@@ -72,7 +72,7 @@ export class Playground {
       this.#presence = p.state;
       this.#render();
     });
-    this.#render('ยกมือชี้ไปที่ปุ่ม แล้วค้างไว้');
+    this.#render('ยกแขนออกด้านข้าง เลื่อนมือพา cursor ไปที่ปุ่ม แล้วค้างไว้');
   }
 
   setMode(mode: 'body' | 'mouse'): void {

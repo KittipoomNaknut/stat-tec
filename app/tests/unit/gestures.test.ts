@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { gestureConfig } from '../../src/config/gestures';
 import { CursorTracker } from '../../src/gestures/cursor';
 import { DwellDetector } from '../../src/gestures/dwell';
 import { GestureEngine } from '../../src/gestures/engine';
@@ -67,21 +68,34 @@ describe('CursorTracker', () => {
     expect(c.update(body([0.75, -0.25]), 300).visible).toBe(true);
   });
 
-  it('follows an extended pointing arm across the reach box', () => {
+  it('maps the interaction zone beside the shoulder onto the screen', () => {
+    const { box } = gestureConfig.cursor;
     const c = new CursorTracker();
-    const corner = point(c, body([1.7, -1.3]));
+    // Outer top corner of the right hand's zone = screen top-right.
+    const corner = point(c, body([box.x1, box.y0]));
     expect(corner).toMatchObject({ visible: true, hand: 'right' });
     expect(corner.x).toBeCloseTo(1, 5);
     expect(corner.y).toBeCloseTo(0, 5);
-    // Extended arm out to the right and up: (1.4, −1.0) SW → x (1.4+1.4)/3.1, y (−1+1.3)/1.8
-    const p = c.update(body([1.4, -1.0]), 300);
-    expect(p.x).toBeCloseTo(2.8 / 3.1, 4);
-    expect(p.y).toBeCloseTo(0.3 / 1.8, 4);
+    // Middle of the zone = middle of the screen; the arm reaches out, not toward the camera.
+    const mid = c.update(body([(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2]), 300);
+    expect(mid.x).toBeCloseTo(0.5, 4);
+    expect(mid.y).toBeCloseTo(0.5, 4);
   });
 
-  it('mirrors the reach box for the left hand', () => {
+  it('keeps the screen center away from the arm-toward-camera pose', () => {
+    // Research 010: a wrist on its own shoulder (arm pointing at the camera) must not map to the
+    // middle of the screen.
+    const { box } = gestureConfig.cursor;
+    const shoulderX = (0.5 - box.x0) / (box.x1 - box.x0);
+    const shoulderY = (0 - box.y0) / (box.y1 - box.y0);
+    expect(Math.hypot(shoulderX - 0.5, shoulderY - 0.5)).toBeGreaterThan(0.4);
+  });
+
+  it('mirrors the zone for the left hand', () => {
+    const { box } = gestureConfig.cursor;
     const c = new CursorTracker();
-    const corner = point(c, body(null, [-1.7, -1.3]));
+    // The left hand's outer top corner = screen top-left.
+    const corner = point(c, body(null, [-box.x1, box.y0]));
     expect(corner.hand).toBe('left');
     expect(corner.x).toBeCloseTo(0, 5);
     expect(corner.y).toBeCloseTo(0, 5);

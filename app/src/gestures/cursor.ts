@@ -93,13 +93,14 @@ export class CursorTracker {
           extension >= c.activateExtension &&
           straightness !== null &&
           straightness >= c.activateStraightness
-      : above >= c.releaseAboveHips &&
-          (straightness === null || straightness >= c.releaseStraightness) &&
-          (extension >= c.deactivateExtension ||
-            // Pointing straight at the camera: the arm looks short but stays a straight line.
-            (straightness !== null &&
-              straightness >= c.foreshortenedStraightness &&
-              extension >= c.foreshortenedMinExtension));
+      : (c.keepWhileAboveHips !== null && above >= c.keepWhileAboveHips) ||
+          (above >= c.releaseAboveHips &&
+            (straightness === null || straightness >= c.releaseStraightness) &&
+            (extension >= c.deactivateExtension ||
+              // Pointing straight at the camera: the arm looks short but stays a straight line.
+              (straightness !== null &&
+                straightness >= c.foreshortenedStraightness &&
+                extension >= c.foreshortenedMinExtension)));
   }
 
   #hide(): CursorState {

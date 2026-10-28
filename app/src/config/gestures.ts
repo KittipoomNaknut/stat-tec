@@ -33,14 +33,24 @@ export const gestureConfig = {
      */
     foreshortenedStraightness: 0.65,
     foreshortenedMinExtension: 0.25,
+    /**
+     * Once pointing, keep it while the wrist stays this far above the hips (SW), whatever the arm
+     * shape. Research 010: recovered both failed holds in the playground replay (22 → 24 of 24)
+     * with no cursor during fidgeting or standing. Starting still needs the strict rules above.
+     */
+    keepWhileAboveHips: 1.0 as number | null,
     /** Pointing must hold this long before the cursor appears — hides brief fidget flickers. */
     activateAfterMs: 100,
     minVisibility: 0.5,
     /**
-     * Reach box mapped to the whole screen, for the right hand (mirrored for the left).
-     * Pointing sweeps measured x −1.4…1.7, y −1.1…0.9 SW.
+     * Interaction zone mapped to the whole screen, for the right hand (mirrored for the left), in
+     * body space: x outward from the body's center line, y down. Research 010: a zone across the
+     * whole body (old: x −1.4…1.7) put the screen center where the arm points at the camera and
+     * collapses in 2D (button 5 never selected). This zone sits beside and above the shoulder
+     * (0.5, 0): the screen center needs the wrist ~0.55 SW outside the shoulder. Measured reach of
+     * straight raised arms: outward 1.4–1.5 SW typical, arm length ~1.5 SW (98%: 2.0).
      */
-    box: { x0: -1.4, x1: 1.7, y0: -1.3, y1: 0.5 },
+    box: { x0: 0.4, x1: 1.7, y0: -1.2, y1: 0.3 },
   },
   dwell: {
     holdMs: 1200,
