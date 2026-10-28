@@ -51,3 +51,19 @@ Camera must be opened as MJPEG: uncompressed YUYV at 720p only delivers 10 fps.
 
 Caveat: every model processes every captured frame in turn, so all of them see the same
 (lower) frame rate. Fair for comparing accuracy and stability, not for absolute fps.
+
+## Result (2026-10-28) → decision: RTMPose-x (ADR-0007)
+
+`guided.py`, each model alone at the camera's 30 fps (built-in 720p webcam), owner standing ~2 m:
+
+| model | ms avg / p95 | fps | jitter raw → filtered (px) | flips raw → stabilized | hidden while moving | wrists "seen" while hidden |
+|---|---|---|---|---|---|---|
+| MediaPipe heavy (CPU here) | 35.9 / 39.6 | 21.0 | 10.09 → 8.87 | 3.8 → 1.3 | 36% | 0% |
+| **RTMPose-x** (TRT FP16) | **7.5 / 25.3** | 30.6 | 4.29 → **1.45** | 8.7 → **0.0** | **3%** | 100% |
+| RTMW-x (TRT FP16) | 7.7 / 25.5 | 30.6 | 5.09 → 1.29 | 0.0 → 0.0 | 0% | 100% |
+
+- FP16 vs FP32 keypoints: RTMPose 0.69 px mean / 3.7 px max (104 frames); RTMW 0.57 / 8.1 (107 frames)
+- RTMW index fingertips: 59 → 28.5 px jitter — not usable for pointing at 2 m with a 720p camera
+- Owner's visual judgement: RTMPose and RTMW clearly better than MediaPipe; chose RTMPose-x
+- Caveats: RTM models never admit a hidden wrist (100% "seen" behind the back); the app's
+  stabilizer is still needed (raw flips 8.7 → 0)
