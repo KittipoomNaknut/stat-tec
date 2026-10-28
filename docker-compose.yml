@@ -1,0 +1,35 @@
+name: stat-tec
+
+services:
+  # Production: built app served by nginx (kiosk browser opens http://127.0.0.1:8080)
+  web:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+      target: runtime
+    ports:
+      - "127.0.0.1:8080:80"
+    restart: always
+
+  # Development: Vite dev server with hot reload
+  dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+      target: dev
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - ./app:/repo/app
+      - /repo/app/node_modules
+
+  # Data pipeline: writes scene datasets into app/public/data
+  pipeline:
+    profiles: ["data"]
+    build:
+      context: .
+      dockerfile: docker/pipeline.Dockerfile
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./app/public/data:/out
