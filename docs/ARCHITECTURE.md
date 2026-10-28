@@ -641,7 +641,7 @@ synth/   (จำลอง, seed) ─┼─▶ clean/transform (polars) ─▶ mo
 | `F3` | แสดง skeleton ดิบ (ก่อนกรอง) ซ้อนบน debug overlay |
 | `F5` | กลับ attract ทันที |
 | `F8` | Pose recorder (dev build เท่านั้น) |
-| `F9` | Export สถิติวันนี้เป็น JSON |
+| `F9` | Export สถิติวันนี้เป็น JSON · ใน `?playground`: ดาวน์โหลดผลการกดปุ่ม + ท่าที่อัด (research 010) |
 | `F10` / `F11` | ลด / เพิ่มเสียง |
 
 ---

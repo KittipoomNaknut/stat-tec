@@ -5,6 +5,7 @@ import { BenchmarkView } from './debug/benchmark';
 import { DebugOverlay } from './debug/overlay';
 import { Playground } from './debug/playground';
 import { RecorderPanel } from './debug/recorder';
+import { SessionRecorder } from './debug/session-recorder';
 import { GestureEngine } from './gestures/engine';
 import { IntentBus } from './input/intent-bus';
 import { MouseAdapter } from './input/mouse-adapter';
@@ -45,7 +46,8 @@ if (params.has('bench')) {
 function startPlayground(parent: HTMLElement): void {
   const bus = new IntentBus();
   const targets = new TargetRegistry();
-  const playground = new Playground(parent, bus, targets);
+  const recorder = new SessionRecorder('playground', 'free play in ?playground (research 010)');
+  const playground = new Playground(parent, bus, targets, recorder);
   const engine = new GestureEngine(bus, targets);
   const mouse = new MouseAdapter(window, bus, targets);
   window.addEventListener('keydown', (e) => {
@@ -56,11 +58,16 @@ function startPlayground(parent: HTMLElement): void {
     playground.setMode(mouse.enabled ? 'mouse' : 'body');
   });
   startOverlay(parent, {
-    onReady: (options) => {
+    onReady: (options, model) => {
       engine.setPoseSource(options.source);
+      recorder.model = model;
+    },
+    onCamera: (camera) => {
+      recorder.camera = camera;
     },
     onDetections: (detections) => {
       engine.update(detections, performance.now());
+      recorder.add(detections);
     },
   }).setVisible(false);
 }
