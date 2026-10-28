@@ -21,6 +21,21 @@ export class TargetRegistry {
     };
   }
 
+  /** Current rect of a target, or `null` if unknown or hidden. */
+  rectOf(id: string): Rect | null {
+    return this.#targets.get(id)?.() ?? null;
+  }
+
+  /** Snapshot of every visible target's rect. */
+  snapshot(): Record<string, Rect> {
+    const out: Record<string, Rect> = {};
+    for (const [id, rect] of this.#targets) {
+      const r = rect();
+      if (r) out[id] = r;
+    }
+    return out;
+  }
+
   /** Target under the point, preferring the most recently registered (topmost). */
   hitTest(x: number, y: number, padding = 0): string | null {
     const entries = [...this.#targets.entries()];
