@@ -1,0 +1,78 @@
+{
+  "createdAt": "2026-10-28T08:51:19.155Z",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+  "camera": {
+    "label": "HD Webcam",
+    "width": 1280,
+    "height": 720,
+    "frameRate": 30
+  },
+  "filter": {
+    "minCutoff": 0.8,
+    "beta": 3,
+    "dCutoff": 1
+  },
+  "seconds": 15,
+  "results": [
+    {
+      "model": "lite",
+      "delegate": "GPU",
+      "frames": 457,
+      "inference": {
+        "mean": 14.896936542381017,
+        "p50": 14.5,
+        "p95": 22.199999999254942
+      },
+      "fps": 30.46275327173675,
+      "latency": {
+        "mean": 15.034269971451039,
+        "p95": 22.300048828125
+      },
+      "jitter": {
+        "raw": 5.780011847744412,
+        "filtered": 0.7695895189986919
+      },
+      "coverage": 1
+    },
+    {
+      "model": "full",
+      "delegate": "GPU",
+      "frames": 457,
+      "inference": {
+        "mean": 15.574398249192102,
+        "p50": 15.699999999254942,
+        "p95": 20.800000000745058
+      },
+      "fps": 30.474968422315868,
+      "latency": {
+        "mean": 15.695099878624179,
+        "p95": 20.89990234375
+      },
+      "jitter": {
+        "raw": 5.336124329112971,
+        "filtered": 0.7074970290004451
+      },
+      "coverage": 1
+    },
+    {
+      "model": "heavy",
+      "delegate": "GPU",
+      "frames": 457,
+      "inference": {
+        "mean": 16.857330415984798,
+        "p50": 16.700000002980232,
+        "p95": 18.799999997019768
+      },
+      "fps": 30.473135525260627,
+      "latency": {
+        "mean": 17.006406955176423,
+        "p95": 18.900146484375
+      },
+      "jitter": {
+        "raw": 4.556584599575526,
+        "filtered": 0.5796907461367565
+      },
+      "coverage": 1
+    }
+  ]
+}
