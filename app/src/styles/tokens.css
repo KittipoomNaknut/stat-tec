@@ -5,8 +5,8 @@
   --bg: #050b18;
   --bg-deep: #02060f;
   --bg-grid: #0d1b33;
-  --panel: rgba(12, 32, 64, 0.55);
-  --panel-strong: rgba(10, 26, 54, 0.82);
+  --panel: rgb(10 28 58 / 78%);
+  --panel-strong: rgb(8 22 46 / 90%);
   --primary: #3fe0ff;
   --accent: #ffc857;
   --positive: #3dffa2;
