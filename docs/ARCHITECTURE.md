@@ -62,15 +62,18 @@ Display (TV input lag)              ~10–30 ms   ← ตั้ง TV เป็�
 ## 2. ภาพรวมระบบ
 
 ```
-                       ┌────────────────────────────────────────────┐
- USB Camera 1080p@60 ─▶│ Capture   getUserMedia → VideoFrame         │
-                       └──────────────────┬─────────────────────────┘
-                                          │ transfer (zero-copy)
-                       ┌──────────────────▼─────────────────────────┐
+ ┌──────────────────── PERCEPTION SERVICE (Python, host, GPU) — ADR-0007 ─────┐
+ │ USB camera (MJPEG) → YOLOX-m (CUDA, every 7th frame)                        │
+ │                    → RTMPose-x (TensorRT FP16, every frame, ≤ 3 people)     │
+ │                    → COCO-17 → 33-point layout, visibility = clamp(score)   │
+ └──────────────────────────────────┬─────────────────────────────────────────┘
+                                    │ WebSocket 127.0.0.1:8765 (binary, raw detections)
+                       ┌────────────▼───────────────────────────────┐
                        │ PERCEPTION WORKER (Web Worker)             │
-                       │  MediaPipe PoseLandmarker (GPU, numPoses=3)│
+                       │  source: server (default)                  │
+                       │       or MediaPipe heavy (fallback, GPU)   │
                        │  → PlayerLock (เลือก/ล็อกผู้เล่น 1 คน)       │
-                       │  → OneEuroFilter (ต่อ landmark ต่อแกน)       │
+                       │  → Stabilizer + OneEuroFilter               │
                        │  → BodyNormalizer (หน่วย = ความกว้างไหล่)     │
                        └──────────────────┬─────────────────────────┘
                                           │ PoseFrame (postMessage)
@@ -109,7 +112,8 @@ Display (TV input lag)              ~10–30 ms   ← ตั้ง TV เป็�
 | Language | TypeScript (`strict: true`) | Data contract ชัด, refactor ปลอดภัย |
 | Build | Vite | Dev เร็ว, รองรับ Worker เป็น module |
 | Package manager | pnpm | เร็ว, lockfile เข้ม |
-| Pose | `@mediapipe/tasks-vision` — PoseLandmarker | แม่น, เร็วบน GPU, 33 จุด + world coords |
+| Pose (หลัก) | Perception service: RTMPose-x + YOLOX-m ผ่าน rtmlib, ONNX Runtime GPU + TensorRT FP16 | นิ่งกว่า MediaPipe ~6 เท่า, 7.5 ms/เฟรม ([ADR-0007](adr/0007-perception-service-rtmpose.md)) |
+| Pose (สำรอง) | `@mediapipe/tasks-vision` — PoseLandmarker heavy ในเบราว์เซอร์ | ใช้เมื่อ service ล่ม; ไม่ต้องติดตั้งอะไรเพิ่ม |
 | 3D | Three.js (WebGL2) | Ecosystem ใหญ่, เสถียร |
 | Post-processing | `postprocessing` (pmndrs) | Bloom/SMAA ประสิทธิภาพดีกว่า EffectComposer เดิม |
 | Animation | GSAP | Timeline แม่นยำ, ease สวย |
@@ -225,6 +229,8 @@ stat-tec/
 
 ### 5.1 Capture — `perception/camera.ts`
 
+> ตั้งแต่ [ADR-0007](adr/0007-perception-service-rtmpose.md): กล้องเป็นของ perception service (เปิดได้ทีละโปรแกรม) — ส่วนนี้ใช้เฉพาะ source `mediapipe` (fallback)
+
 - `getUserMedia({ video: { width: 1920, height: 1080, frameRate: { ideal: 60 } } })`
 - เลือกกล้องจาก `deviceId` ที่บันทึกใน config (กันเลือกกล้องผิดตัวเมื่อเสียบหลายตัว)
 - ใช้ `MediaStreamTrackProcessor` อ่าน `VideoFrame` แล้ว **transfer** ไป Worker (ไม่ copy)
@@ -234,6 +240,8 @@ stat-tec/
 - ติดตาม `track.onended` / `readyState` → แจ้ง Watchdog
 
 ### 5.2 Perception Worker — `perception/perception.worker.ts`
+
+> source `server`: worker เชื่อม WebSocket ไปที่ perception service แล้วป้อน raw detections เข้า `PoseTracker` ตัวเดียวกัน; source `mediapipe`: ตามรายละเอียดด้านล่าง
 
 - โหลด `PoseLandmarker` จาก `/models/` และ `/wasm/` ในเครื่อง
 - `runningMode: 'VIDEO'`, `delegate: 'GPU'`, `numPoses: 3`
@@ -670,6 +678,7 @@ services:
 ```
 
 - **เบราว์เซอร์ kiosk รันบน host โดยตรง** (กล้อง + GPU ไม่ผ่าน container)
+- **Perception service รันบน host โดยตรง** (`uv` + systemd user unit, `Restart=always`) — ต้องใช้กล้องและ GPU ([ADR-0007](adr/0007-perception-service-rtmpose.md))
 - Bind เฉพาะ `127.0.0.1` — ไม่เปิดพอร์ตออกเครือข่าย
 
 ### 16.2 Kiosk — `scripts/kiosk.sh`
@@ -726,3 +735,5 @@ google-chrome \
 | R5 | Latency รวมเกิน 100 ms | รู้สึกหน่วง | กล้อง 60fps, TV game mode, วัดจริง | 1 |
 | R6 | ลิขสิทธิ์ข้อมูลจริง/เสียง | ใช้ไม่ได้ | ตรวจ license ก่อนใช้, บันทึกใน manifest | 4, 5 |
 | R7 | Font ไทยใน kiosk offline | ตัวอักษรเพี้ยน | self-host ฟอนต์ทั้งหมด | 3 |
+| R8 | Perception service ล่มหน้างาน | ไม่มี skeleton | systemd restart + fallback MediaPipe อัตโนมัติ + health ใน overlay | 2, 6 |
+| R9 | RTMPose ให้ score สูงกับข้อมือที่ซ่อนอยู่ (0.45–0.85) | cursor/ท่าทางจากมือที่ "เดา" | gestures พึ่งกฎเชิงท่าทาง ไม่ใช่ score; ยืนยันด้วย replay จาก session RTMPose | 2 |
