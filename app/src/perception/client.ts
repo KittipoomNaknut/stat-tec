@@ -6,6 +6,11 @@ export interface PerceptionEvents {
   onError: (message: string) => void;
 }
 
+/** Frames reach the worker through MediaStreamTrackProcessor, which Firefox lacks on window. */
+export function isPerceptionSupported(): boolean {
+  return typeof MediaStreamTrackProcessor === 'function';
+}
+
 /** Main-thread handle to the perception worker. */
 export class PerceptionClient {
   readonly #worker: Worker;

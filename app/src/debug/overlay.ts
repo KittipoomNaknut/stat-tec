@@ -75,7 +75,8 @@ export class DebugOverlay {
     this.#perception = options;
   }
 
-  setError(message: string): void {
+  /** Pass `null` to clear once the problem is resolved. */
+  setError(message: string | null): void {
     this.#error = message;
   }
 

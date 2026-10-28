@@ -13,6 +13,8 @@ export interface CameraEvents {
   onStatus: (status: CameraStatus) => void;
   /** Called with every new track, including after a reconnect. */
   onTrack: (track: MediaStreamTrack, settings: CameraSettings) => void;
+  /** Why the last connect attempt failed, e.g. permission denied or camera busy. */
+  onError: (message: string) => void;
 }
 
 /**
@@ -53,23 +55,29 @@ export class Camera {
 
   async #connect(): Promise<void> {
     this.#events.onStatus('connecting');
+    let track: MediaStreamTrack;
     try {
-      const track = await this.#openTrack();
-      if (this.#stopped) {
-        track.stop();
-        return;
-      }
-      track.addEventListener('ended', () => {
-        this.restart();
-      });
-      this.#track = track;
-      this.#events.onTrack(track, describe(track));
-      this.#events.onStatus('live');
+      track = await this.#openTrack();
     } catch (error) {
       console.warn('[camera] connect failed', error);
+      this.#events.onError(
+        error instanceof Error ? `${error.name}: ${error.message}` : String(error),
+      );
       this.#events.onStatus('lost');
       this.#scheduleRetry();
+      return;
     }
+    if (this.#stopped) {
+      track.stop();
+      return;
+    }
+    track.addEventListener('ended', () => {
+      this.restart();
+    });
+    this.#track = track;
+    // Outside the try: a failing consumer is a bug to surface, not a reason to reconnect.
+    this.#events.onTrack(track, describe(track));
+    this.#events.onStatus('live');
   }
 
   async #openTrack(): Promise<MediaStreamTrack> {
