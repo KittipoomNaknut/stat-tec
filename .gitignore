@@ -42,3 +42,6 @@ dist-ssr/
 # Fetched by app/scripts/fetch-assets.mjs
 app/public/models/
 app/public/wasm/
+
+# Spike outputs
+spikes/**/results/
