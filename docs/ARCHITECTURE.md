@@ -3,7 +3,7 @@
 > Gesture-controlled data storytelling kiosk สำหรับงาน Open House สาขา Data Science
 > ผู้เล่น 1 คนยืนหน้าจอใหญ่ ควบคุมกราฟและฉากธุรกิจด้วยร่างกาย (ไม่มีเมาส์/คีย์บอร์ด)
 
-สถานะเอกสาร: **Draft v0.1** — แก้ไขผ่าน PR เท่านั้น การตัดสินใจสำคัญบันทึกใน [`docs/adr/`](adr/)
+สถานะเอกสาร: **Draft v0.2** (อัปเดตหลัง Phase 1) — แก้ไขผ่าน PR เท่านั้น การตัดสินใจสำคัญบันทึกใน [`docs/adr/`](adr/)
 
 ---
 
@@ -105,7 +105,7 @@ Display (TV input lag)              ~10–30 ms   ← ตั้ง TV เป็�
 
 | หมวด | เลือกใช้ | เหตุผล |
 |---|---|---|
-| Runtime | Chromium (kiosk mode) | WebGL2/WebGPU, MediaPipe GPU delegate, ควบคุม flag ได้ |
+| Runtime | Google Chrome .deb (kiosk mode, ล็อกเวอร์ชัน) | WebGL2/WebGPU, MediaPipe GPU delegate, MediaStreamTrackProcessor ([ADR-0006](adr/0006-kiosk-browser.md)) |
 | Language | TypeScript (`strict: true`) | Data contract ชัด, refactor ปลอดภัย |
 | Build | Vite | Dev เร็ว, รองรับ Worker เป็น module |
 | Package manager | pnpm | เร็ว, lockfile เข้ม |
@@ -195,7 +195,7 @@ stat-tec/
 │   └── audio.json                  # manifest เสียง
 ├── data-pipeline/
 │   ├── pyproject.toml
-│   ├── src/pipeline/
+│   ├── src/stat_tec_pipeline/
 │   │   ├── sources/                # ดึงข้อมูลจริง
 │   │   ├── synth/                  # สร้างข้อมูลจำลอง (fixed seed)
 │   │   ├── models/                 # regression / forecast ที่ precompute
@@ -228,7 +228,8 @@ stat-tec/
 - `getUserMedia({ video: { width: 1920, height: 1080, frameRate: { ideal: 60 } } })`
 - เลือกกล้องจาก `deviceId` ที่บันทึกใน config (กันเลือกกล้องผิดตัวเมื่อเสียบหลายตัว)
 - ใช้ `MediaStreamTrackProcessor` อ่าน `VideoFrame` แล้ว **transfer** ไป Worker (ไม่ copy)
-- Fallback: ถ้าไม่รองรับ ใช้ `createImageBitmap(video)` แล้ว transfer
+- ส่ง `ReadableStream` ของ processor ไปทั้งก้อน — worker อ่านเฟรมเอง main thread ไม่แตะภาพเลย
+- ไม่ทำ fallback สำหรับเบราว์เซอร์ที่ไม่มี `MediaStreamTrackProcessor` (เช่น Firefox) — แสดง error ชัดเจนแทน ([ADR-0006](adr/0006-kiosk-browser.md))
 - Downscale ก่อน inference ที่ ~640 px ด้านยาว (MediaPipe resize ภายในอยู่แล้ว ลด bandwidth)
 - ติดตาม `track.onended` / `readyState` → แจ้ง Watchdog
 
@@ -237,7 +238,8 @@ stat-tec/
 - โหลด `PoseLandmarker` จาก `/models/` และ `/wasm/` ในเครื่อง
 - `runningMode: 'VIDEO'`, `delegate: 'GPU'`, `numPoses: 3`
 - `numPoses: 3` ไม่ใช่เพื่อเล่นหลายคน แต่เพื่อ **รู้ว่ามีใครอื่นในเฟรม** แล้วไม่ให้เขาแย่งคุม
-- เริ่มด้วยโมเดล `full`; benchmark `heavy` ใน Phase 1 แล้วเลือกตาม budget
+- ใช้โมเดล **`heavy`** — นิ่งที่สุดและยังอยู่ในงบ ([ADR-0005](adr/0005-pose-model-heavy.md), [ผลวัด](benchmarks/phase1.md))
+- ใช้ WASM แบบ ES module (`forVisionTasks(base, true)`) เพราะ module worker เรียก `importScripts` ไม่ได้
 - ส่งออก `PoseFrame` ทุกเฟรม (รวม `inferenceMs` สำหรับ telemetry)
 - ถ้า Worker crash → main thread respawn อัตโนมัติ (ดู §14)
 
@@ -262,8 +264,10 @@ LOST   → SEARCHING หลัง 1.5 s
 
 ### 5.4 Filtering — `perception/one-euro.ts`
 
-- One Euro Filter ต่อ landmark ต่อแกน (33 × 3 ตัว)
-- ค่าเริ่มต้น: `minCutoff = 1.0 Hz`, `beta = 0.007`, `dCutoff = 1.0 Hz` — **จูนใน Phase 2** ด้วย replay
+- One Euro Filter ต่อ landmark ต่อแกน (33 × 3 ตัว) รันใน worker
+- ความเร็วหารด้วยความกว้างไหล่ → `beta` มีหน่วยเป็น **SW/s** ใช้ได้เท่ากันทุกระยะ
+- ค่าเริ่มต้น: `minCutoff = 0.8 Hz`, `beta = 3`, `dCutoff = 1.0 Hz` (ลด jitter ~87% ตอนยืนนิ่ง — [ผลวัด](benchmarks/phase1.md)) — จูนความหน่วงตอนขยับเร็วใน Phase 2 ด้วย replay
+- Reset เมื่อผู้เล่นหายเกิน 500 ms
 - Landmark ที่ `visibility < 0.5` → คงค่าเดิม (hold) ไม่เกิน 200 ms แล้ว mark ว่าไม่ valid
 - Mirror แกน x (ภาพแบบกระจก ผู้เล่นยกมือขวา cursor ไปทางขวา)
 
@@ -620,6 +624,7 @@ synth/   (จำลอง, seed) ─┼─▶ clean/transform (polars) ─▶ mo
 |---|---|
 | `F1` | Debug overlay (FPS, latency, skeleton, lock state, confidence) |
 | `F2` | สลับ Mouse mode |
+| `F3` | แสดง skeleton ดิบ (ก่อนกรอง) ซ้อนบน debug overlay |
 | `F5` | กลับ attract ทันที |
 | `F8` | Pose recorder (dev build เท่านั้น) |
 | `F9` | Export สถิติวันนี้เป็น JSON |
@@ -665,7 +670,7 @@ services:
 ### 16.2 Kiosk — `scripts/kiosk.sh`
 
 ```bash
-chromium \
+google-chrome \
   --kiosk --app=http://127.0.0.1:8080 \
   --use-fake-ui-for-media-stream \          # อนุญาตกล้องอัตโนมัติ
   --autoplay-policy=no-user-gesture-required \
@@ -691,6 +696,7 @@ chromium \
 - [ ] เปิด F1 ดู fps ≥ 60, inference ≥ 30, confidence ≥ 0.8 ที่จุดยืน
 - [ ] ทดสอบเล่นครบ 1 รอบ + ทดสอบดึงกล้องออกแล้วเสียบกลับ
 - [ ] ตั้งเครื่องไม่ให้ sleep / auto-update
+- [ ] Chrome เป็นเวอร์ชันที่ทดสอบผ่าน และ `apt-mark hold google-chrome-stable` แล้ว
 
 ---
 
@@ -708,8 +714,8 @@ chromium \
 
 | # | ความเสี่ยง | ผลกระทบ | แผนพิสูจน์/รับมือ | Phase |
 |---|---|---|---|---|
-| R1 | MediaPipe GPU delegate ใน Web Worker อาจมีข้อจำกัด (OffscreenCanvas/WebGL ใน worker) | ต้องย้าย inference ไป main thread | Spike ใน Phase 1; fallback = main thread + จำกัด render budget | 1 |
-| R2 | ยังไม่มีกล้อง | Phase 1 เริ่มไม่ได้ | จัดหา webcam 1080p@60 | 0 |
+| R1 | ~~MediaPipe GPU delegate ใน Web Worker อาจมีข้อจำกัด~~ | – | ✅ **ปิดแล้ว** — GPU delegate ทำงานใน module worker บน RTX 4060 ([ADR-0002](adr/0002-perception-in-worker.md)) | 1 |
+| R2 | ยังไม่มีกล้องตัวจริง (ตอนนี้ใช้เว็บแคมในตัว 720p30) | latency/fps ที่วัดได้ยังไม่ใช่ของหน้างาน | จัดหา webcam 1080p@60 แล้ววัดซ้ำ (`/?bench`) | 1–6 |
 | R3 | ความแม่นยำของ pose ที่ระยะ 2–3 m กับเด็กตัวเล็ก | ท่าทางพลาด | Body-normalized thresholds + playtest กับวัยรุ่น | 2, 6 |
 | R4 | แสงหน้างานไม่ดี | confidence ต่ำ | สำรวจสถานที่ล่วงหน้า, เตรียมไฟส่องหน้า | 6 |
 | R5 | Latency รวมเกิน 100 ms | รู้สึกหน่วง | กล้อง 60fps, TV game mode, วัดจริง | 1 |
