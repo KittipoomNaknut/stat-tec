@@ -1,0 +1,58 @@
+/* Design tokens — see docs/ARCHITECTURE.md §11.3 */
+:root {
+  --bg: #050b18;
+  --bg-grid: #0d1b33;
+  --panel: rgba(12, 32, 64, 0.55);
+  --primary: #3fe0ff;
+  --accent: #ffc857;
+  --positive: #3dffa2;
+  --negative: #ff4d6d;
+  --text: #e6f1ff;
+  --text-dim: #7e93b5;
+
+  --font-ui: 'Anuphan', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --size-hero: 18vh;
+  --size-headline: 8vh;
+  --size-caption: 5vh;
+  --size-label: 3.5vh;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  cursor: none;
+  user-select: none;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background-image:
+    linear-gradient(var(--bg-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+  background-size: 6vh 6vh;
+}
+
+.boot-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--size-headline);
+  letter-spacing: 0.2em;
+  color: var(--primary);
+  text-shadow: 0 0 2vh color-mix(in srgb, var(--primary) 60%, transparent);
+}
