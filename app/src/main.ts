@@ -1,51 +1,50 @@
 import './style.css';
 import { perceptionOptionsFromUrl } from './config/perception';
+import { startLoop } from './core/loop';
+import { DebugOverlay } from './debug/overlay';
 import { Camera } from './perception/camera';
-import { PerceptionClient } from './perception/client';
+import { isPerceptionSupported, PerceptionClient } from './perception/client';
 
 const root = document.querySelector<HTMLDivElement>('#app');
 if (!root) throw new Error('#app root element not found');
 
-const preview = document.createElement('video');
-preview.className = 'camera-preview';
-preview.muted = true;
-preview.playsInline = true;
+const overlay = new DebugOverlay(root);
 
-const status = document.createElement('p');
-status.className = 'camera-status';
-const detectionStatus = document.createElement('p');
-detectionStatus.className = 'camera-status detection-status';
-root.append(preview, status, detectionStatus);
+if (isPerceptionSupported()) {
+  const perception = new PerceptionClient(perceptionOptionsFromUrl(location.search), {
+    onReady: (options) => {
+      overlay.setPerception(options);
+    },
+    onDetections: (detections) => {
+      overlay.addDetections(detections);
+    },
+    onError: (message) => {
+      overlay.setError(message);
+    },
+  });
 
-let model = 'loading model…';
-const perception = new PerceptionClient(perceptionOptionsFromUrl(location.search), {
-  onReady: (options) => {
-    model = `${options.model}/${options.delegate}`;
-    detectionStatus.textContent = `perception: ${model} ready`;
-  },
-  onDetections: (d) => {
-    detectionStatus.textContent = `perception: ${model} · poses ${String(d.poseCount)} · inference ${d.inferenceMs.toFixed(1)} ms · frame #${String(d.frameId)}`;
-  },
-  onError: (message) => {
-    detectionStatus.dataset['status'] = 'lost';
-    detectionStatus.textContent = `perception error: ${message}`;
-  },
+  const camera = new Camera(
+    {
+      onStatus: (status) => {
+        overlay.setCameraStatus(status);
+        if (status === 'live') overlay.setError(null);
+      },
+      onError: (message) => {
+        overlay.setError(`camera: ${message}`);
+      },
+      onTrack: (track, settings) => {
+        // The worker consumes the original track; the preview gets its own clone.
+        perception.attachTrack(track);
+        overlay.setCameraTrack(track.clone(), settings);
+      },
+    },
+    new URLSearchParams(location.search).get('camera'),
+  );
+  camera.start();
+} else {
+  overlay.setError('This browser cannot stream camera frames to a worker. Use Chrome/Chromium.');
+}
+
+startLoop((dt, now) => {
+  overlay.update(dt, now);
 });
-
-const camera = new Camera(
-  {
-    onStatus: (s) => {
-      status.dataset['status'] = s;
-      if (s !== 'live') status.textContent = `camera: ${s}`;
-    },
-    onTrack: (track, settings) => {
-      // The worker consumes the original track; the preview gets its own clone.
-      perception.attachTrack(track);
-      preview.srcObject = new MediaStream([track.clone()]);
-      void preview.play();
-      status.textContent = `camera: ${settings.label} · ${String(settings.width)}×${String(settings.height)} @ ${settings.frameRate.toFixed(0)}fps`;
-    },
-  },
-  new URLSearchParams(location.search).get('camera'),
-);
-camera.start();
