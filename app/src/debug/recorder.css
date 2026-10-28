@@ -1,0 +1,60 @@
+.recorder {
+  position: fixed;
+  left: 50%;
+  bottom: 4vh;
+  z-index: 1100;
+  width: min(90vw, 1400px);
+  padding: 2.4vh 3vh;
+  transform: translateX(-50%);
+  text-align: center;
+  background: var(--panel);
+  border: 2px solid color-mix(in srgb, var(--primary) 40%, transparent);
+  border-radius: 2vh;
+  backdrop-filter: blur(12px);
+  cursor: default;
+  user-select: text;
+}
+
+.recorder.recording {
+  border-color: var(--negative);
+}
+
+.recorder-main {
+  margin: 0;
+  font-size: var(--size-caption);
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.recorder-sub {
+  margin: 1vh 0 0;
+  font-family: var(--font-mono);
+  font-size: 3vh;
+  color: var(--primary);
+}
+
+.recording .recorder-sub {
+  color: var(--negative);
+}
+
+.recorder-done {
+  text-align: left;
+}
+
+.recorder-summary {
+  margin: 1.5vh 0;
+  padding-left: 2.5vh;
+  font-family: var(--font-mono);
+  font-size: 1.8vh;
+  color: var(--text-dim);
+}
+
+.recorder-download {
+  display: inline-block;
+  padding: 1vh 2vh;
+  font-size: 2vh;
+  color: var(--bg);
+  background: var(--primary);
+  border-radius: 1vh;
+  text-decoration: none;
+}
