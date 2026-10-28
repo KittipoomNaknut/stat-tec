@@ -98,7 +98,12 @@ export class DebugOverlay {
     this.#inference.push(detections.inferenceMs);
     this.#detectionRate.tick(performance.now());
     if (detections.player) {
-      this.#rawJitter.add(detections.landmarks, detections.width, detections.height);
+      this.#rawJitter.add(
+        detections.landmarks,
+        detections.width,
+        detections.height,
+        detections.playerIndex,
+      );
       this.#filteredJitter.add(detections.player, detections.width, detections.height);
     } else {
       this.#rawJitter.reset();
@@ -144,11 +149,11 @@ export class DebugOverlay {
       h: d.height * scale,
     };
 
-    for (let pose = 1; pose < d.poseCount; pose++) {
+    for (const pose of d.otherIndices) {
       this.#drawPose(d.landmarks, pose, box, COLOR_OTHER, 3 * dpr);
     }
-    if (this.#showRaw && d.poseCount > 0) {
-      this.#drawPose(d.landmarks, 0, box, COLOR_RAW, 2 * dpr);
+    if (this.#showRaw && d.playerIndex >= 0) {
+      this.#drawPose(d.landmarks, d.playerIndex, box, COLOR_RAW, 2 * dpr);
     }
     if (d.player) this.#drawPose(d.player, 0, box, COLOR_PLAYER, 4 * dpr);
   }
@@ -193,7 +198,7 @@ export class DebugOverlay {
       `model      ${p ? `${p.model} / ${p.delegate} / numPoses ${String(p.numPoses)}` : 'loading…'}`,
       `filter     ${f ? `one-euro minCutoff ${String(f.minCutoff)} · beta ${String(f.beta)} · dCutoff ${String(f.dCutoff)}` : p ? 'off' : '…'}`,
       `inference  ${ms(this.#inference.mean())} avg · ${ms(this.#inference.percentile(95))} p95 · ${this.#detectionRate.rate(nowMs).toFixed(1)} fps`,
-      `poses      ${String(this.#detections?.poseCount ?? 0)}`,
+      `player     ${describeLock(this.#detections)}`,
       `body (SW)  ${describeWrists(this.#detections?.body ?? null)}`,
       `jitter     raw ${px(this.#rawJitter.mean())} · filtered ${px(this.#filteredJitter.mean())}  (stand still)`,
       `worker→ui  ${ms(this.#workerToScreen.mean())} avg · ${ms(this.#workerToScreen.percentile(95))} p95`,
@@ -203,6 +208,12 @@ export class DebugOverlay {
     lines.push('', `F1 hide · F3 raw skeleton ${this.#showRaw ? 'on' : 'off'}`);
     return lines.join('\n');
   }
+}
+
+function describeLock(d: PoseDetections | null): string {
+  if (!d) return '–';
+  const id = d.playerId > 0 ? ` #${String(d.playerId)}` : '';
+  return `${d.lock}${id} · others ${String(d.otherIndices.length)} · detections ${String(d.poseCount)}`;
 }
 
 /** Wrist positions in body space: what cursor and gesture thresholds will read. */

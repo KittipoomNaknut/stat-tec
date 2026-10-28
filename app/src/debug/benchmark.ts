@@ -127,7 +127,7 @@ export class BenchmarkView {
       rate.tick(performance.now());
       if (d.player) {
         withPerson++;
-        raw.add(d.landmarks, d.width, d.height);
+        raw.add(d.landmarks, d.width, d.height, d.playerIndex);
         filtered.add(d.player, d.width, d.height);
       } else {
         raw.reset();

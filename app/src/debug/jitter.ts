@@ -1,5 +1,5 @@
 import { RollingWindow } from '../core/rolling-stats';
-import { LANDMARK_STRIDE } from '../perception/protocol';
+import { LANDMARK_COUNT, LANDMARK_STRIDE } from '../perception/protocol';
 
 const WINDOW = 120;
 const MIN_VISIBILITY = 0.5;
@@ -24,12 +24,13 @@ export class JitterMeter {
     return this.#window.mean();
   }
 
-  /** Reads the first pose of `data`. */
-  add(data: Float32Array, width: number, height: number): void {
+  /** Reads pose `pose` of `data`. */
+  add(data: Float32Array, width: number, height: number, pose = 0): void {
+    const base = pose * LANDMARK_COUNT * LANDMARK_STRIDE;
     let sum = 0;
     let visible = true;
     for (let k = 0; k < JITTER_LANDMARKS.length; k++) {
-      const i = (JITTER_LANDMARKS[k] ?? 0) * LANDMARK_STRIDE;
+      const i = base + (JITTER_LANDMARKS[k] ?? 0) * LANDMARK_STRIDE;
       if ((data[i + 3] ?? 0) < MIN_VISIBILITY) visible = false;
       const x = (data[i] ?? 0) * width;
       const y = (data[i + 1] ?? 0) * height;
