@@ -92,6 +92,11 @@
 
 .bench-chart .value {
   fill: var(--text);
+  /* Halo in the panel color keeps values legible over grid and reference lines. */
+  paint-order: stroke;
+  stroke: #0f1d36;
+  stroke-width: 4px;
+  stroke-linejoin: round;
 }
 
 .bench-chart .category {
