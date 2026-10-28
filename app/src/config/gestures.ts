@@ -2,6 +2,8 @@
  * Gesture thresholds in body units (SW = shoulder width, from body space; +y is down).
  * Defaults come from the first recorded session (tests/fixtures/poses) — see docs/ARCHITECTURE.md §7.
  */
+import type { PerceptionSource } from '../perception/protocol';
+
 export const gestureConfig = {
   cursor: {
     /**
@@ -18,6 +20,19 @@ export const gestureConfig = {
      */
     activateAboveHips: 0.8,
     releaseAboveHips: 0.3,
+    /**
+     * Arm straightness (shoulder-wrist / (shoulder-elbow + elbow-wrist)) to start pointing and to
+     * keep pointing. Separates crossed arms and head-scratching from pointing — see the replay
+     * tests; extension alone failed on crossed arms in the RTMPose session.
+     */
+    activateStraightness: 0.8, // RTMPose; see cursorConfigFor() for MediaPipe
+    releaseStraightness: 0.5,
+    /**
+     * Keep pointing with a short-looking arm (pointing at the camera: 0.28-0.53 SW measured) as
+     * long as it stays straight (0.68-0.83 measured); head-scratching is bent (0.23-0.40).
+     */
+    foreshortenedStraightness: 0.65,
+    foreshortenedMinExtension: 0.25,
     /** Pointing must hold this long before the cursor appears — hides brief fidget flickers. */
     activateAfterMs: 100,
     minVisibility: 0.5,
@@ -37,3 +52,21 @@ export const gestureConfig = {
     padding: 0.02,
   },
 } as const;
+
+/**
+ * Per pose source: each model's errors differ, so thresholds are calibrated on recordings of each
+ * (tests/replay). RTMPose reports crossed arms with straightness up to ~0.76, so it needs 0.8;
+ * MediaPipe's elbows are rougher (left-hand pointing 0.46-0.78), which 0.8 would cut in half.
+ */
+type Widen<T> = { readonly [K in keyof T]: T[K] extends number ? number : Widen<T[K]> };
+/** Cursor thresholds with plain number types (the literals above are only the defaults). */
+export type CursorConfig = Widen<typeof gestureConfig.cursor>;
+
+const CURSOR_BY_SOURCE: Record<PerceptionSource, Partial<CursorConfig>> = {
+  server: {},
+  mediapipe: { activateStraightness: 0.7 },
+};
+
+export function cursorConfigFor(source: PerceptionSource): CursorConfig {
+  return { ...gestureConfig.cursor, ...CURSOR_BY_SOURCE[source] };
+}

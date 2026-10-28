@@ -56,6 +56,9 @@ function startPlayground(parent: HTMLElement): void {
     playground.setMode(mouse.enabled ? 'mouse' : 'body');
   });
   startOverlay(parent, {
+    onReady: (options) => {
+      engine.setPoseSource(options.source);
+    },
     onDetections: (detections) => {
       engine.update(detections, performance.now());
     },

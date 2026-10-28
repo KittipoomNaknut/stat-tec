@@ -1,4 +1,4 @@
-import { gestureConfig } from '../config/gestures';
+import { gestureConfig, type CursorConfig } from '../config/gestures';
 import type { Hand } from '../input/intents';
 import { Landmark } from '../perception/landmarks';
 import { LANDMARK_STRIDE } from '../perception/protocol';
@@ -12,8 +12,16 @@ export interface CursorState {
 }
 
 const HANDS = {
-  right: { wrist: Landmark.RIGHT_WRIST, shoulder: Landmark.RIGHT_SHOULDER },
-  left: { wrist: Landmark.LEFT_WRIST, shoulder: Landmark.LEFT_SHOULDER },
+  right: {
+    wrist: Landmark.RIGHT_WRIST,
+    elbow: Landmark.RIGHT_ELBOW,
+    shoulder: Landmark.RIGHT_SHOULDER,
+  },
+  left: {
+    wrist: Landmark.LEFT_WRIST,
+    elbow: Landmark.LEFT_ELBOW,
+    shoulder: Landmark.LEFT_SHOULDER,
+  },
 } as const;
 
 /**
@@ -22,13 +30,13 @@ const HANDS = {
  * move the cursor. Stays on the current hand while it keeps pointing (no flicker between hands).
  */
 export class CursorTracker {
-  readonly #config: typeof gestureConfig.cursor;
+  readonly #config: CursorConfig;
   #hand: Hand | null = null;
   /** Hand that started pointing but has not held long enough yet, and since when. */
   #pending: { hand: Hand; since: number } | null = null;
   #state: CursorState = { visible: false, hand: 'right', x: 0.5, y: 0.5 };
 
-  constructor(config: typeof gestureConfig.cursor = gestureConfig.cursor) {
+  constructor(config: CursorConfig = gestureConfig.cursor) {
     this.#config = config;
   }
 
@@ -69,17 +77,29 @@ export class CursorTracker {
 
   #pointing(body: Float32Array, hand: Hand, activating: boolean): boolean {
     const c = this.#config;
-    const { wrist, shoulder } = HANDS[hand];
+    const { wrist, elbow, shoulder } = HANDS[hand];
     if (vis(body, wrist) < c.minVisibility) return false;
     const hipY = (y(body, Landmark.LEFT_HIP) + y(body, Landmark.RIGHT_HIP)) / 2;
     const above = hipY - y(body, wrist);
-    const extension = Math.hypot(
-      x(body, wrist) - x(body, shoulder),
-      y(body, wrist) - y(body, shoulder),
-    );
+    const extension = dist(body, wrist, shoulder);
+    // Straight arm: shoulder–wrist distance over the arm's length along the elbow. Unchanged by
+    // pointing toward the camera (a straight arm stays a straight line); low for crossed arms.
+    const elbowSeen = vis(body, elbow) >= c.minVisibility;
+    const straightness = elbowSeen
+      ? extension / Math.max(dist(body, shoulder, elbow) + dist(body, elbow, wrist), 1e-6)
+      : null;
     return activating
-      ? above >= c.activateAboveHips && extension >= c.activateExtension
-      : above >= c.releaseAboveHips && extension >= c.deactivateExtension;
+      ? above >= c.activateAboveHips &&
+          extension >= c.activateExtension &&
+          straightness !== null &&
+          straightness >= c.activateStraightness
+      : above >= c.releaseAboveHips &&
+          (straightness === null || straightness >= c.releaseStraightness) &&
+          (extension >= c.deactivateExtension ||
+            // Pointing straight at the camera: the arm looks short but stays a straight line.
+            (straightness !== null &&
+              straightness >= c.foreshortenedStraightness &&
+              extension >= c.foreshortenedMinExtension));
   }
 
   #hide(): CursorState {
@@ -98,6 +118,10 @@ function y(body: Float32Array, i: number): number {
 
 function vis(body: Float32Array, i: number): number {
   return body[i * LANDMARK_STRIDE + 3] ?? 0;
+}
+
+function dist(body: Float32Array, a: number, b: number): number {
+  return Math.hypot(x(body, a) - x(body, b), y(body, a) - y(body, b));
 }
 
 function clamp01(v: number): number {

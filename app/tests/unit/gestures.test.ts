@@ -8,8 +8,17 @@ import { TargetRegistry } from '../../src/input/targets';
 import { Landmark } from '../../src/perception/landmarks';
 import { LANDMARK_COUNT, LANDMARK_STRIDE } from '../../src/perception/protocol';
 
-/** Body-space pose: shoulders ±0.5, hips at y=1.5, wrists where asked (x is screen-right). */
-function body(right: [number, number] | null, left: [number, number] | null = null) {
+type Point = [number, number];
+
+/**
+ * Body-space pose: shoulders ±0.5, hips at y=1.5, wrists where asked (x is screen-right).
+ * Elbows sit halfway along each arm (a straight arm) unless given.
+ */
+function body(
+  right: Point | null,
+  left: Point | null = null,
+  elbows: { right?: Point; left?: Point } = {},
+) {
   const b = new Float32Array(LANDMARK_COUNT * LANDMARK_STRIDE);
   const set = (i: number, x: number, y: number, v = 1) => {
     b.set([x, y, 0, v], i * LANDMARK_STRIDE);
@@ -19,8 +28,12 @@ function body(right: [number, number] | null, left: [number, number] | null = nu
   set(Landmark.RIGHT_HIP, 0.4, 1.5);
   set(Landmark.LEFT_HIP, -0.4, 1.5);
   set(Landmark.NOSE, 0, -0.8);
-  set(Landmark.RIGHT_WRIST, ...(right ?? [0.6, 1.5]));
-  set(Landmark.LEFT_WRIST, ...(left ?? [-0.6, 1.5]));
+  const rw: Point = right ?? [0.6, 1.5];
+  const lw: Point = left ?? [-0.6, 1.5];
+  set(Landmark.RIGHT_WRIST, ...rw);
+  set(Landmark.LEFT_WRIST, ...lw);
+  set(Landmark.RIGHT_ELBOW, ...(elbows.right ?? [(0.5 + rw[0]) / 2, rw[1] / 2]));
+  set(Landmark.LEFT_ELBOW, ...(elbows.left ?? [(-0.5 + lw[0]) / 2, lw[1] / 2]));
   return b;
 }
 
@@ -36,7 +49,22 @@ describe('CursorTracker', () => {
   });
 
   it('ignores a raised but bent arm (touching the face)', () => {
-    expect(point(new CursorTracker(), body([0.3, -0.5])).visible).toBe(false);
+    // Elbow out to the side and low: the forearm folds back up to the face.
+    const face = body([0.3, -0.5], null, { right: [1.1, 0.6] });
+    expect(point(new CursorTracker(), face).visible).toBe(false);
+  });
+
+  it('ignores crossed arms even when the wrist is far from its shoulder', () => {
+    // Right wrist across the chest near the left side: 1.1 SW from its shoulder, elbow bent.
+    const crossed = body([-0.6, -0.2], null, { right: [0.2, 0.7] });
+    expect(point(new CursorTracker(), crossed).visible).toBe(false);
+  });
+
+  it('keeps pointing with a foreshortened but straight arm (pointing at the camera)', () => {
+    const c = new CursorTracker();
+    expect(point(c, body([1.4, -1.0])).visible).toBe(true);
+    // Arm now looks 0.35 SW long but is still a straight line.
+    expect(c.update(body([0.75, -0.25]), 300).visible).toBe(true);
   });
 
   it('follows an extended pointing arm across the reach box', () => {
