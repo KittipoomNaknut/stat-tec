@@ -1,4 +1,5 @@
 /** Messages between the main thread and the perception worker. */
+import type { OneEuroParams } from './one-euro';
 
 export type PoseModel = 'lite' | 'full' | 'heavy';
 export type Delegate = 'GPU' | 'CPU';
@@ -8,6 +9,8 @@ export interface PerceptionOptions {
   delegate: Delegate;
   /** More than one so the app knows when other people are in frame (see PlayerLock). */
   numPoses: number;
+  /** Temporal smoothing of the player's landmarks; `null` disables it. */
+  filter: OneEuroParams | null;
 }
 
 export const LANDMARK_COUNT = 33;
@@ -24,6 +27,11 @@ export interface PoseDetections {
   poseCount: number;
   /** `poseCount × LANDMARK_COUNT × LANDMARK_STRIDE`, normalized image coordinates, not mirrored. */
   landmarks: Float32Array;
+  /**
+   * The player's landmarks after filtering (same layout as one pose of `landmarks`), or `null`
+   * when nobody is in frame. Until PlayerLock exists the player is simply the first pose.
+   */
+  player: Float32Array | null;
 }
 
 export type ToWorker =
