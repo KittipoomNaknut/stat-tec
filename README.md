@@ -3,7 +3,7 @@
 ประสบการณ์ **Data Science แบบควบคุมด้วยร่างกาย** สำหรับงาน Open House
 ผู้เล่นยืนหน้าจอใหญ่ กลายเป็น CEO และตัดสินใจทางธุรกิจด้วยข้อมูล ผ่านท่าทาง — ไม่มีเมาส์ ไม่มีคีย์บอร์ด
 
-> สถานะ: 🚧 Phase 0 — วางรากฐาน
+> สถานะ: ✅ Phase 1 (Perception) เสร็จ — `v0.1.0` · 🚧 ต่อไป Phase 2 (Gesture & Input)
 
 ## Highlights
 
@@ -21,6 +21,7 @@
 | [Story](docs/STORY.md) | โครงเรื่องและบทพูด |
 | [Contributing](docs/CONTRIBUTING.md) | Git workflow, commit, PR |
 | [ADRs](docs/adr/) | บันทึกการตัดสินใจทางสถาปัตยกรรม |
+| [Benchmarks](docs/benchmarks/phase1.md) | ผลวัดโมเดลและ pipeline |
 
 ## Quick start
 

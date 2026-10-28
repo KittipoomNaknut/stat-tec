@@ -59,10 +59,13 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 | 1.6 | ADR ผลการตัดสินใจ (worker vs main, model) | `docs/adr-perception-results` |
 
 **DoD**
-- [ ] Render ≥ 60 fps และ inference ≥ 30 fps พร้อมกัน
-- [ ] Latency p95 ≤ 100 ms (หรือมีแผนแก้ที่ชัดเจน)
-- [ ] Skeleton เสถียรที่ระยะ 1.8 / 2.3 / 3 m
-- [ ] Tag `v0.1.0`
+- [x] Render ≥ 60 fps และ inference ≥ 30 fps พร้อมกัน — 165 / 30.5 fps ([ผลวัด](benchmarks/phase1.md))
+- [ ] Latency p95 ≤ 100 ms — ⏭ เลื่อนไปวัดพร้อมกล้อง 1080p60 ตัวจริง (เว็บแคมในตัวเป็นตัวกำหนด latency หลัก)
+- [~] Skeleton เสถียร — วัดที่ ~2 m แล้ว (jitter 0.58 px หลังกรอง); 1.8 / 3 m วัดพร้อมกล้องตัวจริง
+- [x] Tag `v0.1.0`
+
+**ผล:** R1 ปิดแล้ว ([ADR-0002](adr/0002-perception-in-worker.md)), เลือกโมเดล heavy ([ADR-0005](adr/0005-pose-model-heavy.md)), เบราว์เซอร์ kiosk ([ADR-0006](adr/0006-kiosk-browser.md))
+งาน 2.1 (One Euro filter) ถูกดึงมาทำใน Phase 1 เพราะ skeleton สั่นมาก
 
 ---
 
@@ -70,7 +73,7 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 
 | # | งาน | Branch |
 |---|---|---|
-| 2.1 | OneEuroFilter + BodyNormalizer (+ unit tests) | `feature/perception-filtering` |
+| 2.1 | ~~OneEuroFilter~~ ✅ (#8) + BodyNormalizer (+ unit tests) | `feature/perception-filtering` |
 | 2.2 | PlayerLock (+ unit tests ด้วย synthetic data) | `feature/perception-player-lock` |
 | 2.3 | Pose recorder (dev) + format `.pose.json.gz` | `feature/tools-pose-recorder` |
 | 2.4 | อัด fixture set ขั้นต่ำ (ท่า × ระยะ × แสง + negative cases) | `test/pose-fixtures` |
