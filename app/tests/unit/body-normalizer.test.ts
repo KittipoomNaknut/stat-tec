@@ -47,6 +47,19 @@ describe('toBodySpace', () => {
     expect(at(out, Landmark.NOSE).v).toBeCloseTo(0.42);
   });
 
+  it('keeps its scale when the person turns sideways', () => {
+    const facing = syntheticPoses([{ cx: 0.5, cy: 0.5, sw: 0.2 }]);
+    const sideways = syntheticPoses([{ cx: 0.5, cy: 0.5, sw: 0.2, shoulderSpread: 0.05 }]);
+    const a = new Float32Array(LANDMARK_COUNT * LANDMARK_STRIDE);
+    const b = new Float32Array(LANDMARK_COUNT * LANDMARK_STRIDE);
+    toBodySpace(facing.data, facing.width, facing.height, a);
+    toBodySpace(sideways.data, sideways.width, sideways.height, b);
+    // Shoulder width collapsed 20×; the torso keeps the scale within 1.6× instead of exploding.
+    const hipY = (out: Float32Array) => at(out, Landmark.LEFT_HIP).y;
+    expect(hipY(b) / hipY(a)).toBeGreaterThan(0.9);
+    expect(hipY(b) / hipY(a)).toBeLessThan(1.6);
+  });
+
   it('refuses a degenerate pose and leaves the output untouched', () => {
     const { data, width, height } = syntheticPoses([{ cx: 0.5, cy: 0.5, sw: 0 }]);
     const out = new Float32Array(LANDMARK_COUNT * LANDMARK_STRIDE).fill(7);

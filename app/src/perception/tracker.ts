@@ -1,5 +1,5 @@
 import { toBodySpace } from './body-normalizer';
-import { shoulderWidthPx } from './landmarks';
+import { bodyScalePx } from './landmarks';
 import { OneEuroFilterBank, type OneEuroParams } from './one-euro';
 import { PlayerLock, type LockResult } from './player-lock';
 import { LANDMARK_COUNT, LANDMARK_STRIDE } from './protocol';
@@ -68,7 +68,7 @@ export class PoseTracker {
     }
     this.#lastPlayerAt = tMs;
 
-    const shoulderPx = Math.max(shoulderWidthPx(player, w, h), 1);
+    const shoulderPx = Math.max(bodyScalePx(player, w, h), 1);
     // x and z are normalized by width, y by height.
     const scales = [shoulderPx / w, shoulderPx / h, shoulderPx / w];
     this.#filters.forEach((f, axis) => {

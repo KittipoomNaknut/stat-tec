@@ -8,6 +8,8 @@ export interface SyntheticPose {
   /** Shoulder width as a fraction of the frame width. */
   sw: number;
   visibility?: number;
+  /** 1 = facing the camera; near 0 = turned sideways (shoulders overlap, torso unchanged). */
+  shoulderSpread?: number;
 }
 
 /**
@@ -16,8 +18,8 @@ export interface SyntheticPose {
  */
 export function syntheticPoses(poses: readonly SyntheticPose[], width = 1280, height = 720) {
   const data = new Float32Array(poses.length * LANDMARK_COUNT * LANDMARK_STRIDE);
-  poses.forEach(({ cx, cy, sw, visibility = 0.95 }, p) => {
-    const halfX = sw / 2;
+  poses.forEach(({ cx, cy, sw, visibility = 0.95, shoulderSpread = 1 }, p) => {
+    const halfX = (sw / 2) * shoulderSpread;
     const halfY = ((sw * width) / height) * 0.5;
     const set = (i: number, x: number, y: number) => {
       const k = (p * LANDMARK_COUNT + i) * LANDMARK_STRIDE;
