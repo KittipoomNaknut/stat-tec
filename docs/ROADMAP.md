@@ -92,11 +92,13 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 | 2.12 | Gesture playground (หน้าทดสอบทุกท่า + แสดงค่า threshold สด) | `feature/debug-gesture-playground` |
 | 2.13 | จูน threshold ด้วย replay → อัปเดต `config/gestures.ts` | `chore/gesture-tuning` |
 
-**DoD**
-- [ ] Replay suite ผ่านทั้งหมด: ทุกท่า detect ถูก, negative fixtures = 0 intent
-- [ ] Dwell-select สำเร็จ ≥ 95% (ทดสอบคนจริง ≥ 5 คน)
-- [ ] Mouse mode ใช้แทนได้ทุกท่า
-- [ ] Tag `v0.2.0`
+**DoD** (ปิด Phase 2 เป็น milestone "ชี้ + ชี้ค้าง" — 2026-10-29)
+- [x] Replay suite ผ่านทั้งหมดสำหรับท่าที่มีแล้ว (cursor, dwell, PlayerLock, stability) บน 2 แหล่ง pose; ยืนนิ่ง / เกาหัว / กอดอก = 0 cursor
+- [ ] Dwell-select ≥ 95% กับคนจริง ≥ 5 คน — **ยังไม่ผ่าน**: 23/29 (79%) คนเดียว, จอโน้ตบุ๊ก ([research 010](research/010-dwell-failures.md)) → วัดซ้ำใน Phase 6
+- [~] Mouse mode: cursor, select, draw, zoom, swipe ✅ — ท่าอื่นทำพร้อมท่านั้น
+- [x] Tag `v0.2.0`
+
+**ย้ายไป Phase 4:** 2.7–2.11 (raise, throw, slap, draw, swipe/lean/zoom) — สร้างพร้อมฉากที่ใช้ท่านั้น จะได้จูนกับการใช้งานจริง; 2.13 จูนต่อ (หลุดเป้า 6/29)
 
 ---
 
