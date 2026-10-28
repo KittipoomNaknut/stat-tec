@@ -1,12 +1,21 @@
 import './styleguide.css';
+import { startLoop } from '../core/loop';
+import { renderConfigFromUrl } from '../config/render';
+import { Renderer } from '../render/renderer';
 
 /**
  * `?styleguide` — the HUD building blocks composed like a real chapter screen, to judge type
- * sizes, contrast and spacing on the kiosk TV (research 011). `?styleguide&dwell=0.6` sets the
- * hovered button's dwell fill.
+ * sizes, contrast and spacing on the kiosk TV (research 011), in front of the WebGL stage.
+ * `?styleguide&dwell=0.6` sets the hovered button's dwell fill; `&hud=0` shows the stage alone.
  */
 export function showStyleguide(parent: HTMLElement, search: string): void {
-  const dwell = Number(new URLSearchParams(search).get('dwell') ?? '0.6');
+  const params = new URLSearchParams(search);
+  const dwell = Number(params.get('dwell') ?? '0.6');
+  const renderer = new Renderer(parent, renderConfigFromUrl(search));
+  startLoop((dt, now) => {
+    renderer.frame(dt, now);
+  });
+  if (params.get('hud') === '0') return;
   const view = document.createElement('div');
   view.className = 'styleguide';
   view.innerHTML = `

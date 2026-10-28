@@ -20,6 +20,7 @@
 | [009](009-cursor-rtmpose-calibration.md)  | Cursor กับ RTMPose: กอดอก, แขนตรง, เกณฑ์แยกตามแหล่ง | กฎแขนตรง; RTMPose 0.8 / MediaPipe 0.7                                                                                                        | PR #27               |
 | [010](010-dwell-failures.md)              | ทำไมปุ่มบางครั้งไม่ติด                              | ปุ่มหน้าตัว = แขนชี้เข้ากล้องยุบใน 2D → พื้นที่มือข้างตัว + ชี้ต่อเมื่อยกค้าง: ปุ่ม 5 0 → 3; ทางแก้ฝั่ง dwell (stay padding, decay) ไม่ได้ผล | PR #29, #30          |
 | [011](011-hud-design-system.md)           | Design system ของ HUD                               | Anuphan + JetBrains Mono; ปุ่ม dwell ≥ 26×15 vh เติมแสงที่ตัวปุ่ม; label ไทยห้าม tracking                                                    | PR #33               |
+| [012](012-renderer-frame-budget.md)       | Renderer: frame budget, backdrop blur, 4K           | blur หลัง panel ทำเฟรมหลุด (p95 16.8 → 33.4) → เลิกใช้; 4K ใน headless เชื่อไม่ได้                                                           | PR #34               |
 
 ## แม่แบบ
 
