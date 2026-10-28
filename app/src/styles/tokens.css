@@ -1,0 +1,60 @@
+/* Design tokens — "Holographic HUD". See docs/ARCHITECTURE.md §11.3 and research 011.
+   Sizes are in vh: the kiosk is read from 2–2.5 m, so type scales with the screen height. */
+:root {
+  /* Color */
+  --bg: #050b18;
+  --bg-deep: #02060f;
+  --bg-grid: #0d1b33;
+  --panel: rgba(12, 32, 64, 0.55);
+  --panel-strong: rgba(10, 26, 54, 0.82);
+  --primary: #3fe0ff;
+  --accent: #ffc857;
+  --positive: #3dffa2;
+  --negative: #ff4d6d;
+  --text: #e6f1ff;
+  --text-dim: #7e93b5;
+  --line: color-mix(in srgb, var(--primary) 28%, transparent);
+  --line-strong: color-mix(in srgb, var(--primary) 70%, transparent);
+
+  /* Glow (text-shadow / drop-shadow); kept soft so text stays sharp */
+  --glow-primary: 0 0 1.6vh color-mix(in srgb, var(--primary) 55%, transparent);
+  --glow-accent: 0 0 2vh color-mix(in srgb, var(--accent) 50%, transparent);
+
+  /* Typography */
+  --font-ui: 'Anuphan', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --size-hero: 18vh;
+  --size-display: 11vh;
+  --size-headline: 8vh;
+  --size-caption: 5vh;
+  --size-label: 3.5vh;
+  --size-micro: 2.4vh;
+  /* Thai stacks vowels and tone marks above and below the line: never tighter than 1.4 */
+  --leading-thai: 1.45;
+
+  /* Space and shape */
+  --space-1: 0.8vh;
+  --space-2: 1.6vh;
+  --space-3: 2.4vh;
+  --space-4: 4vh;
+  --space-5: 6vh;
+  --space-6: 9vh;
+  --radius: 0.8vh;
+  --bracket: 2.2vh;
+  --stroke: max(2px, 0.22vh);
+
+  /* Motion: expo.out to enter, power2.in to leave */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.11, 0, 0.5, 0);
+  --dur-micro: 200ms;
+  --dur-ui: 500ms;
+  --dur-scene: 1200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-micro: 0ms;
+    --dur-ui: 120ms;
+    --dur-scene: 200ms;
+  }
+}

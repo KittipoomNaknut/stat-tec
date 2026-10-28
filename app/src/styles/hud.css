@@ -1,0 +1,272 @@
+/* HUD building blocks. Animate transform/opacity only (ARCHITECTURE §11.2).
+   Labels in mono are Latin only: letter-spacing breaks Thai clusters. */
+
+/* ---------- Panel: glass + corner brackets ---------- */
+.hud-panel {
+  position: relative;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--primary) 7%, transparent), transparent 45%),
+    var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow:
+    inset 0 0 4vh color-mix(in srgb, var(--primary) 6%, transparent),
+    0 2vh 6vh rgb(0 0 0 / 45%);
+}
+
+.hud-panel::after {
+  --c: var(--line-strong);
+  --b: var(--bracket);
+  --s: var(--stroke);
+  content: '';
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--c), var(--c)) top left / var(--b) var(--s),
+    linear-gradient(var(--c), var(--c)) top left / var(--s) var(--b),
+    linear-gradient(var(--c), var(--c)) top right / var(--b) var(--s),
+    linear-gradient(var(--c), var(--c)) top right / var(--s) var(--b),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--b) var(--s),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--s) var(--b),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--b) var(--s),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--s) var(--b);
+  background-repeat: no-repeat;
+}
+
+/* ---------- Text ---------- */
+.hud-label {
+  margin: 0;
+  font: 500 var(--size-micro) / 1.2 var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* Thai label: same size and color, no tracking or uppercase (both break Thai) */
+.hud-label-th {
+  margin: 0;
+  font: 500 var(--size-micro) / 1.3 var(--font-ui);
+  color: var(--text-dim);
+}
+
+.hud-label-accent {
+  color: var(--primary);
+}
+
+.hud-headline {
+  margin: 0;
+  font-size: var(--size-headline);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+  text-shadow: var(--glow-primary);
+}
+
+.hud-display {
+  margin: 0;
+  font-size: var(--size-display);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--primary);
+  text-shadow: var(--glow-primary);
+}
+
+.hud-number {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  text-shadow: var(--glow-accent);
+}
+
+.hud-number-hero {
+  font-size: var(--size-hero);
+  line-height: 1;
+}
+
+.hud-positive {
+  color: var(--positive);
+}
+
+.hud-negative {
+  color: var(--negative);
+}
+
+/* ---------- Caption: the AI narrator ---------- */
+.hud-caption {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-5);
+  width: min(76vw, 140vh);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  transform: translateX(-50%);
+}
+
+.hud-caption-speaker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/* "Speaking" indicator: three bars, calm motion (well under 3 flashes/s) */
+.hud-voice {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.4vh;
+  height: 2.2vh;
+}
+
+.hud-voice i {
+  width: 0.5vh;
+  height: 100%;
+  background: var(--primary);
+  border-radius: 0.3vh;
+  transform: scaleY(0.3);
+  transform-origin: bottom;
+}
+
+.hud-caption.is-speaking .hud-voice i {
+  animation: hud-voice 900ms var(--ease-out) infinite alternate;
+}
+
+.hud-caption.is-speaking .hud-voice i:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.hud-caption.is-speaking .hud-voice i:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes hud-voice {
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.hud-caption-text {
+  margin: 0;
+  min-height: calc(2 * var(--leading-thai) * 1em);
+  font-size: var(--size-caption);
+  font-weight: 500;
+  line-height: var(--leading-thai);
+  color: var(--text);
+}
+
+.hud-caption-text b,
+.hud-caption-text strong {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ---------- Dwell button ---------- */
+.hud-button {
+  --dwell: 0;
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: var(--space-1);
+  min-width: 26vh;
+  min-height: 15vh;
+  padding: var(--space-3) var(--space-4);
+  overflow: hidden;
+  font-size: var(--size-label);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+  text-align: center;
+  transition:
+    transform var(--dur-micro) var(--ease-out),
+    border-color var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out);
+}
+
+/* Fill that sweeps across while the cursor dwells: the progress is the button itself */
+.hud-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--primary) 12%, transparent),
+    color-mix(in srgb, var(--primary) 38%, transparent)
+  );
+  transform: scaleX(var(--dwell));
+  transform-origin: left;
+}
+
+.hud-button > * {
+  position: relative;
+}
+
+.hud-button.is-hover {
+  border-color: var(--primary);
+  transform: scale(1.04);
+  box-shadow:
+    0 0 3vh color-mix(in srgb, var(--primary) 35%, transparent),
+    inset 0 0 3vh color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.hud-button.is-hover::after {
+  --c: var(--primary);
+}
+
+.hud-button.is-selected {
+  animation: hud-select 700ms var(--ease-out);
+}
+
+@keyframes hud-select {
+  0% {
+    box-shadow: 0 0 6vh color-mix(in srgb, var(--accent) 80%, transparent);
+    border-color: var(--accent);
+    transform: scale(1.08);
+  }
+}
+
+.hud-button-hint {
+  font: 500 var(--size-micro) / 1.2 var(--font-mono);
+  letter-spacing: 0.18em;
+  color: var(--text-dim);
+}
+
+/* ---------- Chapter progress ---------- */
+.hud-progress {
+  display: flex;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hud-progress li {
+  width: 6vh;
+  height: 0.9vh;
+  border-radius: 0.45vh;
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  transition: background var(--dur-ui) var(--ease-out);
+}
+
+.hud-progress li.is-done {
+  background: var(--primary);
+  box-shadow: var(--glow-primary);
+}
+
+.hud-progress li.is-current {
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  box-shadow: inset 0 0 0 var(--stroke) var(--primary);
+}
+
+/* ---------- Corner tiles (progress / profit) ---------- */
+.hud-tile {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+}
+
+.hud-tile .hud-number {
+  font-size: calc(var(--size-label) * 1.5);
+  line-height: 1.1;
+}
