@@ -1,6 +1,6 @@
 # ADR-0002: แยก Pose inference ไปไว้ใน Web Worker
 
-- **Status:** Accepted — พิสูจน์แล้วใน Phase 1 (2026-10-28)
+- **Status:** Accepted — พิสูจน์แล้วใน Phase 1 (2026-10-28) · inference ย้ายไป perception service ใน [ADR-0007](0007-perception-service-rtmpose.md); worker ยังทำ PlayerLock/filter และเป็น fallback MediaPipe
 - **Date:** 2026-10-28
 
 ## Context
