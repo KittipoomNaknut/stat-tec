@@ -1,9 +1,5 @@
 /// <reference lib="webworker" />
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
-import { toBodySpace } from './body-normalizer';
-import { shoulderWidthPx } from './landmarks';
-import { OneEuroFilterBank } from './one-euro';
-import { PlayerLock } from './player-lock';
 import {
   LANDMARK_COUNT,
   LANDMARK_STRIDE,
@@ -11,20 +7,14 @@ import {
   type PerceptionOptions,
   type ToWorker,
 } from './protocol';
+import { PoseTracker } from './tracker';
 
 declare const self: DedicatedWorkerGlobalScope;
-
-/** A gap this long means the player left; start the filter fresh. */
-const FILTER_RESET_GAP_MS = 500;
 
 let landmarker: PoseLandmarker | null = null;
 let reader: ReadableStreamDefaultReader<VideoFrame> | null = null;
 let frameId = 0;
-/** One bank per axis (x, y, z), each with one channel per landmark. */
-let filters: OneEuroFilterBank[] = [];
-let lastPlayerAt = -Infinity;
-let filteredPlayerId = 0;
-const lock = new PlayerLock();
+let tracker = new PoseTracker(null);
 
 self.onmessage = (event: MessageEvent<ToWorker>) => {
   const message = event.data;
@@ -70,8 +60,7 @@ async function init(options: PerceptionOptions): Promise<void> {
     delegate = 'CPU';
     landmarker = await create(delegate);
   }
-  const filter = options.filter;
-  filters = filter ? [0, 1, 2].map(() => new OneEuroFilterBank(LANDMARK_COUNT, filter)) : [];
+  tracker = new PoseTracker(options.filter);
   post({ type: 'ready', options: { ...options, delegate } });
 }
 
@@ -111,16 +100,8 @@ function detect(model: PoseLandmarker, frame: VideoFrame): void {
 
   const width = frame.displayWidth;
   const height = frame.displayHeight;
-  const locked = lock.update(landmarks, poses.length, width, height, start);
-  const player =
-    locked.playerIndex >= 0
-      ? filterPlayer(landmarks, locked.playerIndex, locked.playerId, start, width, height)
-      : null;
-  let body: Float32Array | null = null;
-  if (player) {
-    body = new Float32Array(player.length);
-    if (!toBodySpace(player, width, height, body)) body = null;
-  }
+  const tracked = tracker.process(landmarks, poses.length, width, height, start);
+  const { player, body } = tracked;
 
   post(
     {
@@ -133,42 +114,14 @@ function detect(model: PoseLandmarker, frame: VideoFrame): void {
         height,
         poseCount: poses.length,
         landmarks,
-        lock: locked.state,
-        playerId: locked.playerId,
-        playerIndex: locked.playerIndex,
-        otherIndices: locked.otherIndices,
+        lock: tracked.state,
+        playerId: tracked.playerId,
+        playerIndex: tracked.playerIndex,
+        otherIndices: tracked.otherIndices,
         player,
         body,
       },
     },
     [landmarks.buffer, ...(player ? [player.buffer] : []), ...(body ? [body.buffer] : [])],
   );
-}
-
-/** Smoothed copy of the player's pose. Speeds are measured in shoulder widths per second. */
-function filterPlayer(
-  landmarks: Float32Array,
-  index: number,
-  playerId: number,
-  tMs: number,
-  w: number,
-  h: number,
-): Float32Array {
-  const size = LANDMARK_COUNT * LANDMARK_STRIDE;
-  const player = landmarks.slice(index * size, (index + 1) * size);
-  if (filters.length === 0) return player;
-  // A new person must not inherit the previous player's motion history.
-  if (playerId !== filteredPlayerId || tMs - lastPlayerAt > FILTER_RESET_GAP_MS) {
-    for (const f of filters) f.reset();
-    filteredPlayerId = playerId;
-  }
-  lastPlayerAt = tMs;
-
-  const shoulderPx = Math.max(shoulderWidthPx(player, w, h), 1);
-  // x and z are normalized by width, y by height.
-  const scales = [shoulderPx / w, shoulderPx / h, shoulderPx / w];
-  filters.forEach((f, axis) => {
-    f.filter(player, tMs, LANDMARK_STRIDE, axis, scales[axis]);
-  });
-  return player;
 }
