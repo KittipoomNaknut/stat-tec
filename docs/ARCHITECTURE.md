@@ -195,7 +195,7 @@ stat-tec/
 │   └── audio.json                  # manifest เสียง
 ├── data-pipeline/
 │   ├── pyproject.toml
-│   ├── src/pipeline/
+│   ├── src/stat_tec_pipeline/
 │   │   ├── sources/                # ดึงข้อมูลจริง
 │   │   ├── synth/                  # สร้างข้อมูลจำลอง (fixed seed)
 │   │   ├── models/                 # regression / forecast ที่ precompute
