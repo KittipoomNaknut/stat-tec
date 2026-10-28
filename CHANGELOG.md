@@ -3,6 +3,30 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: [SemVer](https://semver.org/)
 
+## [0.2.0] — 2026-10-29
+
+Phase 2 (Gesture & Input) as a milestone: the player controls the screen with their body — point and hold to select.
+
+### Added
+- RTMPose-x perception service (`perception-server/`, Python, TensorRT FP16 + YOLOX-m): 30 fps, 7.2 ms avg; WebSocket to the app, local origins only; MediaPipe stays as an automatic in-browser fallback (ADR-0007)
+- PlayerLock: one player, duplicates and "ghost" fits merged, robust body scale when turning
+- Landmark stabilizer: visibility smoothing + hysteresis + brief holds (arm/hip flicker 76 → ≤ 6 per clip)
+- Body-space normalizer (shoulder-width units)
+- Intent bus, target registry, mouse/keyboard adapter (F2)
+- Cursor gesture: straight-arm rule, per-pose-source calibration, side interaction zone, keep while raised
+- Dwell-to-select (1.2 s), `?playground` with attempt log and session recording (F9)
+- Guided pose recorder (`?record`) and replay test harness; 3 recorded sessions (MediaPipe, RTMPose, playground)
+- Research log `docs/research/` (001–010)
+
+### Changed
+- Primary pose model: MediaPipe heavy → RTMPose-x (spike: jitter 8.87 → 1.45 px after filtering)
+
+### Known limitations
+- Dwell success 23/29 (79%) for one adult on a laptop screen; remaining failures are cursor drift with the side zone
+- Raising both arms looks like pointing; scenes must disable the cursor while that gesture is active
+- Gestures other than point/dwell (raise, throw, slap, draw, swipe) move to Phase 4
+- All measurements: one adult, built-in 720p30 webcam
+
 ## [0.1.0] — 2026-10-28
 
 Phase 0 (Foundation) and Phase 1 (Perception spike). The camera sees a person, skeletons are drawn in real time, and the numbers are measured.
@@ -30,4 +54,5 @@ Phase 0 (Foundation) and Phase 1 (Perception spike). The camera sees a person, s
 - One person very close to the camera can be detected twice (fixed by PlayerLock in Phase 2)
 - Worker crash recovery is not implemented yet (Phase 3 watchdog)
 
+[0.2.0]: https://github.com/KittipoomNaknut/stat-tec/releases/tag/v0.2.0
 [0.1.0]: https://github.com/KittipoomNaknut/stat-tec/releases/tag/v0.1.0
