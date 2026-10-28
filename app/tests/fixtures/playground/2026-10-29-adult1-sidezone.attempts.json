@@ -1,0 +1,348 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-28T17:04:24.100Z",
+  "viewport": {
+    "width": 1536,
+    "height": 747
+  },
+  "targets": {
+    "button-1": {
+      "x": 0.05999755859375,
+      "y": 0.07999498298369258,
+      "w": 0.26666871706644696,
+      "h": 0.3700050445924322
+    },
+    "button-2": {
+      "x": 0.3666626214981079,
+      "y": 0.07999498298369258,
+      "w": 0.26666871706644696,
+      "h": 0.3700050445924322
+    },
+    "button-3": {
+      "x": 0.6733276844024658,
+      "y": 0.07999498298369258,
+      "w": 0.26666871706644696,
+      "h": 0.3700050445924322
+    },
+    "button-4": {
+      "x": 0.05999755859375,
+      "y": 0.48999750630124667,
+      "w": 0.26666871706644696,
+      "h": 0.3700050445924322
+    },
+    "button-5": {
+      "x": 0.3666626214981079,
+      "y": 0.48999750630124667,
+      "w": 0.26666871706644696,
+      "h": 0.3700050445924322
+    },
+    "button-6": {
+      "x": 0.6733276844024658,
+      "y": 0.48999750630124667,
+      "w": 0.26666871706644696,
+      "h": 0.3700050445924322
+    }
+  },
+  "summary": {
+    "selected": 23,
+    "left-target": 6,
+    "cursor-hidden": 0,
+    "passed-by": 4
+  },
+  "attempts": [
+    {
+      "targetId": "button-3",
+      "start": 5172,
+      "end": 6351.69999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-2",
+      "start": 6648,
+      "end": 7833.89999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-1",
+      "start": 8420.29999999702,
+      "end": 9604.19999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-4",
+      "start": 9996.39999999851,
+      "end": 11176.10000000149,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-5",
+      "start": 11504,
+      "end": 12708.69999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-6",
+      "start": 13016.39999999851,
+      "end": 14196,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-3",
+      "start": 14852.5,
+      "end": 16035.89999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-2",
+      "start": 16428.39999999851,
+      "end": 16528.10000000149,
+      "maxProgress": 0.08358333333705863,
+      "outcome": "passed-by",
+      "breakOff": {
+        "visible": true,
+        "outside": 0.011058464394994472
+      }
+    },
+    {
+      "targetId": "button-5",
+      "start": 16560.60000000149,
+      "end": 16617.10000000149,
+      "maxProgress": 0.027083333333333334,
+      "outcome": "passed-by",
+      "breakOff": {
+        "visible": true,
+        "outside": 0.028348959409273566
+      }
+    },
+    {
+      "targetId": "button-4",
+      "start": 16624.10000000149,
+      "end": 17840.39999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-1",
+      "start": 20664.39999999851,
+      "end": 20992,
+      "maxProgress": 0.29083333333333333,
+      "outcome": "left-target",
+      "breakOff": {
+        "visible": true,
+        "outside": 0.028808702261019836
+      }
+    },
+    {
+      "targetId": "button-2",
+      "start": 21024.5,
+      "end": 21548.10000000149,
+      "maxProgress": 0.43691666666418316,
+      "outcome": "left-target",
+      "breakOff": {
+        "visible": true,
+        "outside": 0.013056406607994786
+      }
+    },
+    {
+      "targetId": "button-1",
+      "start": 21580.39999999851,
+      "end": 22763.89999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-2",
+      "start": 23288.29999999702,
+      "end": 24504,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-3",
+      "start": 24960.10000000149,
+      "end": 26144.10000000149,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-6",
+      "start": 26723,
+      "end": 27869.60000000149,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-5",
+      "start": 28472.39999999851,
+      "end": 29656.39999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-4",
+      "start": 30344.60000000149,
+      "end": 31545.19999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-5",
+      "start": 32116.5,
+      "end": 32640.29999999702,
+      "maxProgress": 0.43666666666666665,
+      "outcome": "left-target",
+      "breakOff": {
+        "visible": true,
+        "outside": 0.0031221463130071125
+      }
+    },
+    {
+      "targetId": "button-4",
+      "start": 32699.19999999553,
+      "end": 33232.5,
+      "maxProgress": 0.46691666667039194,
+      "outcome": "left-target",
+      "breakOff": {
+        "visible": true,
+        "outside": 0.016519233202322847
+      }
+    },
+    {
+      "targetId": "button-5",
+      "start": 33264.19999999553,
+      "end": 33845.19999999553,
+      "maxProgress": 0.4664166666629414,
+      "outcome": "left-target",
+      "breakOff": {
+        "visible": true,
+        "outside": 0.01081389647263753
+      }
+    },
+    {
+      "targetId": "button-4",
+      "start": 33856.89999999851,
+      "end": 35072.19999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-5",
+      "start": 35332.29999999702,
+      "end": 36516.29999999702,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-2",
+      "start": 37300.19999999553,
+      "end": 38516.29999999702,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-3",
+      "start": 38844.39999999851,
+      "end": 39076.39999999851,
+      "maxProgress": 0.19016666666294138,
+      "outcome": "passed-by",
+      "breakOff": {
+        "visible": true,
+        "outside": 0.008221600716372568
+      }
+    },
+    {
+      "targetId": "button-6",
+      "start": 39131.29999999702,
+      "end": 40277,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-3",
+      "start": 40684.60000000149,
+      "end": 41885.69999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-2",
+      "start": 42388.5,
+      "end": 43572,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-2",
+      "start": 44424.29999999702,
+      "end": 44784.10000000149,
+      "maxProgress": 0.2827499999975165,
+      "outcome": "left-target",
+      "breakOff": {
+        "visible": true,
+        "outside": 0.001981130013099186
+      }
+    },
+    {
+      "targetId": "button-1",
+      "start": 44816.39999999851,
+      "end": 46021.10000000149,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-4",
+      "start": 46360.60000000149,
+      "end": 47540,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-3",
+      "start": 49872.39999999851,
+      "end": 51072.89999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-6",
+      "start": 51644.5,
+      "end": 51840.69999999553,
+      "maxProgress": 0.05341666666790843,
+      "outcome": "passed-by",
+      "breakOff": {
+        "visible": true,
+        "outside": 0.09223782258978486
+      }
+    }
+  ]
+}
