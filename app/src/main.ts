@@ -6,6 +6,7 @@ import { DebugOverlay } from './debug/overlay';
 import { Playground } from './debug/playground';
 import { RecorderPanel } from './debug/recorder';
 import { SessionRecorder } from './debug/session-recorder';
+import { showStyleguide } from './debug/styleguide';
 import { GestureEngine } from './gestures/engine';
 import { IntentBus } from './input/intent-bus';
 import { MouseAdapter } from './input/mouse-adapter';
@@ -22,7 +23,9 @@ if (!root) throw new Error('#app root element not found');
 const params = new URLSearchParams(location.search);
 const cameraHint = params.get('camera');
 
-if (params.has('bench')) {
+if (params.has('styleguide')) {
+  showStyleguide(root, location.search);
+} else if (params.has('bench')) {
   startBenchmark(root);
 } else if (params.has('record')) {
   const recorder = new RecorderPanel(root, location.search);

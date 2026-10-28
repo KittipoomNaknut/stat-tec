@@ -1,0 +1,55 @@
+.styleguide {
+  position: fixed;
+  inset: 0;
+}
+
+.styleguide-top {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.styleguide-profit {
+  text-align: right;
+}
+
+.styleguide-center {
+  position: absolute;
+  top: 13vh;
+  left: 0;
+  right: 0;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+}
+
+.styleguide-buttons {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.styleguide-swatches {
+  position: absolute;
+  left: var(--space-4);
+  top: 22vh;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.styleguide-swatches div {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.styleguide-swatches i {
+  width: 3vh;
+  height: 3vh;
+  border: 1px solid var(--line);
+  border-radius: 0.4vh;
+}
