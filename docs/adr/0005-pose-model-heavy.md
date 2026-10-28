@@ -1,6 +1,6 @@
 # ADR-0005: ใช้ PoseLandmarker `heavy` เป็นโมเดลหลัก
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0007](0007-perception-service-rtmpose.md) (RTMPose-x เป็นหลัก) — heavy ยังเป็นโมเดลของ fallback MediaPipe
 - **Date:** 2026-10-28
 
 ## Context

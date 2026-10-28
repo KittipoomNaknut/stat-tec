@@ -13,6 +13,19 @@ sound effects in particular must have their license recorded here before they ar
 | [MediaPipe Tasks Vision](https://github.com/google-ai-edge/mediapipe) (`@mediapipe/tasks-vision`, incl. WASM runtime) | 1.1.1 | Apache-2.0 | Pose inference |
 | MediaPipe Pose Landmarker models (`pose_landmarker_{lite,full,heavy}.task`, float16/1) | 1 | Apache-2.0 | Pose inference |
 
+## Perception service (installed on the kiosk machine, not redistributed)
+
+| Component | Version | License | Notes |
+|---|---|---|---|
+| [rtmlib](https://github.com/Tau-J/rtmlib) | 0.0.16 | Apache-2.0 | RTMPose/YOLOX inference wrapper |
+| RTMPose-x body7 384×288 ONNX ([MMPose](https://github.com/open-mmlab/mmpose)) | 20230629 | Apache-2.0 (MMPose repository; weights carry no separate license) | Weights trained on Body7 (COCO, AI Challenger, CrowdPose, MPII, sub-JHMDB, Halpe, PoseTrack18) — some datasets restrict commercial use; this is a non-commercial open-house exhibit |
+| YOLOX-m HumanArt ONNX (MMPose) | c2c7a14a | Apache-2.0 (MMPose repository) | Person detector |
+| [ONNX Runtime GPU](https://github.com/microsoft/onnxruntime) | 1.31.0 | MIT | |
+| NVIDIA TensorRT (`tensorrt-cu13`) | 10.16.1.11 | NVIDIA proprietary (TensorRT SLA) | Installed from PyPI on the machine; never committed or redistributed |
+| NVIDIA CUDA / cuDNN runtime wheels | 13.x / 9.x | NVIDIA proprietary | Same as above |
+| [OpenCV](https://github.com/opencv/opencv) (`opencv-python`) | 5.0.0.93 | Apache-2.0 | Camera capture |
+| [websockets](https://github.com/python-websockets/websockets) | — | BSD-3-Clause | Version pinned when the service is added |
+
 ## Data pipeline (Docker image / offline tooling)
 
 | Component | Version | License |
