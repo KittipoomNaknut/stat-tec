@@ -17,6 +17,10 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
     },
   },
-  { files: ['*.config.{js,ts}'], ...tseslint.configs.disableTypeChecked },
+  {
+    files: ['*.config.{js,ts}', 'scripts/**/*.mjs'],
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: { globals: globals.node },
+  },
   prettier,
 );
