@@ -32,6 +32,8 @@ export interface PoseDetections {
    * when nobody is in frame. Until PlayerLock exists the player is simply the first pose.
    */
   player: Float32Array | null;
+  /** `player` in body space (see body-normalizer.ts), or `null` when it cannot be measured. */
+  body: Float32Array | null;
 }
 
 export type ToWorker =

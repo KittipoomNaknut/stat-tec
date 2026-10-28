@@ -1,5 +1,7 @@
 /// <reference lib="webworker" />
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
+import { toBodySpace } from './body-normalizer';
+import { shoulderWidthPx } from './landmarks';
 import { OneEuroFilterBank } from './one-euro';
 import {
   LANDMARK_COUNT,
@@ -11,8 +13,6 @@ import {
 
 declare const self: DedicatedWorkerGlobalScope;
 
-const LEFT_SHOULDER = 11;
-const RIGHT_SHOULDER = 12;
 /** A gap this long means the player left; start the filter fresh. */
 const FILTER_RESET_GAP_MS = 500;
 
@@ -106,7 +106,14 @@ function detect(model: PoseLandmarker, frame: VideoFrame): void {
     }
   }
 
-  const player = poses.length > 0 ? filterPlayer(landmarks, start, frame) : null;
+  const width = frame.displayWidth;
+  const height = frame.displayHeight;
+  const player = poses.length > 0 ? filterPlayer(landmarks, start, width, height) : null;
+  let body: Float32Array | null = null;
+  if (player) {
+    body = new Float32Array(player.length);
+    if (!toBodySpace(player, width, height, body)) body = null;
+  }
 
   post(
     {
@@ -115,19 +122,20 @@ function detect(model: PoseLandmarker, frame: VideoFrame): void {
         frameId: frameId++,
         receivedAt,
         inferenceMs,
-        width: frame.displayWidth,
-        height: frame.displayHeight,
+        width,
+        height,
         poseCount: poses.length,
         landmarks,
         player,
+        body,
       },
     },
-    player ? [landmarks.buffer, player.buffer] : [landmarks.buffer],
+    [landmarks.buffer, ...(player ? [player.buffer] : []), ...(body ? [body.buffer] : [])],
   );
 }
 
 /** Smoothed copy of the first pose. Speeds are measured in shoulder widths per second. */
-function filterPlayer(landmarks: Float32Array, tMs: number, frame: VideoFrame): Float32Array {
+function filterPlayer(landmarks: Float32Array, tMs: number, w: number, h: number): Float32Array {
   const player = landmarks.slice(0, LANDMARK_COUNT * LANDMARK_STRIDE);
   if (filters.length === 0) return player;
   if (tMs - lastPlayerAt > FILTER_RESET_GAP_MS) {
@@ -135,16 +143,7 @@ function filterPlayer(landmarks: Float32Array, tMs: number, frame: VideoFrame): 
   }
   lastPlayerAt = tMs;
 
-  const w = frame.displayWidth;
-  const h = frame.displayHeight;
-  const at = (i: number, axis: number) => player[i * LANDMARK_STRIDE + axis] ?? 0;
-  const shoulderPx = Math.max(
-    Math.hypot(
-      (at(LEFT_SHOULDER, 0) - at(RIGHT_SHOULDER, 0)) * w,
-      (at(LEFT_SHOULDER, 1) - at(RIGHT_SHOULDER, 1)) * h,
-    ),
-    1,
-  );
+  const shoulderPx = Math.max(shoulderWidthPx(player, w, h), 1);
   // x and z are normalized by width, y by height.
   const scales = [shoulderPx / w, shoulderPx / h, shoulderPx / w];
   filters.forEach((f, axis) => {

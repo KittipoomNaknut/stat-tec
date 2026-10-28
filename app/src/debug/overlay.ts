@@ -7,6 +7,7 @@ import {
   type PerceptionOptions,
   type PoseDetections,
 } from '../perception/protocol';
+import { Landmark } from '../perception/landmarks';
 import { POSE_CONNECTIONS } from '../perception/skeleton';
 import { JitterMeter } from './jitter';
 
@@ -193,6 +194,7 @@ export class DebugOverlay {
       `filter     ${f ? `one-euro minCutoff ${String(f.minCutoff)} · beta ${String(f.beta)} · dCutoff ${String(f.dCutoff)}` : p ? 'off' : '…'}`,
       `inference  ${ms(this.#inference.mean())} avg · ${ms(this.#inference.percentile(95))} p95 · ${this.#detectionRate.rate(nowMs).toFixed(1)} fps`,
       `poses      ${String(this.#detections?.poseCount ?? 0)}`,
+      `body (SW)  ${describeWrists(this.#detections?.body ?? null)}`,
       `jitter     raw ${px(this.#rawJitter.mean())} · filtered ${px(this.#filteredJitter.mean())}  (stand still)`,
       `worker→ui  ${ms(this.#workerToScreen.mean())} avg · ${ms(this.#workerToScreen.percentile(95))} p95`,
       `render     ${this.#renderRate.rate(nowMs).toFixed(1)} fps · frame ${ms(this.#frameTime.percentile(95))} p95`,
@@ -201,6 +203,22 @@ export class DebugOverlay {
     lines.push('', `F1 hide · F3 raw skeleton ${this.#showRaw ? 'on' : 'off'}`);
     return lines.join('\n');
   }
+}
+
+/** Wrist positions in body space: what cursor and gesture thresholds will read. */
+function describeWrists(body: Float32Array | null): string {
+  if (!body) return '–';
+  const wrist = (name: string, i: number) => {
+    const k = i * LANDMARK_STRIDE;
+    const x = body[k] ?? 0;
+    const y = body[k + 1] ?? 0;
+    return `${name} (${signed(x)}, ${signed(y)})`;
+  };
+  return `${wrist('R wrist', Landmark.RIGHT_WRIST)} · ${wrist('L wrist', Landmark.LEFT_WRIST)}`;
+}
+
+function signed(value: number): string {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
 }
 
 function ms(value: number): string {
