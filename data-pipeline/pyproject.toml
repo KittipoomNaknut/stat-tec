@@ -1,0 +1,38 @@
+[project]
+name = "stat-tec-pipeline"
+version = "0.1.0"
+description = "Data pipeline for STAT_TEC: builds real and simulated scene datasets"
+readme = "README.md"
+authors = [
+    { name = "Kittipoom", email = "kittipoomnak02@gmail.com" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy==2.5.4",
+    "polars==2.1.0",
+    "scikit-learn==1.9.1",
+]
+
+[project.scripts]
+stat-tec-pipeline = "stat_tec_pipeline.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest==9.2.0",
+    "ruff==0.17.3",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
