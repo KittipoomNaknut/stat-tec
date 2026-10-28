@@ -48,6 +48,11 @@ export class PerceptionClient {
     this.#send({ type: 'frames', stream }, [stream]);
   }
 
+  /** Stops the worker and frees its GPU resources. */
+  dispose(): void {
+    this.#worker.terminate();
+  }
+
   #send(message: ToWorker, transfer: Transferable[] = []): void {
     this.#worker.postMessage(message, transfer);
   }

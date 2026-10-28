@@ -1,0 +1,191 @@
+.bench {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  cursor: default;
+  user-select: text;
+}
+
+.bench > video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scaleX(-1);
+  opacity: 0.35;
+}
+
+.bench-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  white-space: pre-line;
+}
+
+.bench-main {
+  margin: 0;
+  font-size: var(--size-caption);
+  color: var(--text);
+}
+
+.bench-sub {
+  margin: 1vh 0 0;
+  font-family: var(--font-mono);
+  font-size: 2.6vh;
+  color: var(--primary);
+}
+
+.bench-report {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+  font-family: var(--font-ui);
+  color: var(--text);
+}
+
+.bench-report h1 {
+  margin: 0 0 4px;
+  font-size: 28px;
+}
+
+.bench-report h2 {
+  margin: 32px 0 2px;
+  font-size: 18px;
+}
+
+.bench-meta,
+.bench-note {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.bench-chart {
+  position: relative;
+  margin: 0;
+  padding: 16px;
+  background: var(--panel);
+  border-radius: 8px;
+}
+
+.bench-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.bench-chart .grid {
+  stroke: var(--bg-grid);
+  stroke-width: 1;
+}
+
+.bench-chart .axis,
+.bench-chart .value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--text-dim);
+}
+
+.bench-chart .value {
+  fill: var(--text);
+}
+
+.bench-chart .category {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  fill: var(--text);
+}
+
+.bench-chart .marker {
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.bench-chart .reference {
+  stroke: var(--text-dim);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.bench-chart .reference-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--text-dim);
+}
+
+.bench-chart .hit {
+  fill: transparent;
+}
+
+.bench-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--bg-grid);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.bench-legend {
+  display: flex;
+  gap: 16px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.bench-legend span {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 2px;
+}
+
+.bench-table {
+  width: 100%;
+  margin-top: 32px;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.bench-table th,
+.bench-table td {
+  padding: 6px 8px;
+  white-space: nowrap;
+  text-align: right;
+  border-bottom: 1px solid var(--bg-grid);
+}
+
+.bench-table th:first-child,
+.bench-table td:first-child {
+  text-align: left;
+}
+
+.bench-table th {
+  color: var(--text-dim);
+  font-weight: normal;
+}
+
+.bench-download {
+  display: inline-block;
+  margin-top: 24px;
+  padding: 8px 16px;
+  color: var(--bg);
+  background: var(--primary);
+  border-radius: 6px;
+  text-decoration: none;
+}
