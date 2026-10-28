@@ -42,6 +42,8 @@ export interface PoseDetections {
   player: Float32Array | null;
   /** `player` in body space (see body-normalizer.ts), or `null` when it cannot be measured. */
   body: Float32Array | null;
+  /** Per landmark of `player`: 1 = show it (hysteresis, no flicker). See stabilizer.ts. */
+  playerShown: Uint8Array | null;
 }
 
 export type ToWorker =

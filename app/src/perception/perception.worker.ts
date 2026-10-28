@@ -101,7 +101,7 @@ function detect(model: PoseLandmarker, frame: VideoFrame): void {
   const width = frame.displayWidth;
   const height = frame.displayHeight;
   const tracked = tracker.process(landmarks, poses.length, width, height, start);
-  const { player, body } = tracked;
+  const { player, body, shown } = tracked;
 
   post(
     {
@@ -120,8 +120,9 @@ function detect(model: PoseLandmarker, frame: VideoFrame): void {
         otherIndices: tracked.otherIndices,
         player,
         body,
+        playerShown: shown,
       },
     },
-    [landmarks.buffer, ...(player ? [player.buffer] : []), ...(body ? [body.buffer] : [])],
+    [landmarks, player, body, shown].flatMap((a) => (a ? [a.buffer] : [])),
   );
 }
