@@ -48,11 +48,27 @@ body {
   background-size: 6vh 6vh;
 }
 
-.boot-title {
+/* Phase 1 perception spike — replaced by the HUD in Phase 3 */
+.camera-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scaleX(-1);
+  opacity: 0.6;
+}
+
+.camera-status {
+  position: absolute;
+  left: 2vh;
+  bottom: 1vh;
   margin: 0;
   font-family: var(--font-mono);
-  font-size: var(--size-headline);
-  letter-spacing: 0.2em;
+  font-size: 2.2vh;
   color: var(--primary);
-  text-shadow: 0 0 2vh color-mix(in srgb, var(--primary) 60%, transparent);
+}
+
+.camera-status[data-status='lost'] {
+  color: var(--negative);
 }
