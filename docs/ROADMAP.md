@@ -73,12 +73,12 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 
 | # | งาน | Branch |
 |---|---|---|
-| 2.1 | ~~OneEuroFilter~~ ✅ (#8) + BodyNormalizer (+ unit tests) | `feature/perception-filtering` |
-| 2.2 | PlayerLock (+ unit tests ด้วย synthetic data) | `feature/perception-player-lock` |
-| 2.3 | Pose recorder (dev) + format `.pose.json.gz` | `feature/tools-pose-recorder` |
-| 2.4 | อัด fixture set ขั้นต่ำ (ท่า × ระยะ × แสง + negative cases) | `test/pose-fixtures` |
-| 2.5 | Intent Bus + types + MouseAdapter + ReplayAdapter | `feature/input-intent-bus` |
-| 2.6 | Gesture: cursor + dwell | `feature/gesture-cursor-dwell` |
+| 2.1 | ~~OneEuroFilter + BodyNormalizer~~ ✅ (#8, #15) | `feature/perception-filtering` |
+| 2.2 | ~~PlayerLock~~ ✅ (#16, #19) | `feature/perception-player-lock` |
+| 2.3 | ~~Pose recorder~~ ✅ (#18) | `feature/tools-pose-recorder` |
+| 2.4 | อัด fixture set ขั้นต่ำ — ✅ ชุดแรก (#19); ⏳ คนอื่น/ระยะอื่น/กล้องจริง | `test/pose-fixtures` |
+| 2.5 | ~~Intent Bus + types + MouseAdapter~~ ✅ (#20) | `feature/input-intent-bus` |
+| 2.6 | ~~Gesture: cursor + dwell~~ ✅ + playground เบื้องต้น | `feature/gesture-cursor-dwell` |
 | 2.7 | Gesture: raise, raise-both | `feature/gesture-raise` |
 | 2.8 | Gesture: throw | `feature/gesture-throw` |
 | 2.9 | Gesture: slap | `feature/gesture-slap` |

@@ -46,4 +46,9 @@ export const RECORD_SCRIPT: readonly ClipSpec[] = [
     seconds: 10,
   },
   { id: 'swipe', instruction: 'ปัดมือขวาไปทางซ้ายแล้วทางขวา 3 ครั้ง', seconds: 8 },
+  {
+    id: 'free-play',
+    instruction: 'เล่นตามปกติเหมือนตอนกดปุ่มใน playground — ชี้ไปมา ชี้ค้าง สลับมือ',
+    seconds: 30,
+  },
 ];

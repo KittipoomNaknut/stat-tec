@@ -1,0 +1,133 @@
+import { describe, expect, it } from 'vitest';
+import { CursorTracker } from '../../src/gestures/cursor';
+import { DwellDetector } from '../../src/gestures/dwell';
+import { GestureEngine } from '../../src/gestures/engine';
+import { IntentBus } from '../../src/input/intent-bus';
+import type { Intent } from '../../src/input/intents';
+import { TargetRegistry } from '../../src/input/targets';
+import { Landmark } from '../../src/perception/landmarks';
+import { LANDMARK_COUNT, LANDMARK_STRIDE } from '../../src/perception/protocol';
+
+/** Body-space pose: shoulders ±0.5, hips at y=1.5, wrists where asked (x is screen-right). */
+function body(right: [number, number] | null, left: [number, number] | null = null) {
+  const b = new Float32Array(LANDMARK_COUNT * LANDMARK_STRIDE);
+  const set = (i: number, x: number, y: number, v = 1) => {
+    b.set([x, y, 0, v], i * LANDMARK_STRIDE);
+  };
+  set(Landmark.RIGHT_SHOULDER, 0.5, 0);
+  set(Landmark.LEFT_SHOULDER, -0.5, 0);
+  set(Landmark.RIGHT_HIP, 0.4, 1.5);
+  set(Landmark.LEFT_HIP, -0.4, 1.5);
+  set(Landmark.NOSE, 0, -0.8);
+  set(Landmark.RIGHT_WRIST, ...(right ?? [0.6, 1.5]));
+  set(Landmark.LEFT_WRIST, ...(left ?? [-0.6, 1.5]));
+  return b;
+}
+
+/** Holds the pose long enough for the cursor to activate, then returns the state. */
+function point(c: CursorTracker, b: Float32Array, t0 = 0) {
+  c.update(b, t0);
+  return c.update(b, t0 + 200);
+}
+
+describe('CursorTracker', () => {
+  it('stays hidden with hands down', () => {
+    expect(point(new CursorTracker(), body(null)).visible).toBe(false);
+  });
+
+  it('ignores a raised but bent arm (touching the face)', () => {
+    expect(point(new CursorTracker(), body([0.3, -0.5])).visible).toBe(false);
+  });
+
+  it('follows an extended pointing arm across the reach box', () => {
+    const c = new CursorTracker();
+    const corner = point(c, body([1.7, -1.3]));
+    expect(corner).toMatchObject({ visible: true, hand: 'right' });
+    expect(corner.x).toBeCloseTo(1, 5);
+    expect(corner.y).toBeCloseTo(0, 5);
+    // Extended arm out to the right and up: (1.4, −1.0) SW → x (1.4+1.4)/3.1, y (−1+1.3)/1.8
+    const p = c.update(body([1.4, -1.0]), 300);
+    expect(p.x).toBeCloseTo(2.8 / 3.1, 4);
+    expect(p.y).toBeCloseTo(0.3 / 1.8, 4);
+  });
+
+  it('mirrors the reach box for the left hand', () => {
+    const c = new CursorTracker();
+    const corner = point(c, body(null, [-1.7, -1.3]));
+    expect(corner.hand).toBe('left');
+    expect(corner.x).toBeCloseTo(0, 5);
+    expect(corner.y).toBeCloseTo(0, 5);
+  });
+
+  it('waits 100 ms of pointing before showing the cursor', () => {
+    const c = new CursorTracker();
+    expect(c.update(body([1.4, -1.0]), 0).visible).toBe(false);
+    expect(c.update(body([1.4, -1.0]), 50).visible).toBe(false);
+    expect(c.update(body([1.4, -1.0]), 120).visible).toBe(true);
+  });
+
+  it('keeps the current hand while it still points', () => {
+    const c = new CursorTracker();
+    point(c, body([1.4, -0.5]));
+    expect(c.update(body([1.4, -0.5], [-1.2, -1.2]), 300).hand).toBe('right');
+  });
+});
+
+describe('DwellDetector', () => {
+  const targets = new TargetRegistry();
+  targets.register('ok', () => ({ x: 0.4, y: 0.4, w: 0.2, h: 0.2 }));
+  const on = { visible: true, hand: 'right' as const, x: 0.5, y: 0.5 };
+  const off = { ...on, x: 0.9 };
+
+  it('selects after holding 1.2 s, then rests', () => {
+    const d = new DwellDetector();
+    const events = [];
+    for (let t = 0; t <= 2000; t += 33) events.push(...d.update(on, targets, t));
+    const selects = events.filter((e) => e.type === 'select');
+    expect(selects).toHaveLength(1);
+  });
+
+  it('forgives a short slip but resets after a long one', () => {
+    const d = new DwellDetector();
+    d.update(on, targets, 0);
+    d.update(on, targets, 600);
+    d.update(off, targets, 700);
+    expect(d.update(on, targets, 1250).at(-1)).toMatchObject({ type: 'select' });
+
+    const e = new DwellDetector();
+    e.update(on, targets, 0);
+    e.update(on, targets, 600);
+    expect(e.update(off, targets, 900)).toEqual([{ type: 'dwell', targetId: 'ok', progress: 0 }]);
+    expect(e.update(on, targets, 1250).some((x) => x.type === 'select')).toBe(false);
+  });
+
+  it('never selects while the cursor is hidden', () => {
+    const d = new DwellDetector();
+    const events = [];
+    for (let t = 0; t <= 2000; t += 33)
+      events.push(...d.update({ ...on, visible: false }, targets, t));
+    expect(events).toEqual([]);
+  });
+});
+
+describe('GestureEngine presence', () => {
+  it('emits enter, lost, return and leave on lock transitions', () => {
+    const bus = new IntentBus();
+    const seen: string[] = [];
+    bus.on('presence', (i: Extract<Intent, { type: 'presence' }>) => seen.push(i.state));
+    const engine = new GestureEngine(bus, new TargetRegistry(), 'replay');
+    const steps = [
+      ['candidate', 0],
+      ['locked', 1],
+      ['lost', 1],
+      ['locked', 1],
+      ['lost', 1],
+      ['searching', 1],
+      ['locked', 2],
+    ] as const;
+    steps.forEach(([lock, playerId], t) => {
+      engine.update({ lock, playerId, body: null }, t);
+    });
+    expect(seen).toEqual(['enter', 'lost', 'return', 'lost', 'leave', 'enter']);
+  });
+});
