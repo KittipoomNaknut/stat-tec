@@ -41,3 +41,12 @@ def test_round_trip_and_alignment():
 def test_rejects_wrong_size():
     with pytest.raises(ValueError):
         encode_detections(Detections(0, 0, 0, 1, 1, 1, np.zeros(5, np.float32)))
+
+
+def test_matches_the_shared_fixture_byte_for_byte():
+    """The app decodes this same file in app/tests/unit/server-protocol.test.ts."""
+    from pathlib import Path
+
+    fixture = Path(__file__).parents[2] / "app/tests/fixtures/server/std1-two-people.bin"
+    d = Detections(42, 1761650000123.5, 7.25, 1280, 720, 2, np.arange(264, dtype=np.float32) * 0.5)
+    assert encode_detections(d) == fixture.read_bytes()
