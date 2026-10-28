@@ -10,10 +10,11 @@ Detections (28-byte header, then float32 landmarks — header length keeps them 
     height  u16
     people  u8
     pad     3x
-    float32 people × 33 × [x, y, z, visibility]
+    float32 people x 33 x [x, y, z, visibility]
 
-Preview (debug only, sent only to clients that asked): b"STJ1" + JPEG bytes.
-Text frames are JSON: server → {"type": "hello", ...}; client → {"type": "preview", "enabled": bool}.
+Preview (debug only, only to clients that asked): b"STJ1" + JPEG bytes.
+Text frames are JSON. Server: {"type": "hello" | "status", ...}.
+Client: {"type": "preview", "enabled": bool}.
 """
 
 from __future__ import annotations
@@ -37,7 +38,7 @@ class Detections:
     width: int
     height: int
     people: int
-    landmarks: np.ndarray  # float32, people × 33 × 4 flattened
+    landmarks: np.ndarray  # float32, people x 33 x 4 flattened
 
 
 def encode_detections(d: Detections) -> bytes:
@@ -45,7 +46,13 @@ def encode_detections(d: Detections) -> bytes:
     if landmarks.size != d.people * 33 * 4:
         raise ValueError(f"expected {d.people * 33 * 4} floats, got {landmarks.size}")
     header = _HEADER.pack(
-        DETECTIONS_MAGIC, d.frame_id, d.captured_at_ms, d.inference_ms, d.width, d.height, d.people
+        DETECTIONS_MAGIC,
+        d.frame_id,
+        d.captured_at_ms,
+        d.inference_ms,
+        d.width,
+        d.height,
+        d.people,
     )
     return header + landmarks.tobytes()
 

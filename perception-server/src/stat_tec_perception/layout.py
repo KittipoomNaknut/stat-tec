@@ -34,11 +34,11 @@ _APP = np.array(list(COCO_TO_APP.values()))
 def to_app_layout(keypoints: np.ndarray, scores: np.ndarray, width: int, height: int) -> np.ndarray:
     """
     `keypoints` (people, 17, 2) in pixels and `scores` (people, 17) → float32
-    `people × 33 × [x, y, z, visibility]` with x, y normalized to [0, 1].
+    `people x 33 x [x, y, z, visibility]` with x, y normalized to [0, 1].
 
     Landmarks COCO-17 lacks (fingers, heels, inner/outer eyes, mouth) get visibility 0.
     Visibility = clamp(score, 0, 1): RTMPose scores span the same range as MediaPipe
-    visibility for visible joints (0.5–1.05 measured), so the app's thresholds still apply.
+    visibility for visible joints (0.5-1.05 measured), so the app's thresholds still apply.
     z is not estimated (0).
     """
     people = len(keypoints)
