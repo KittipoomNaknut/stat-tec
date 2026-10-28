@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "fetch:assets": "node scripts/fetch-assets.mjs",
+    "dev": "pnpm fetch:assets && vite",
+    "build": "pnpm fetch:assets && tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc",
     "lint": "eslint .",
