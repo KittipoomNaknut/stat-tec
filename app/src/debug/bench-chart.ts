@@ -3,11 +3,13 @@
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const WIDTH = 640;
 const LABEL_W = 72;
-const VALUE_W = 64;
+const VALUE_W = 120;
 const BAR_H = 16;
 const BAR_GAP = 2;
 const ROW_GAP = 14;
 const AXIS_H = 22;
+/** Band above the plot for reference-line labels, so they never collide with bar values. */
+const REF_H = 18;
 
 export interface BarSeries {
   name: string;
@@ -40,7 +42,9 @@ export function barChart(options: BarChartOptions): HTMLElement {
     ) * 1.08 || 1;
   const rowH = series.length * BAR_H + (series.length - 1) * BAR_GAP;
   const plotW = WIDTH - LABEL_W - VALUE_W;
-  const height = categories.length * (rowH + ROW_GAP) + AXIS_H;
+  const plotTop = references.length > 0 ? REF_H : 0;
+  const plotBottom = plotTop + categories.length * (rowH + ROW_GAP);
+  const height = plotBottom + AXIS_H;
   const xOf = (v: number) => LABEL_W + (v / max) * plotW;
 
   const figure = document.createElement('figure');
@@ -55,13 +59,22 @@ export function barChart(options: BarChartOptions): HTMLElement {
   for (const tick of niceTicks(max)) {
     const x = xOf(tick);
     svg.append(
-      el('line', { x1: x, x2: x, y1: 0, y2: height - AXIS_H, class: 'grid' }),
+      el('line', { x1: x, x2: x, y1: plotTop, y2: plotBottom, class: 'grid' }),
       text(String(tick), x, height - 6, 'axis', 'middle'),
     );
   }
 
+  // Reference lines go under the bars and labels.
+  for (const ref of references) {
+    const x = xOf(ref.value);
+    svg.append(
+      el('line', { x1: x, x2: x, y1: plotTop - 4, y2: plotBottom, class: 'reference' }),
+      text(ref.label, x, REF_H - 8, 'reference-label', 'middle'),
+    );
+  }
+
   categories.forEach((category, row) => {
-    const top = row * (rowH + ROW_GAP);
+    const top = plotTop + row * (rowH + ROW_GAP);
     svg.append(text(category, LABEL_W - 10, top + rowH / 2 + 5, 'category', 'end'));
     series.forEach((s, k) => {
       const value = s.values[row] ?? 0;
@@ -86,22 +99,21 @@ export function barChart(options: BarChartOptions): HTMLElement {
       hit.addEventListener('pointerleave', () => {
         tooltip.hidden = true;
       });
-      svg.append(bar, text(fmt(value), xOf(value) + 6, y + BAR_H - 4, 'value', 'start'));
+      // The label starts past both the bar end and its marker, and names the marker's value
+      // so the number beside the tick is never mistaken for it.
+      let labelX = xOf(value);
+      let label = fmt(value);
       if (k === 0 && markers) {
-        const mx = xOf(markers.values[row] ?? 0);
+        const markerValue = markers.values[row] ?? 0;
+        const mx = xOf(markerValue);
         svg.append(el('line', { x1: mx, x2: mx, y1: y - 3, y2: y + BAR_H + 3, class: 'marker' }));
+        labelX = Math.max(labelX, mx);
+        label += ` · ${markers.name} ${markerValue.toFixed(digits)}`;
       }
+      svg.append(bar, text(label, labelX + 6, y + BAR_H - 4, 'value', 'start'));
       svg.append(hit);
     });
   });
-
-  for (const ref of references) {
-    const x = xOf(ref.value);
-    svg.append(
-      el('line', { x1: x, x2: x, y1: 0, y2: height - AXIS_H, class: 'reference' }),
-      text(ref.label, x + 4, 10, 'reference-label', 'start'),
-    );
-  }
 
   figure.append(svg, tooltip);
   return figure;
