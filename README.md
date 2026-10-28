@@ -24,13 +24,14 @@
 
 ## Quick start
 
-> จะเพิ่มหลัง Phase 0 เสร็จ
-
 ```bash
-docker compose --profile dev up      # dev server
-docker compose up -d                 # production serve (127.0.0.1:8080)
-./scripts/kiosk.sh                   # เปิด Chromium kiosk
+docker compose --profile dev up dev            # dev server → http://127.0.0.1:5173
+docker compose --profile data run --rm pipeline # build scene data → app/public/data
+docker compose up -d web                       # production → http://127.0.0.1:8080
+./scripts/kiosk.sh                             # Chromium kiosk (Phase 6)
 ```
+
+Without Docker: `cd app && pnpm install && pnpm dev` / `cd data-pipeline && uv sync && uv run stat-tec-pipeline build`
 
 ## Requirements
 
