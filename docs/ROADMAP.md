@@ -173,6 +173,12 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 | 6.6 | คู่มือ staff 1 หน้า (`docs/STAFF_GUIDE.md`) + ป้าย privacy |
 | 6.7 | Release `v1.0.0` |
 
+### ท้ายโปรเจค (ตามที่เจ้าของงานกำหนด)
+
+| # | งาน | หมายเหตุ |
+|---|---|---|
+| 6.8 | ทดลองแยกท่ามือ **กำ = ไม่มี cursor / ชี้นิ้ว = cursor** | ต้องใช้กล้อง 1080p + โมเดลมือแบบตัดภาพ; วัดความแม่นก่อนใช้ (เกณฑ์ ≥ 95%) — ดู [research 010](research/010-dwell-failures.md), [006](research/006-pose-model-spike.md) |
+
 **DoD**
 - [ ] ผ่าน checklist ก่อนวันงาน (ARCHITECTURE §16.4) ครบทุกข้อ
 - [ ] Soak test ผ่าน
