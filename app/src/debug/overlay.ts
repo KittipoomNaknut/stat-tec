@@ -26,6 +26,9 @@ const COLOR_RAW = 'rgba(255, 255, 255, 0.45)';
 export class DebugOverlay {
   readonly #root = document.createElement('div');
   readonly #video = document.createElement('video');
+  /** Camera picture from the perception service (it owns the camera; see ADR-0007). */
+  readonly #preview = document.createElement('img');
+  readonly #onVisibility: (visible: boolean) => void;
   readonly #canvas = document.createElement('canvas');
   readonly #ctx: CanvasRenderingContext2D;
   readonly #panel = document.createElement('pre');
@@ -46,11 +49,15 @@ export class DebugOverlay {
     settings: null,
   };
   #perception: PerceptionOptions | null = null;
+  #model = '';
+  #server: { connected: boolean; fps: number; inferenceMs: number } | null = null;
   #error: string | null = null;
   #lastTextUpdate = 0;
   readonly #gpu = detectGpu();
 
-  constructor(parent: HTMLElement) {
+  /** `onVisibility` lets the owner request camera previews only while the overlay is shown. */
+  constructor(parent: HTMLElement, onVisibility: (visible: boolean) => void = () => undefined) {
+    this.#onVisibility = onVisibility;
     const ctx = this.#canvas.getContext('2d');
     if (!ctx) throw new Error('2D canvas unavailable');
     this.#ctx = ctx;
@@ -59,13 +66,15 @@ export class DebugOverlay {
     this.#video.muted = true;
     this.#video.playsInline = true;
     this.#panel.className = 'debug-panel';
-    this.#root.append(this.#video, this.#canvas, this.#panel);
+    this.#preview.alt = '';
+    this.#preview.hidden = true;
+    this.#root.append(this.#video, this.#preview, this.#canvas, this.#panel);
     parent.append(this.#root);
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'F1') {
         e.preventDefault();
-        this.#root.hidden = !this.#root.hidden;
+        this.setVisible(!this.visible);
       } else if (e.key === 'F3') {
         e.preventDefault();
         this.#showRaw = !this.#showRaw;
@@ -74,8 +83,13 @@ export class DebugOverlay {
     });
   }
 
+  get visible(): boolean {
+    return !this.#root.hidden;
+  }
+
   setVisible(visible: boolean): void {
     this.#root.hidden = !visible;
+    this.#onVisibility(visible);
   }
 
   setCameraStatus(status: CameraStatus): void {
@@ -88,8 +102,28 @@ export class DebugOverlay {
     void this.#video.play();
   }
 
-  setPerception(options: PerceptionOptions): void {
+  setPerception(options: PerceptionOptions, model: string): void {
     this.#perception = options;
+    this.#model = model;
+    this.#video.hidden = options.source === 'server';
+    this.#preview.hidden = options.source !== 'server';
+  }
+
+  /** Camera owned by the perception service. */
+  setCameraInfo(settings: CameraSettings): void {
+    this.#camera = { status: 'live', settings };
+  }
+
+  setServer(status: { connected: boolean; fps: number; inferenceMs: number }): void {
+    this.#server = status;
+    this.#camera.status = status.connected ? 'live' : 'lost';
+  }
+
+  /** Shows one JPEG preview frame from the perception service. */
+  setPreviewFrame(jpeg: ArrayBuffer): void {
+    const previous = this.#preview.src;
+    this.#preview.src = URL.createObjectURL(new Blob([jpeg], { type: 'image/jpeg' }));
+    if (previous) URL.revokeObjectURL(previous);
   }
 
   /** Pass `null` to clear once the problem is resolved. */
@@ -214,6 +248,14 @@ export class DebugOverlay {
     ctx.restore();
   }
 
+  #describeServer(): string {
+    const s = this.#server;
+    if (!s) return '';
+    return s.connected
+      ? ` · service ${s.fps.toFixed(1)} fps, ${s.inferenceMs.toFixed(1)} ms`
+      : ' · SERVICE DISCONNECTED (reconnecting)';
+  }
+
   #describe(nowMs: number): string {
     const cam = this.#camera.settings;
     const p = this.#perception;
@@ -221,7 +263,7 @@ export class DebugOverlay {
     const lines = [
       `camera     ${this.#camera.status}${cam ? ` · ${cam.label} · ${String(cam.width)}×${String(cam.height)} @ ${cam.frameRate.toFixed(0)}` : ''}`,
       `gpu        ${this.#gpu}`,
-      `model      ${p ? `${p.model} / ${p.delegate} / numPoses ${String(p.numPoses)}` : 'loading…'}`,
+      `source     ${p ? `${p.source} · ${this.#model}` : 'connecting…'}${this.#describeServer()}`,
       `filter     ${f ? `one-euro minCutoff ${String(f.minCutoff)} · beta ${String(f.beta)} · dCutoff ${String(f.dCutoff)}` : p ? 'off' : '…'}`,
       `inference  ${ms(this.#inference.mean())} avg · ${ms(this.#inference.percentile(95))} p95 · ${this.#detectionRate.rate(nowMs).toFixed(1)} fps`,
       `player     ${describeLock(this.#detections)}`,

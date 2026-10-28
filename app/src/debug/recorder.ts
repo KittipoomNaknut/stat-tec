@@ -1,6 +1,6 @@
 import './recorder.css';
 import type { CameraSettings } from '../perception/camera';
-import type { PerceptionOptions, PoseDetections } from '../perception/protocol';
+import type { PoseDetections } from '../perception/protocol';
 import {
   encodeSession,
   POSE_SESSION_VERSION,
@@ -21,7 +21,8 @@ export class RecorderPanel {
   readonly #panel = document.createElement('div');
   readonly #script: readonly ClipSpec[];
   #camera: CameraSettings | null = null;
-  #model: PerceptionOptions | null = null;
+  /** Description of the pose source actually in use, e.g. `rtmpose-x/trt-fp16 + yolox-m/cuda`. */
+  #model: string | null = null;
   #current: PoseClip | null = null;
   #clipStart = 0;
   #started = false;
@@ -40,8 +41,8 @@ export class RecorderPanel {
     this.#maybeStart();
   }
 
-  setModel(options: PerceptionOptions): void {
-    this.#model = options;
+  setModel(model: string): void {
+    this.#model = model;
     this.#maybeStart();
   }
 
@@ -52,7 +53,7 @@ export class RecorderPanel {
   }
 
   #maybeStart(): void {
-    if (this.#started || !this.#camera || !this.#model) return;
+    if (this.#started || !this.#camera || this.#model === null) return;
     this.#started = true;
     this.#run().catch((error: unknown) => {
       this.#show(`Recording failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -93,12 +94,12 @@ export class RecorderPanel {
   async #finish(clips: PoseClip[]): Promise<void> {
     const camera = this.#camera;
     const model = this.#model;
-    if (!camera || !model) throw new Error('camera or model missing');
+    if (!camera || model === null) throw new Error('camera or model missing');
     const session: PoseSession = {
       version: POSE_SESSION_VERSION,
       recordedAt: new Date().toISOString(),
       camera,
-      model: `${model.model}/${model.delegate}`,
+      model,
       clips,
     };
     const blob = await encodeSession(session);

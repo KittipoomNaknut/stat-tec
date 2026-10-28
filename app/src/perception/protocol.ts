@@ -4,8 +4,15 @@ import type { LockState } from './player-lock';
 
 export type PoseModel = 'lite' | 'full' | 'heavy';
 export type Delegate = 'GPU' | 'CPU';
+/** `server`: RTMPose perception service (ADR-0007); `mediapipe`: in-browser fallback. */
+export type PerceptionSource = 'server' | 'mediapipe';
 
 export interface PerceptionOptions {
+  /** Preferred source; the worker falls back to `mediapipe` if the service is unreachable. */
+  source: PerceptionSource;
+  /** WebSocket URL of the perception service. */
+  serverUrl: string;
+  /** MediaPipe model (fallback only). */
   model: PoseModel;
   delegate: Delegate;
   /** More than one so the app knows when other people are in frame (see PlayerLock). */
@@ -20,7 +27,10 @@ export const LANDMARK_STRIDE = 4;
 
 export interface PoseDetections {
   frameId: number;
-  /** Epoch ms (`performance.timeOrigin + performance.now()`) when the worker received the frame. */
+  /**
+   * Epoch ms (same clock as `performance.timeOrigin + performance.now()`) when the frame was
+   * captured: by the perception service, or when the MediaPipe worker received it.
+   */
   receivedAt: number;
   inferenceMs: number;
   width: number;
@@ -46,11 +56,25 @@ export interface PoseDetections {
   playerShown: Uint8Array | null;
 }
 
+export interface CameraInfo {
+  label: string;
+  width: number;
+  height: number;
+  frameRate: number;
+}
+
 export type ToWorker =
   | { type: 'init'; options: PerceptionOptions }
-  | { type: 'frames'; stream: ReadableStream<VideoFrame> };
+  | { type: 'frames'; stream: ReadableStream<VideoFrame> }
+  /** Ask the perception service for JPEG previews (debug overlay only). */
+  | { type: 'preview'; enabled: boolean };
 
 export type FromWorker =
-  | { type: 'ready'; options: PerceptionOptions }
+  /** `options.source` is the source actually in use; `model` describes it. */
+  | { type: 'ready'; options: PerceptionOptions; model: string }
   | { type: 'detections'; detections: PoseDetections }
+  /** Camera owned by the perception service. */
+  | { type: 'camera'; camera: CameraInfo }
+  | { type: 'preview'; jpeg: ArrayBuffer }
+  | { type: 'server'; connected: boolean; fps: number; inferenceMs: number }
   | { type: 'error'; message: string };

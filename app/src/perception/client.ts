@@ -1,9 +1,21 @@
-import type { FromWorker, PerceptionOptions, PoseDetections, ToWorker } from './protocol';
+import type {
+  CameraInfo,
+  FromWorker,
+  PerceptionOptions,
+  PoseDetections,
+  ToWorker,
+} from './protocol';
 
 export interface PerceptionEvents {
-  onReady: (options: PerceptionOptions) => void;
+  /** `options.source` is the source in use (the service, or MediaPipe after a fallback). */
+  onReady: (options: PerceptionOptions, model: string) => void;
   onDetections: (detections: PoseDetections) => void;
   onError: (message: string) => void;
+  /** The service's camera (source `server` only). */
+  onCamera?: (camera: CameraInfo) => void;
+  /** JPEG preview from the service, while `setPreview(true)`. */
+  onPreview?: (jpeg: ArrayBuffer) => void;
+  onServer?: (status: { connected: boolean; fps: number; inferenceMs: number }) => void;
 }
 
 /** Frames reach the worker through MediaStreamTrackProcessor, which Firefox lacks on window. */
@@ -24,7 +36,16 @@ export class PerceptionClient {
       const message = event.data;
       switch (message.type) {
         case 'ready':
-          events.onReady(message.options);
+          events.onReady(message.options, message.model);
+          break;
+        case 'camera':
+          events.onCamera?.(message.camera);
+          break;
+        case 'preview':
+          events.onPreview?.(message.jpeg);
+          break;
+        case 'server':
+          events.onServer?.(message);
           break;
         case 'detections':
           events.onDetections(message.detections);
@@ -46,6 +67,11 @@ export class PerceptionClient {
     // The lib types `readable` as ReadableStream<any>; video tracks yield VideoFrames.
     const stream = processor.readable as ReadableStream<VideoFrame>;
     this.#send({ type: 'frames', stream }, [stream]);
+  }
+
+  /** Ask the perception service for JPEG previews (debug overlay only). */
+  setPreview(enabled: boolean): void {
+    this.#send({ type: 'preview', enabled });
   }
 
   /** Stops the worker and frees its GPU resources. */

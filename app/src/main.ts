@@ -26,8 +26,8 @@ if (params.has('bench')) {
 } else if (params.has('record')) {
   const recorder = new RecorderPanel(root, location.search);
   startOverlay(root, {
-    onReady: (options) => {
-      recorder.setModel(options);
+    onReady: (_options, model) => {
+      recorder.setModel(model);
     },
     onDetections: (detections) => {
       recorder.addDetections(detections);
@@ -84,25 +84,38 @@ function startBenchmark(parent: HTMLElement): void {
 
 /** Optional listeners for tools layered on top of the overlay, e.g. the recorder. */
 interface OverlayListeners {
-  onReady?: (options: PerceptionOptions) => void;
+  onReady?: (options: PerceptionOptions, model: string) => void;
   onDetections?: (detections: PoseDetections) => void;
   onCamera?: (settings: CameraSettings) => void;
 }
 
 function startOverlay(parent: HTMLElement, listeners: OverlayListeners = {}): DebugOverlay {
-  const overlay = new DebugOverlay(parent);
+  let perception: PerceptionClient | null = null;
+  // Previews from the perception service are only requested while the overlay is on screen.
+  const overlay = new DebugOverlay(parent, (visible) => {
+    perception?.setPreview(visible);
+  });
   startLoop((dt, now) => {
     overlay.update(dt, now);
   });
-  if (!isPerceptionSupported()) {
-    overlay.setError(UNSUPPORTED);
-    return overlay;
-  }
 
-  const perception = new PerceptionClient(perceptionOptionsFromUrl(location.search), {
-    onReady: (options) => {
-      overlay.setPerception(options);
-      listeners.onReady?.(options);
+  const client = new PerceptionClient(perceptionOptionsFromUrl(location.search), {
+    onReady: (options, model) => {
+      overlay.setPerception(options, model);
+      listeners.onReady?.(options, model);
+      // The service owns the camera; the browser opens it only for the MediaPipe fallback.
+      if (options.source === 'server') client.setPreview(overlay.visible);
+      else startBrowserCamera(client, overlay, listeners);
+    },
+    onCamera: (camera) => {
+      overlay.setCameraInfo(camera);
+      listeners.onCamera?.(camera);
+    },
+    onPreview: (jpeg) => {
+      overlay.setPreviewFrame(jpeg);
+    },
+    onServer: (status) => {
+      overlay.setServer(status);
     },
     onDetections: (detections) => {
       overlay.addDetections(detections);
@@ -112,7 +125,19 @@ function startOverlay(parent: HTMLElement, listeners: OverlayListeners = {}): De
       overlay.setError(message);
     },
   });
+  perception = client;
+  return overlay;
+}
 
+function startBrowserCamera(
+  perception: PerceptionClient,
+  overlay: DebugOverlay,
+  listeners: OverlayListeners,
+): void {
+  if (!isPerceptionSupported()) {
+    overlay.setError(UNSUPPORTED);
+    return;
+  }
   new Camera(
     {
       onStatus: (status) => {
@@ -131,5 +156,4 @@ function startOverlay(parent: HTMLElement, listeners: OverlayListeners = {}): De
     },
     cameraHint,
   ).start();
-  return overlay;
 }

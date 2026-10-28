@@ -81,8 +81,8 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 | 2.6 | ~~Gesture: cursor + dwell~~ ✅ + playground เบื้องต้น | `feature/gesture-cursor-dwell` |
 | 2.6a | ~~Stabilizer: ไม่ให้ skeleton กะพริบ~~ ✅ (#22) | `feature/perception-visibility-stability` |
 | 2.6b | ~~Spike เทียบโมเดล → RTMPose-x~~ ✅ (#23, ADR-0007) | `spike/pose-model-comparison` |
-| 2.6c | Perception service (Python): กล้อง → RTMPose-x → WebSocket | `feature/perception-server` |
-| 2.6d | Worker source `server` + fallback MediaPipe + preview ใน overlay | `feature/perception-server-client` |
+| 2.6c | ~~Perception service (Python): กล้อง → RTMPose-x → WebSocket~~ ✅ (#25) | `feature/perception-server` |
+| 2.6d | ~~Worker source `server` + fallback MediaPipe + preview ใน overlay~~ ✅ | `feature/perception-server-client` |
 | 2.6e | อัด fixtures ใหม่ด้วย RTMPose + replay test ชุดเดิม | `test/rtmpose-fixtures` |
 | 2.7 | Gesture: raise, raise-both | `feature/gesture-raise` |
 | 2.8 | Gesture: throw | `feature/gesture-throw` |

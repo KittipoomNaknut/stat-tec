@@ -137,7 +137,7 @@ export class BenchmarkView {
 
     const client = await new Promise<PerceptionClient>((resolve, reject) => {
       const c: PerceptionClient = new PerceptionClient(
-        { ...perceptionDefaults, model },
+        { ...perceptionDefaults, source: 'mediapipe', model },
         {
           onReady: (options) => {
             delegate = options.delegate;
