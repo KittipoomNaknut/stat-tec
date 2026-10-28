@@ -18,7 +18,7 @@
 | [007](007-rtmpose-performance.md) | ทำ RTMPose ให้ทัน 30 fps | MJPEG + YOLOX-m + TensorRT FP16 → 7.5 ms avg | PR #23, #25 |
 | [008](008-onnxruntime-cpu-overwrite.md) | ONNX Runtime CPU ทับตัว GPU | ตัด `onnxruntime` ออก + service ไม่ยอมเริ่มถ้าไม่อยู่บน TensorRT | PR #25 |
 | [009](009-cursor-rtmpose-calibration.md) | Cursor กับ RTMPose: กอดอก, แขนตรง, เกณฑ์แยกตามแหล่ง | กฎแขนตรง; RTMPose 0.8 / MediaPipe 0.7 | PR #27 |
-| [010](010-dwell-failures.md) | ทำไมปุ่มบางครั้งไม่ติด | *กำลังทำ* | – |
+| [010](010-dwell-failures.md) | ทำไมปุ่มบางครั้งไม่ติด | ปุ่มหน้าตัว = แขนชี้เข้ากล้องยุบใน 2D → พื้นที่มือข้างตัว + ชี้ต่อเมื่อยกค้าง: ปุ่ม 5 0 → 3; ทางแก้ฝั่ง dwell (stay padding, decay) ไม่ได้ผล | PR #29, #30 |
 
 ## แม่แบบ
 
