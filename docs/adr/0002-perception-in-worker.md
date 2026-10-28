@@ -1,6 +1,6 @@
 # ADR-0002: แยก Pose inference ไปไว้ใน Web Worker
 
-- **Status:** Proposed — ต้องพิสูจน์ใน Phase 1 (Risk R1)
+- **Status:** Accepted — พิสูจน์แล้วใน Phase 1 (2026-10-28)
 - **Date:** 2026-10-28
 
 ## Context
@@ -26,3 +26,14 @@ Render loop บน main thread ใช้ PoseFrame ล่าสุดเสม�
 ## Fallback
 
 ถ้า Phase 1 พบว่าใช้ไม่ได้: รัน inference บน main thread แบบ async ทุกเฟรมเว้นเฟรม + ลด render budget แล้วบันทึกผลเป็น ADR ใหม่ที่ supersede ฉบับนี้
+
+## Result (Phase 1)
+
+พิสูจน์บน Chrome 156 / Linux / RTX 4060 Laptop:
+
+- `PoseLandmarker` ด้วย **GPU delegate ทำงานใน module worker** ได้ (ใช้ WASM แบบ ES module เพราะ module worker ไม่มี `importScripts`)
+- เฟรมไหลจาก `MediaStreamTrackProcessor` → `ReadableStream` ที่ transfer เข้า worker — main thread ไม่แตะภาพ
+- Render 60+ fps (165 fps บนจอโน้ตบุ๊ก) ขณะ inference 30 fps; worker → main thread < 1 ms นอกเหนือจาก inference
+- ตัวเลขเต็ม: [docs/benchmarks/phase1.md](../benchmarks/phase1.md)
+
+ไม่ต้องใช้ fallback
