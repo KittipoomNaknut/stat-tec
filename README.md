@@ -26,17 +26,22 @@
 ## Quick start
 
 ```bash
+# 1. Pose service on the host GPU (owns the camera) — see perception-server/README.md
+cd perception-server && uv sync --extra gpu && uv run --extra gpu stat-tec-perception
+
+# 2. App
 docker compose --profile dev up dev            # dev server → http://127.0.0.1:5173
 docker compose --profile data run --rm pipeline # build scene data → app/public/data
 docker compose up -d web                       # production → http://127.0.0.1:8080
 ./scripts/kiosk.sh                             # Chromium kiosk (Phase 6)
 ```
 
-Without Docker: `cd app && pnpm install && pnpm dev` / `cd data-pipeline && uv sync && uv run stat-tec-pipeline build`
+Without the service the app falls back to MediaPipe in the browser automatically
+(`?perception=mediapipe` forces it). Without Docker: `cd app && pnpm install && pnpm dev` / `cd data-pipeline && uv sync && uv run stat-tec-pipeline build`
 
 ## Requirements
 
-- Linux + NVIDIA GPU (พัฒนาบน RTX 4060 Laptop)
+- Linux + NVIDIA GPU + driver (พัฒนาบน RTX 4060 Laptop) — สำหรับ perception service
 - USB webcam 1080p@60
 - Docker + Docker Compose, Chromium
 
