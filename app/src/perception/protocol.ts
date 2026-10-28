@@ -1,5 +1,6 @@
 /** Messages between the main thread and the perception worker. */
 import type { OneEuroParams } from './one-euro';
+import type { LockState } from './player-lock';
 
 export type PoseModel = 'lite' | 'full' | 'heavy';
 export type Delegate = 'GPU' | 'CPU';
@@ -27,9 +28,16 @@ export interface PoseDetections {
   poseCount: number;
   /** `poseCount × LANDMARK_COUNT × LANDMARK_STRIDE`, normalized image coordinates, not mirrored. */
   landmarks: Float32Array;
+  lock: LockState;
+  /** Increments each time a new person becomes the player. */
+  playerId: number;
+  /** The player's pose in `landmarks`, or −1 when no player is visible this frame. */
+  playerIndex: number;
+  /** Other distinct people in frame (duplicate detections merged away). */
+  otherIndices: number[];
   /**
    * The player's landmarks after filtering (same layout as one pose of `landmarks`), or `null`
-   * when nobody is in frame. Until PlayerLock exists the player is simply the first pose.
+   * when no player is visible this frame.
    */
   player: Float32Array | null;
   /** `player` in body space (see body-normalizer.ts), or `null` when it cannot be measured. */

@@ -3,6 +3,7 @@ import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
 import { toBodySpace } from './body-normalizer';
 import { shoulderWidthPx } from './landmarks';
 import { OneEuroFilterBank } from './one-euro';
+import { PlayerLock } from './player-lock';
 import {
   LANDMARK_COUNT,
   LANDMARK_STRIDE,
@@ -22,6 +23,8 @@ let frameId = 0;
 /** One bank per axis (x, y, z), each with one channel per landmark. */
 let filters: OneEuroFilterBank[] = [];
 let lastPlayerAt = -Infinity;
+let filteredPlayerId = 0;
+const lock = new PlayerLock();
 
 self.onmessage = (event: MessageEvent<ToWorker>) => {
   const message = event.data;
@@ -108,7 +111,11 @@ function detect(model: PoseLandmarker, frame: VideoFrame): void {
 
   const width = frame.displayWidth;
   const height = frame.displayHeight;
-  const player = poses.length > 0 ? filterPlayer(landmarks, start, width, height) : null;
+  const locked = lock.update(landmarks, poses.length, width, height, start);
+  const player =
+    locked.playerIndex >= 0
+      ? filterPlayer(landmarks, locked.playerIndex, locked.playerId, start, width, height)
+      : null;
   let body: Float32Array | null = null;
   if (player) {
     body = new Float32Array(player.length);
@@ -126,6 +133,10 @@ function detect(model: PoseLandmarker, frame: VideoFrame): void {
         height,
         poseCount: poses.length,
         landmarks,
+        lock: locked.state,
+        playerId: locked.playerId,
+        playerIndex: locked.playerIndex,
+        otherIndices: locked.otherIndices,
         player,
         body,
       },
@@ -134,12 +145,22 @@ function detect(model: PoseLandmarker, frame: VideoFrame): void {
   );
 }
 
-/** Smoothed copy of the first pose. Speeds are measured in shoulder widths per second. */
-function filterPlayer(landmarks: Float32Array, tMs: number, w: number, h: number): Float32Array {
-  const player = landmarks.slice(0, LANDMARK_COUNT * LANDMARK_STRIDE);
+/** Smoothed copy of the player's pose. Speeds are measured in shoulder widths per second. */
+function filterPlayer(
+  landmarks: Float32Array,
+  index: number,
+  playerId: number,
+  tMs: number,
+  w: number,
+  h: number,
+): Float32Array {
+  const size = LANDMARK_COUNT * LANDMARK_STRIDE;
+  const player = landmarks.slice(index * size, (index + 1) * size);
   if (filters.length === 0) return player;
-  if (tMs - lastPlayerAt > FILTER_RESET_GAP_MS) {
+  // A new person must not inherit the previous player's motion history.
+  if (playerId !== filteredPlayerId || tMs - lastPlayerAt > FILTER_RESET_GAP_MS) {
     for (const f of filters) f.reset();
+    filteredPlayerId = playerId;
   }
   lastPlayerAt = tMs;
 
