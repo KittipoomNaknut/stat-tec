@@ -2,6 +2,7 @@
   "name": "stat-tec-app",
   "private": true,
   "version": "0.1.0",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "fetch:assets": "node scripts/fetch-assets.mjs",

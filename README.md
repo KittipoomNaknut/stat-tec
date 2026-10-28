@@ -39,3 +39,8 @@ Without Docker: `cd app && pnpm install && pnpm dev` / `cd data-pipeline && uv s
 - Linux + NVIDIA GPU (พัฒนาบน RTX 4060 Laptop)
 - USB webcam 1080p@60
 - Docker + Docker Compose, Chromium
+
+## License
+
+Copyright © 2026 Kittipoom. **All rights reserved** — viewable only; see [LICENSE](LICENSE).
+Third-party components keep their own licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

@@ -3,6 +3,7 @@ name = "stat-tec-pipeline"
 version = "0.1.0"
 description = "Data pipeline for STAT_TEC: builds real and simulated scene datasets"
 readme = "README.md"
+license = "LicenseRef-Proprietary"
 authors = [
     { name = "Kittipoom", email = "kittipoomnak02@gmail.com" }
 ]
