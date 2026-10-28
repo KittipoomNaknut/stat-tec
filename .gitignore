@@ -36,3 +36,5 @@ data-pipeline/raw/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+dist-ssr/
+*.local
