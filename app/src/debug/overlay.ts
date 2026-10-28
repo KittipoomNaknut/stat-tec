@@ -159,37 +159,59 @@ export class DebugOverlay {
     if (this.#showRaw && d.playerIndex >= 0) {
       this.#drawPose(d.landmarks, d.playerIndex, box, COLOR_RAW, 2 * dpr);
     }
-    if (d.player) this.#drawPose(d.player, 0, box, COLOR_PLAYER, 4 * dpr);
+    if (d.player) this.#drawPose(d.player, 0, box, COLOR_PLAYER, 5 * dpr, d.playerShown);
   }
 
+  /**
+   * Draws one pose. With `shown` (the player), visibility hysteresis decides what is drawn and
+   * smoothed visibility fades it, with a glow; without it, a plain threshold is used.
+   */
   #drawPose(
     data: Float32Array,
     pose: number,
     box: { left: number; top: number; w: number; h: number },
     color: string,
     lineWidth: number,
+    shown: Uint8Array | null = null,
   ): void {
     const ctx = this.#ctx;
     const base = pose * LANDMARK_COUNT * LANDMARK_STRIDE;
     const x = (i: number) => box.left + (1 - (data[base + i * LANDMARK_STRIDE] ?? 0)) * box.w;
     const y = (i: number) => box.top + (data[base + i * LANDMARK_STRIDE + 1] ?? 0) * box.h;
-    const visible = (i: number) => (data[base + i * LANDMARK_STRIDE + 3] ?? 0) >= MIN_VISIBILITY;
+    const opacity = (i: number) => {
+      const v = data[base + i * LANDMARK_STRIDE + 3] ?? 0;
+      if (!shown) return v >= MIN_VISIBILITY ? 1 : 0;
+      return shown[i] ? Math.min(Math.max((v - 0.3) / 0.4, 0.35), 1) : 0;
+    };
 
+    ctx.save();
     ctx.lineWidth = lineWidth;
     ctx.lineCap = 'round';
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
-    ctx.beginPath();
+    if (shown) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = lineWidth * 3;
+    }
     for (const [a, b] of POSE_CONNECTIONS) {
-      if (!visible(a) || !visible(b)) continue;
+      const alpha = Math.min(opacity(a), opacity(b));
+      if (alpha <= 0) continue;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
       ctx.moveTo(x(a), y(a));
       ctx.lineTo(x(b), y(b));
+      ctx.stroke();
     }
-    ctx.stroke();
-    const dot = lineWidth * 1.5;
+    const r = lineWidth * 0.9;
     for (let i = 0; i < LANDMARK_COUNT; i++) {
-      if (visible(i)) ctx.fillRect(x(i) - dot / 2, y(i) - dot / 2, dot, dot);
+      const alpha = opacity(i);
+      if (alpha <= 0) continue;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(x(i), y(i), r, 0, Math.PI * 2);
+      ctx.fill();
     }
+    ctx.restore();
   }
 
   #describe(nowMs: number): string {
