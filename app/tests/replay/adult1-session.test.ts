@@ -10,16 +10,13 @@ import { Landmark } from '../../src/perception/landmarks';
 import { LANDMARK_STRIDE } from '../../src/perception/protocol';
 import { PoseTracker, type TrackedFrame } from '../../src/perception/tracker';
 import { clipFrames, loadSession } from '../support/pose-session';
+import { SOLO_SESSIONS } from '../support/sessions';
 
-const FILE = '2026-10-28-adult1-2m-indoor.pose.json.gz';
 const LOCK_WITHIN_MS = 700;
 /** Arms fully extended reach ~3 SW from mid-shoulder; anything past this is a scale bug. */
 const MAX_BODY_COORD = 5;
 
 let session: PoseSession;
-beforeAll(async () => {
-  session = await loadSession(FILE);
-});
 
 function replay(clipId: string) {
   const clip = session.clips.find((c) => c.id === clipId);
@@ -53,18 +50,31 @@ const CLIPS = [
   'swipe',
 ];
 
-describe(`replay ${FILE}`, () => {
-  it.each(CLIPS)('%s: locks quickly and keeps one player id', (id) => {
+describe.each(SOLO_SESSIONS)('replay $file', ({ file: FILE }) => {
+  beforeAll(async () => {
+    session = await loadSession(FILE);
+  });
+
+  it.each(CLIPS)('%s: locks quickly once eligible and keeps one player id', (id) => {
     const frames = replay(id);
+    // Measured from when the person becomes a candidate (centered enough): in the RTMPose
+    // session the owner was still walking back to the middle when some clips started.
+    const candidate = frames.find((f) => f.state === 'candidate');
     const firstLock = frames.find((f) => f.state === 'locked');
-    expect(firstLock?.t).toBeLessThan(LOCK_WITHIN_MS);
+    expect((firstLock?.t ?? Infinity) - (candidate?.t ?? 0)).toBeLessThan(LOCK_WITHIN_MS);
     expect(new Set(frames.map((f) => f.playerId).filter((p) => p > 0))).toEqual(new Set([1]));
   });
 
-  it.each([...CLIPS, 'walk-in-out'])('%s: never reports another person (recorded alone)', (id) => {
-    const withOthers = replay(id).filter((f) => f.otherIndices.length > 0);
-    expect(withOthers.map((f) => f.t)).toEqual([]);
-  });
+  it.each([...CLIPS, 'walk-in-out'])(
+    '%s: never reports another person while a player is present (recorded alone)',
+    (id) => {
+      // Before a lock, a lone person at the frame edge is simply "not the player yet".
+      const withOthers = replay(id).filter(
+        (f) => (f.state === 'locked' || f.state === 'lost') && f.otherIndices.length > 0,
+      );
+      expect(withOthers.map((f) => f.t)).toEqual([]);
+    },
+  );
 
   it.each(CLIPS)('%s: body-space wrists stay in a plausible range', (id) => {
     const bad: string[] = [];
@@ -87,6 +97,10 @@ describe(`replay ${FILE}`, () => {
     const states = replay('walk-in-out').map((f) => f.state);
     const order = states.filter((s, i) => s !== states[i - 1]);
     // The person is already in view on the first frame, so it starts as a candidate.
-    expect(order).toEqual(['candidate', 'locked', 'lost', 'searching']);
+    expect(order.slice(0, 4)).toEqual(['candidate', 'locked', 'lost', 'searching']);
+    // In the RTMPose session the owner came back before the clip ended: someone returning after
+    // being forgotten is a new player.
+    const ids = replay('walk-in-out').map((f) => f.playerId);
+    expect(Math.max(...ids)).toBe(order.length > 4 ? 2 : 1);
   });
 });

@@ -8,8 +8,8 @@ import type { PoseSession } from '../../src/debug/pose-recording';
 import { Landmark } from '../../src/perception/landmarks';
 import { PoseTracker } from '../../src/perception/tracker';
 import { clipFrames, loadSession } from '../support/pose-session';
+import { SOLO_SESSIONS } from '../support/sessions';
 
-const FILE = '2026-10-28-adult1-2m-indoor.pose.json.gz';
 /** At most this many show/hide changes per landmark per clip (was up to 76). */
 const MAX_FLIPS = 6;
 const WATCHED = {
@@ -22,11 +22,12 @@ const WATCHED = {
 };
 
 let session: PoseSession;
-beforeAll(async () => {
-  session = await loadSession(FILE);
-});
 
-describe(`stability replay ${FILE}`, () => {
+describe.each(SOLO_SESSIONS)('stability replay $file', ({ file: FILE }) => {
+  beforeAll(async () => {
+    session = await loadSession(FILE);
+  });
+
   it.each([
     'idle-fidget',
     'point-right-sweep',
