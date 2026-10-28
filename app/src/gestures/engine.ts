@@ -1,7 +1,9 @@
+import { cursorConfigFor } from '../config/gestures';
 import type { IntentBus } from '../input/intent-bus';
 import type { IntentSource } from '../input/intents';
 import type { TargetRegistry } from '../input/targets';
 import type { LockState } from '../perception/player-lock';
+import type { PerceptionSource } from '../perception/protocol';
 import { CursorTracker } from './cursor';
 import { DwellDetector } from './dwell';
 
@@ -20,7 +22,7 @@ export class GestureEngine {
   readonly #bus: IntentBus;
   readonly #targets: TargetRegistry;
   readonly #source: IntentSource;
-  readonly #cursor = new CursorTracker();
+  #cursor = new CursorTracker(cursorConfigFor('server'));
   readonly #dwell = new DwellDetector();
   #lock: LockState = 'searching';
   #playerId = 0;
@@ -31,6 +33,11 @@ export class GestureEngine {
     this.#bus = bus;
     this.#targets = targets;
     this.#source = source;
+  }
+
+  /** Use thresholds calibrated for the pose source actually in use. */
+  setPoseSource(source: PerceptionSource): void {
+    this.#cursor = new CursorTracker(cursorConfigFor(source));
   }
 
   update(input: GestureInput, tMs: number): void {
