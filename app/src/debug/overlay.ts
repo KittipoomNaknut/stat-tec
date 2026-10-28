@@ -12,10 +12,16 @@ import { POSE_CONNECTIONS } from '../perception/skeleton';
 const WINDOW = 120;
 const TEXT_REFRESH_MS = 250;
 const MIN_VISIBILITY = 0.5;
+/** Nose, shoulders, wrists: what the gestures will depend on. */
+const JITTER_LANDMARKS = [0, 11, 12, 15, 16] as const;
+
+const COLOR_PLAYER = '#3fe0ff';
+const COLOR_OTHER = '#ffc857';
+const COLOR_RAW = 'rgba(255, 255, 255, 0.45)';
 
 /**
- * Developer view (F1): mirrored camera feed, skeletons of every detected pose and live
- * performance numbers. Not part of the visitor experience.
+ * Developer view: mirrored camera feed, skeletons and live performance numbers.
+ * F1 toggles the overlay, F3 toggles the unfiltered skeleton. Not part of the visitor experience.
  */
 export class DebugOverlay {
   readonly #root = document.createElement('div');
@@ -29,9 +35,12 @@ export class DebugOverlay {
   readonly #inference = new RollingWindow(WINDOW);
   readonly #detectionRate = new RateMeter(WINDOW);
   readonly #workerToScreen = new RollingWindow(WINDOW);
+  readonly #rawJitter = new JitterMeter();
+  readonly #filteredJitter = new JitterMeter();
 
   #detections: PoseDetections | null = null;
   #drawnFrameId = -1;
+  #showRaw = false;
   #camera: { status: CameraStatus; settings: CameraSettings | null } = {
     status: 'connecting',
     settings: null,
@@ -57,6 +66,10 @@ export class DebugOverlay {
       if (e.key === 'F1') {
         e.preventDefault();
         this.#root.hidden = !this.#root.hidden;
+      } else if (e.key === 'F3') {
+        e.preventDefault();
+        this.#showRaw = !this.#showRaw;
+        this.#drawnFrameId = -1;
       }
     });
   }
@@ -84,6 +97,13 @@ export class DebugOverlay {
     this.#detections = detections;
     this.#inference.push(detections.inferenceMs);
     this.#detectionRate.tick(performance.now());
+    if (detections.player) {
+      this.#rawJitter.add(detections.landmarks, detections.width, detections.height);
+      this.#filteredJitter.add(detections.player, detections.width, detections.height);
+    } else {
+      this.#rawJitter.reset();
+      this.#filteredJitter.reset();
+    }
   }
 
   update(dtMs: number, nowMs: number): void {
@@ -112,65 +132,116 @@ export class DebugOverlay {
       canvas.width = width;
       canvas.height = height;
     }
-
-    const ctx = this.#ctx;
-    ctx.clearRect(0, 0, width, height);
+    this.#ctx.clearRect(0, 0, width, height);
     if (d.width === 0 || d.height === 0) return;
 
     // Match the video's object-fit: contain + horizontal mirror.
     const scale = Math.min(width / d.width, height / d.height);
-    const w = d.width * scale;
-    const h = d.height * scale;
-    const left = (width - w) / 2;
-    const top = (height - h) / 2;
-    const x = (pose: number, i: number) => {
-      const v = d.landmarks[(pose * LANDMARK_COUNT + i) * LANDMARK_STRIDE] ?? 0;
-      return left + (1 - v) * w;
+    const box = {
+      left: (width - d.width * scale) / 2,
+      top: (height - d.height * scale) / 2,
+      w: d.width * scale,
+      h: d.height * scale,
     };
-    const y = (pose: number, i: number) =>
-      top + (d.landmarks[(pose * LANDMARK_COUNT + i) * LANDMARK_STRIDE + 1] ?? 0) * h;
-    const visible = (pose: number, i: number) =>
-      (d.landmarks[(pose * LANDMARK_COUNT + i) * LANDMARK_STRIDE + 3] ?? 0) >= MIN_VISIBILITY;
 
-    ctx.lineWidth = 3 * dpr;
+    for (let pose = 1; pose < d.poseCount; pose++) {
+      this.#drawPose(d.landmarks, pose, box, COLOR_OTHER, 3 * dpr);
+    }
+    if (this.#showRaw && d.poseCount > 0) {
+      this.#drawPose(d.landmarks, 0, box, COLOR_RAW, 2 * dpr);
+    }
+    if (d.player) this.#drawPose(d.player, 0, box, COLOR_PLAYER, 4 * dpr);
+  }
+
+  #drawPose(
+    data: Float32Array,
+    pose: number,
+    box: { left: number; top: number; w: number; h: number },
+    color: string,
+    lineWidth: number,
+  ): void {
+    const ctx = this.#ctx;
+    const base = pose * LANDMARK_COUNT * LANDMARK_STRIDE;
+    const x = (i: number) => box.left + (1 - (data[base + i * LANDMARK_STRIDE] ?? 0)) * box.w;
+    const y = (i: number) => box.top + (data[base + i * LANDMARK_STRIDE + 1] ?? 0) * box.h;
+    const visible = (i: number) => (data[base + i * LANDMARK_STRIDE + 3] ?? 0) >= MIN_VISIBILITY;
+
+    ctx.lineWidth = lineWidth;
     ctx.lineCap = 'round';
-    for (let pose = 0; pose < d.poseCount; pose++) {
-      ctx.strokeStyle = pose === 0 ? '#3fe0ff' : '#ffc857';
-      ctx.fillStyle = ctx.strokeStyle;
-      ctx.beginPath();
-      for (const [a, b] of POSE_CONNECTIONS) {
-        if (!visible(pose, a) || !visible(pose, b)) continue;
-        ctx.moveTo(x(pose, a), y(pose, a));
-        ctx.lineTo(x(pose, b), y(pose, b));
-      }
-      ctx.stroke();
-      for (let i = 0; i < LANDMARK_COUNT; i++) {
-        if (!visible(pose, i)) continue;
-        ctx.fillRect(x(pose, i) - 3 * dpr, y(pose, i) - 3 * dpr, 6 * dpr, 6 * dpr);
-      }
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    for (const [a, b] of POSE_CONNECTIONS) {
+      if (!visible(a) || !visible(b)) continue;
+      ctx.moveTo(x(a), y(a));
+      ctx.lineTo(x(b), y(b));
+    }
+    ctx.stroke();
+    const dot = lineWidth * 1.5;
+    for (let i = 0; i < LANDMARK_COUNT; i++) {
+      if (visible(i)) ctx.fillRect(x(i) - dot / 2, y(i) - dot / 2, dot, dot);
     }
   }
 
   #describe(nowMs: number): string {
     const cam = this.#camera.settings;
     const p = this.#perception;
+    const f = p?.filter;
     const lines = [
       `camera     ${this.#camera.status}${cam ? ` · ${cam.label} · ${String(cam.width)}×${String(cam.height)} @ ${cam.frameRate.toFixed(0)}` : ''}`,
       `gpu        ${this.#gpu}`,
       `model      ${p ? `${p.model} / ${p.delegate} / numPoses ${String(p.numPoses)}` : 'loading…'}`,
+      `filter     ${f ? `one-euro minCutoff ${String(f.minCutoff)} · beta ${String(f.beta)} · dCutoff ${String(f.dCutoff)}` : p ? 'off' : '…'}`,
       `inference  ${ms(this.#inference.mean())} avg · ${ms(this.#inference.percentile(95))} p95 · ${this.#detectionRate.rate(nowMs).toFixed(1)} fps`,
       `poses      ${String(this.#detections?.poseCount ?? 0)}`,
+      `jitter     raw ${px(this.#rawJitter.mean())} · filtered ${px(this.#filteredJitter.mean())}  (stand still)`,
       `worker→ui  ${ms(this.#workerToScreen.mean())} avg · ${ms(this.#workerToScreen.percentile(95))} p95`,
       `render     ${this.#renderRate.rate(nowMs).toFixed(1)} fps · frame ${ms(this.#frameTime.percentile(95))} p95`,
     ];
     if (this.#error !== null) lines.push(`ERROR      ${this.#error}`);
-    lines.push('', 'F1 hide');
+    lines.push('', `F1 hide · F3 raw skeleton ${this.#showRaw ? 'on' : 'off'}`);
     return lines.join('\n');
+  }
+}
+
+/** Mean frame-to-frame movement (source pixels) of key landmarks; equals jitter when still. */
+class JitterMeter {
+  readonly #window = new RollingWindow(WINDOW);
+  readonly #prev = new Float64Array(JITTER_LANDMARKS.length * 2);
+  #hasPrev = false;
+
+  reset(): void {
+    this.#hasPrev = false;
+  }
+
+  mean(): number {
+    return this.#window.mean();
+  }
+
+  /** Reads the first pose of `data`. */
+  add(data: Float32Array, width: number, height: number): void {
+    let sum = 0;
+    let visible = true;
+    for (let k = 0; k < JITTER_LANDMARKS.length; k++) {
+      const i = (JITTER_LANDMARKS[k] ?? 0) * LANDMARK_STRIDE;
+      if ((data[i + 3] ?? 0) < MIN_VISIBILITY) visible = false;
+      const x = (data[i] ?? 0) * width;
+      const y = (data[i + 1] ?? 0) * height;
+      sum += Math.hypot(x - (this.#prev[k * 2] ?? 0), y - (this.#prev[k * 2 + 1] ?? 0));
+      this.#prev[k * 2] = x;
+      this.#prev[k * 2 + 1] = y;
+    }
+    if (this.#hasPrev && visible) this.#window.push(sum / JITTER_LANDMARKS.length);
+    this.#hasPrev = true;
   }
 }
 
 function ms(value: number): string {
   return `${value.toFixed(1)} ms`;
+}
+
+function px(value: number): string {
+  return `${value.toFixed(2)} px`;
 }
 
 function detectGpu(): string {
