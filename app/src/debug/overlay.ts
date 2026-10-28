@@ -7,6 +7,7 @@ import {
   type PerceptionOptions,
   type PoseDetections,
 } from '../perception/protocol';
+import { Landmark } from '../perception/landmarks';
 import { POSE_CONNECTIONS } from '../perception/skeleton';
 import { JitterMeter } from './jitter';
 
@@ -25,6 +26,9 @@ const COLOR_RAW = 'rgba(255, 255, 255, 0.45)';
 export class DebugOverlay {
   readonly #root = document.createElement('div');
   readonly #video = document.createElement('video');
+  /** Camera picture from the perception service (it owns the camera; see ADR-0007). */
+  readonly #preview = document.createElement('img');
+  readonly #onVisibility: (visible: boolean) => void;
   readonly #canvas = document.createElement('canvas');
   readonly #ctx: CanvasRenderingContext2D;
   readonly #panel = document.createElement('pre');
@@ -45,11 +49,15 @@ export class DebugOverlay {
     settings: null,
   };
   #perception: PerceptionOptions | null = null;
+  #model = '';
+  #server: { connected: boolean; fps: number; inferenceMs: number } | null = null;
   #error: string | null = null;
   #lastTextUpdate = 0;
   readonly #gpu = detectGpu();
 
-  constructor(parent: HTMLElement) {
+  /** `onVisibility` lets the owner request camera previews only while the overlay is shown. */
+  constructor(parent: HTMLElement, onVisibility: (visible: boolean) => void = () => undefined) {
+    this.#onVisibility = onVisibility;
     const ctx = this.#canvas.getContext('2d');
     if (!ctx) throw new Error('2D canvas unavailable');
     this.#ctx = ctx;
@@ -58,19 +66,30 @@ export class DebugOverlay {
     this.#video.muted = true;
     this.#video.playsInline = true;
     this.#panel.className = 'debug-panel';
-    this.#root.append(this.#video, this.#canvas, this.#panel);
+    this.#preview.alt = '';
+    this.#preview.hidden = true;
+    this.#root.append(this.#video, this.#preview, this.#canvas, this.#panel);
     parent.append(this.#root);
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'F1') {
         e.preventDefault();
-        this.#root.hidden = !this.#root.hidden;
+        this.setVisible(!this.visible);
       } else if (e.key === 'F3') {
         e.preventDefault();
         this.#showRaw = !this.#showRaw;
         this.#drawnFrameId = -1;
       }
     });
+  }
+
+  get visible(): boolean {
+    return !this.#root.hidden;
+  }
+
+  setVisible(visible: boolean): void {
+    this.#root.hidden = !visible;
+    this.#onVisibility(visible);
   }
 
   setCameraStatus(status: CameraStatus): void {
@@ -83,8 +102,28 @@ export class DebugOverlay {
     void this.#video.play();
   }
 
-  setPerception(options: PerceptionOptions): void {
+  setPerception(options: PerceptionOptions, model: string): void {
     this.#perception = options;
+    this.#model = model;
+    this.#video.hidden = options.source === 'server';
+    this.#preview.hidden = options.source !== 'server';
+  }
+
+  /** Camera owned by the perception service. */
+  setCameraInfo(settings: CameraSettings): void {
+    this.#camera = { status: 'live', settings };
+  }
+
+  setServer(status: { connected: boolean; fps: number; inferenceMs: number }): void {
+    this.#server = status;
+    this.#camera.status = status.connected ? 'live' : 'lost';
+  }
+
+  /** Shows one JPEG preview frame from the perception service. */
+  setPreviewFrame(jpeg: ArrayBuffer): void {
+    const previous = this.#preview.src;
+    this.#preview.src = URL.createObjectURL(new Blob([jpeg], { type: 'image/jpeg' }));
+    if (previous) URL.revokeObjectURL(previous);
   }
 
   /** Pass `null` to clear once the problem is resolved. */
@@ -97,7 +136,12 @@ export class DebugOverlay {
     this.#inference.push(detections.inferenceMs);
     this.#detectionRate.tick(performance.now());
     if (detections.player) {
-      this.#rawJitter.add(detections.landmarks, detections.width, detections.height);
+      this.#rawJitter.add(
+        detections.landmarks,
+        detections.width,
+        detections.height,
+        detections.playerIndex,
+      );
       this.#filteredJitter.add(detections.player, detections.width, detections.height);
     } else {
       this.#rawJitter.reset();
@@ -143,43 +187,73 @@ export class DebugOverlay {
       h: d.height * scale,
     };
 
-    for (let pose = 1; pose < d.poseCount; pose++) {
+    for (const pose of d.otherIndices) {
       this.#drawPose(d.landmarks, pose, box, COLOR_OTHER, 3 * dpr);
     }
-    if (this.#showRaw && d.poseCount > 0) {
-      this.#drawPose(d.landmarks, 0, box, COLOR_RAW, 2 * dpr);
+    if (this.#showRaw && d.playerIndex >= 0) {
+      this.#drawPose(d.landmarks, d.playerIndex, box, COLOR_RAW, 2 * dpr);
     }
-    if (d.player) this.#drawPose(d.player, 0, box, COLOR_PLAYER, 4 * dpr);
+    if (d.player) this.#drawPose(d.player, 0, box, COLOR_PLAYER, 5 * dpr, d.playerShown);
   }
 
+  /**
+   * Draws one pose. With `shown` (the player), visibility hysteresis decides what is drawn and
+   * smoothed visibility fades it, with a glow; without it, a plain threshold is used.
+   */
   #drawPose(
     data: Float32Array,
     pose: number,
     box: { left: number; top: number; w: number; h: number },
     color: string,
     lineWidth: number,
+    shown: Uint8Array | null = null,
   ): void {
     const ctx = this.#ctx;
     const base = pose * LANDMARK_COUNT * LANDMARK_STRIDE;
     const x = (i: number) => box.left + (1 - (data[base + i * LANDMARK_STRIDE] ?? 0)) * box.w;
     const y = (i: number) => box.top + (data[base + i * LANDMARK_STRIDE + 1] ?? 0) * box.h;
-    const visible = (i: number) => (data[base + i * LANDMARK_STRIDE + 3] ?? 0) >= MIN_VISIBILITY;
+    const opacity = (i: number) => {
+      const v = data[base + i * LANDMARK_STRIDE + 3] ?? 0;
+      if (!shown) return v >= MIN_VISIBILITY ? 1 : 0;
+      return shown[i] ? Math.min(Math.max((v - 0.3) / 0.4, 0.35), 1) : 0;
+    };
 
+    ctx.save();
     ctx.lineWidth = lineWidth;
     ctx.lineCap = 'round';
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
-    ctx.beginPath();
+    if (shown) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = lineWidth * 3;
+    }
     for (const [a, b] of POSE_CONNECTIONS) {
-      if (!visible(a) || !visible(b)) continue;
+      const alpha = Math.min(opacity(a), opacity(b));
+      if (alpha <= 0) continue;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
       ctx.moveTo(x(a), y(a));
       ctx.lineTo(x(b), y(b));
+      ctx.stroke();
     }
-    ctx.stroke();
-    const dot = lineWidth * 1.5;
+    const r = lineWidth * 0.9;
     for (let i = 0; i < LANDMARK_COUNT; i++) {
-      if (visible(i)) ctx.fillRect(x(i) - dot / 2, y(i) - dot / 2, dot, dot);
+      const alpha = opacity(i);
+      if (alpha <= 0) continue;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(x(i), y(i), r, 0, Math.PI * 2);
+      ctx.fill();
     }
+    ctx.restore();
+  }
+
+  #describeServer(): string {
+    const s = this.#server;
+    if (!s) return '';
+    return s.connected
+      ? ` · service ${s.fps.toFixed(1)} fps, ${s.inferenceMs.toFixed(1)} ms`
+      : ' · SERVICE DISCONNECTED (reconnecting)';
   }
 
   #describe(nowMs: number): string {
@@ -189,10 +263,11 @@ export class DebugOverlay {
     const lines = [
       `camera     ${this.#camera.status}${cam ? ` · ${cam.label} · ${String(cam.width)}×${String(cam.height)} @ ${cam.frameRate.toFixed(0)}` : ''}`,
       `gpu        ${this.#gpu}`,
-      `model      ${p ? `${p.model} / ${p.delegate} / numPoses ${String(p.numPoses)}` : 'loading…'}`,
+      `source     ${p ? `${p.source} · ${this.#model}` : 'connecting…'}${this.#describeServer()}`,
       `filter     ${f ? `one-euro minCutoff ${String(f.minCutoff)} · beta ${String(f.beta)} · dCutoff ${String(f.dCutoff)}` : p ? 'off' : '…'}`,
       `inference  ${ms(this.#inference.mean())} avg · ${ms(this.#inference.percentile(95))} p95 · ${this.#detectionRate.rate(nowMs).toFixed(1)} fps`,
-      `poses      ${String(this.#detections?.poseCount ?? 0)}`,
+      `player     ${describeLock(this.#detections)}`,
+      `body (SW)  ${describeWrists(this.#detections?.body ?? null)}`,
       `jitter     raw ${px(this.#rawJitter.mean())} · filtered ${px(this.#filteredJitter.mean())}  (stand still)`,
       `worker→ui  ${ms(this.#workerToScreen.mean())} avg · ${ms(this.#workerToScreen.percentile(95))} p95`,
       `render     ${this.#renderRate.rate(nowMs).toFixed(1)} fps · frame ${ms(this.#frameTime.percentile(95))} p95`,
@@ -201,6 +276,28 @@ export class DebugOverlay {
     lines.push('', `F1 hide · F3 raw skeleton ${this.#showRaw ? 'on' : 'off'}`);
     return lines.join('\n');
   }
+}
+
+function describeLock(d: PoseDetections | null): string {
+  if (!d) return '–';
+  const id = d.playerId > 0 ? ` #${String(d.playerId)}` : '';
+  return `${d.lock}${id} · others ${String(d.otherIndices.length)} · detections ${String(d.poseCount)}`;
+}
+
+/** Wrist positions in body space: what cursor and gesture thresholds will read. */
+function describeWrists(body: Float32Array | null): string {
+  if (!body) return '–';
+  const wrist = (name: string, i: number) => {
+    const k = i * LANDMARK_STRIDE;
+    const x = body[k] ?? 0;
+    const y = body[k + 1] ?? 0;
+    return `${name} (${signed(x)}, ${signed(y)})`;
+  };
+  return `${wrist('R wrist', Landmark.RIGHT_WRIST)} · ${wrist('L wrist', Landmark.LEFT_WRIST)}`;
+}
+
+function signed(value: number): string {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
 }
 
 function ms(value: number): string {

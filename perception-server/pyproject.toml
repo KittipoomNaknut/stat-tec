@@ -1,0 +1,51 @@
+[project]
+name = "stat-tec-perception"
+version = "0.1.0"
+description = "STAT_TEC perception service: camera -> RTMPose-x -> WebSocket (ADR-0007)"
+readme = "README.md"
+authors = [
+    { name = "Kittipoom", email = "kittipoomnak02@gmail.com" }
+]
+requires-python = ">=3.12,<3.13"
+license = "LicenseRef-Proprietary"
+dependencies = [
+    "numpy==2.5.4",
+    "opencv-python==5.0.0.93",
+    "websockets==17.2",
+]
+
+[project.scripts]
+stat-tec-perception = "stat_tec_perception.__main__:main"
+
+[project.optional-dependencies]
+gpu = [
+    "onnxruntime-gpu[cuda,cudnn]==1.31.0",
+    "rtmlib==0.0.16",
+    "tensorrt-cu13==10.16.1.11",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest==9.2.0",
+    "ruff==0.17.3",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.uv]
+# rtmlib requires the CPU `onnxruntime`, which installs into the same `onnxruntime` module as
+# `onnxruntime-gpu` and can overwrite it (then only CPU providers exist). Keep only the GPU build.
+exclude-dependencies = ["onnxruntime"]

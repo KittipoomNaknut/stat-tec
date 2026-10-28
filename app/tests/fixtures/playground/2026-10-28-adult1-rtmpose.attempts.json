@@ -1,0 +1,263 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-28T16:01:24.698Z",
+  "viewport": {
+    "width": 1536,
+    "height": 747
+  },
+  "targets": {
+    "button-1": {
+      "x": 0.05999755859375,
+      "y": 0.07999498298369258,
+      "w": 0.26666871706644696,
+      "h": 0.3700050445924322
+    },
+    "button-2": {
+      "x": 0.3666626214981079,
+      "y": 0.07999498298369258,
+      "w": 0.26666871706644696,
+      "h": 0.3700050445924322
+    },
+    "button-3": {
+      "x": 0.6733276844024658,
+      "y": 0.07999498298369258,
+      "w": 0.26666871706644696,
+      "h": 0.3700050445924322
+    },
+    "button-4": {
+      "x": 0.05999755859375,
+      "y": 0.48999750630124667,
+      "w": 0.26666871706644696,
+      "h": 0.3700050445924322
+    },
+    "button-5": {
+      "x": 0.3666626214981079,
+      "y": 0.48999750630124667,
+      "w": 0.26666871706644696,
+      "h": 0.3700050445924322
+    },
+    "button-6": {
+      "x": 0.6693276564280192,
+      "y": 0.48444743328783885,
+      "w": 0.27466875314712524,
+      "h": 0.38110514976572957
+    }
+  },
+  "summary": {
+    "selected": 22,
+    "left-target": 1,
+    "cursor-hidden": 1,
+    "passed-by": 1
+  },
+  "attempts": [
+    {
+      "targetId": "button-3",
+      "start": 28247,
+      "end": 29427.79999999702,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-6",
+      "start": 30238.09999999404,
+      "end": 31383.89999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-3",
+      "start": 32119.09999999404,
+      "end": 32679.19999999553,
+      "maxProgress": 0.46291666666666664,
+      "outcome": "left-target",
+      "breakOff": {
+        "visible": true,
+        "outside": 0.002269059099176851
+      }
+    },
+    {
+      "targetId": "button-2",
+      "start": 32711.5,
+      "end": 33912.59999999404,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-1",
+      "start": 34711.59999999404,
+      "end": 35895.19999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-4",
+      "start": 36519.19999999553,
+      "end": 37699.29999999702,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-5",
+      "start": 38387.89999999851,
+      "end": 38551.39999999851,
+      "maxProgress": 0.027250000002483527,
+      "outcome": "passed-by",
+      "breakOff": {
+        "visible": false,
+        "outside": 0
+      }
+    },
+    {
+      "targetId": "button-4",
+      "start": 40487.79999999702,
+      "end": 41670.89999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-1",
+      "start": 42063.79999999702,
+      "end": 43246.69999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-2",
+      "start": 43903.5,
+      "end": 45083.39999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-3",
+      "start": 45511.79999999702,
+      "end": 46691.19999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-6",
+      "start": 48791.29999999702,
+      "end": 49996.29999999702,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-4",
+      "start": 53519.39999999851,
+      "end": 54699.69999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-1",
+      "start": 55095.29999999702,
+      "end": 56274.89999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-2",
+      "start": 56931.39999999851,
+      "end": 58111,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-3",
+      "start": 58736.5,
+      "end": 59951.29999999702,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-6",
+      "start": 60411.39999999851,
+      "end": 61591.5,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-4",
+      "start": 63199.5,
+      "end": 64379.19999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-1",
+      "start": 64807.69999999553,
+      "end": 65990.89999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-2",
+      "start": 66611.09999999404,
+      "end": 67795.59999999404,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-3",
+      "start": 68255.79999999702,
+      "end": 69435.19999999553,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-6",
+      "start": 69535.29999999702,
+      "end": 70747.09999999404,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-4",
+      "start": 73243.09999999404,
+      "end": 74163,
+      "maxProgress": 0.6572499999962748,
+      "outcome": "cursor-hidden",
+      "breakOff": {
+        "visible": false,
+        "outside": 0
+      }
+    },
+    {
+      "targetId": "button-3",
+      "start": 77792.59999999404,
+      "end": 78940.5,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    },
+    {
+      "targetId": "button-6",
+      "start": 79402.5,
+      "end": 80549.89999999851,
+      "maxProgress": 1,
+      "outcome": "selected",
+      "breakOff": null
+    }
+  ]
+}

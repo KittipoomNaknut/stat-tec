@@ -1,0 +1,26 @@
+[project]
+name = "pose-model-spike"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "Kittipoom", email = "kittipoomnak02@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "mediapipe==1.1.1",
+    "onnxruntime-gpu[cuda,cudnn]==1.31.0",
+    "opencv-python==5.0.0.93",
+    "rtmlib==0.0.16",
+    "tensorrt-cu13==10.16.1.11",
+]
+
+[project.scripts]
+pose-model-spike = "pose_model_spike:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+# See perception-server/pyproject.toml: the CPU onnxruntime from rtmlib can overwrite onnxruntime-gpu.
+exclude-dependencies = ["onnxruntime"]

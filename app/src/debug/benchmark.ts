@@ -127,7 +127,7 @@ export class BenchmarkView {
       rate.tick(performance.now());
       if (d.player) {
         withPerson++;
-        raw.add(d.landmarks, d.width, d.height);
+        raw.add(d.landmarks, d.width, d.height, d.playerIndex);
         filtered.add(d.player, d.width, d.height);
       } else {
         raw.reset();
@@ -137,7 +137,7 @@ export class BenchmarkView {
 
     const client = await new Promise<PerceptionClient>((resolve, reject) => {
       const c: PerceptionClient = new PerceptionClient(
-        { ...perceptionDefaults, model },
+        { ...perceptionDefaults, source: 'mediapipe', model },
         {
           onReady: (options) => {
             delegate = options.delegate;

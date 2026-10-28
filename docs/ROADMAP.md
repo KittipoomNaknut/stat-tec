@@ -73,12 +73,17 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 
 | # | งาน | Branch |
 |---|---|---|
-| 2.1 | ~~OneEuroFilter~~ ✅ (#8) + BodyNormalizer (+ unit tests) | `feature/perception-filtering` |
-| 2.2 | PlayerLock (+ unit tests ด้วย synthetic data) | `feature/perception-player-lock` |
-| 2.3 | Pose recorder (dev) + format `.pose.json.gz` | `feature/tools-pose-recorder` |
-| 2.4 | อัด fixture set ขั้นต่ำ (ท่า × ระยะ × แสง + negative cases) | `test/pose-fixtures` |
-| 2.5 | Intent Bus + types + MouseAdapter + ReplayAdapter | `feature/input-intent-bus` |
-| 2.6 | Gesture: cursor + dwell | `feature/gesture-cursor-dwell` |
+| 2.1 | ~~OneEuroFilter + BodyNormalizer~~ ✅ (#8, #15) | `feature/perception-filtering` |
+| 2.2 | ~~PlayerLock~~ ✅ (#16, #19) | `feature/perception-player-lock` |
+| 2.3 | ~~Pose recorder~~ ✅ (#18) | `feature/tools-pose-recorder` |
+| 2.4 | อัด fixture set ขั้นต่ำ — ✅ ชุดแรก (#19); ⏳ คนอื่น/ระยะอื่น/กล้องจริง | `test/pose-fixtures` |
+| 2.5 | ~~Intent Bus + types + MouseAdapter~~ ✅ (#20) | `feature/input-intent-bus` |
+| 2.6 | ~~Gesture: cursor + dwell~~ ✅ + playground เบื้องต้น | `feature/gesture-cursor-dwell` |
+| 2.6a | ~~Stabilizer: ไม่ให้ skeleton กะพริบ~~ ✅ (#22) | `feature/perception-visibility-stability` |
+| 2.6b | ~~Spike เทียบโมเดล → RTMPose-x~~ ✅ (#23, ADR-0007) | `spike/pose-model-comparison` |
+| 2.6c | ~~Perception service (Python): กล้อง → RTMPose-x → WebSocket~~ ✅ (#25) | `feature/perception-server` |
+| 2.6d | ~~Worker source `server` + fallback MediaPipe + preview ใน overlay~~ ✅ | `feature/perception-server-client` |
+| 2.6e | ~~อัด fixtures ใหม่ด้วย RTMPose + replay test ชุดเดิม~~ ✅ (เกณฑ์ cursor แยกตามแหล่ง pose) | `test/rtmpose-fixtures` |
 | 2.7 | Gesture: raise, raise-both | `feature/gesture-raise` |
 | 2.8 | Gesture: throw | `feature/gesture-throw` |
 | 2.9 | Gesture: slap | `feature/gesture-slap` |
@@ -87,11 +92,13 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 | 2.12 | Gesture playground (หน้าทดสอบทุกท่า + แสดงค่า threshold สด) | `feature/debug-gesture-playground` |
 | 2.13 | จูน threshold ด้วย replay → อัปเดต `config/gestures.ts` | `chore/gesture-tuning` |
 
-**DoD**
-- [ ] Replay suite ผ่านทั้งหมด: ทุกท่า detect ถูก, negative fixtures = 0 intent
-- [ ] Dwell-select สำเร็จ ≥ 95% (ทดสอบคนจริง ≥ 5 คน)
-- [ ] Mouse mode ใช้แทนได้ทุกท่า
-- [ ] Tag `v0.2.0`
+**DoD** (ปิด Phase 2 เป็น milestone "ชี้ + ชี้ค้าง" — 2026-10-29)
+- [x] Replay suite ผ่านทั้งหมดสำหรับท่าที่มีแล้ว (cursor, dwell, PlayerLock, stability) บน 2 แหล่ง pose; ยืนนิ่ง / เกาหัว / กอดอก = 0 cursor
+- [ ] Dwell-select ≥ 95% กับคนจริง ≥ 5 คน — **ยังไม่ผ่าน**: 23/29 (79%) คนเดียว, จอโน้ตบุ๊ก ([research 010](research/010-dwell-failures.md)) → วัดซ้ำใน Phase 6
+- [~] Mouse mode: cursor, select, draw, zoom, swipe ✅ — ท่าอื่นทำพร้อมท่านั้น
+- [x] Tag `v0.2.0`
+
+**ย้ายไป Phase 4:** 2.7–2.11 (raise, throw, slap, draw, swipe/lean/zoom) — สร้างพร้อมฉากที่ใช้ท่านั้น จะได้จูนกับการใช้งานจริง; 2.13 จูนต่อ (หลุดเป้า 6/29)
 
 ---
 
@@ -167,6 +174,12 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 | 6.5 | ซ้อมติดตั้ง (dress rehearsal) บนเครื่อง/จอจริง |
 | 6.6 | คู่มือ staff 1 หน้า (`docs/STAFF_GUIDE.md`) + ป้าย privacy |
 | 6.7 | Release `v1.0.0` |
+
+### ท้ายโปรเจค (ตามที่เจ้าของงานกำหนด)
+
+| # | งาน | หมายเหตุ |
+|---|---|---|
+| 6.8 | ทดลองแยกท่ามือ **กำ = ไม่มี cursor / ชี้นิ้ว = cursor** | ต้องใช้กล้อง 1080p + โมเดลมือแบบตัดภาพ; วัดความแม่นก่อนใช้ (เกณฑ์ ≥ 95%) — ดู [research 010](research/010-dwell-failures.md), [006](research/006-pose-model-spike.md) |
 
 **DoD**
 - [ ] ผ่าน checklist ก่อนวันงาน (ARCHITECTURE §16.4) ครบทุกข้อ

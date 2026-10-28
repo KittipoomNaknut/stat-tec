@@ -62,15 +62,18 @@ Display (TV input lag)              ~10–30 ms   ← ตั้ง TV เป็�
 ## 2. ภาพรวมระบบ
 
 ```
-                       ┌────────────────────────────────────────────┐
- USB Camera 1080p@60 ─▶│ Capture   getUserMedia → VideoFrame         │
-                       └──────────────────┬─────────────────────────┘
-                                          │ transfer (zero-copy)
-                       ┌──────────────────▼─────────────────────────┐
+ ┌──────────────────── PERCEPTION SERVICE (Python, host, GPU) — ADR-0007 ─────┐
+ │ USB camera (MJPEG) → YOLOX-m (CUDA, every 7th frame)                        │
+ │                    → RTMPose-x (TensorRT FP16, every frame, ≤ 3 people)     │
+ │                    → COCO-17 → 33-point layout, visibility = clamp(score)   │
+ └──────────────────────────────────┬─────────────────────────────────────────┘
+                                    │ WebSocket 127.0.0.1:8765 (binary, raw detections)
+                       ┌────────────▼───────────────────────────────┐
                        │ PERCEPTION WORKER (Web Worker)             │
-                       │  MediaPipe PoseLandmarker (GPU, numPoses=3)│
+                       │  source: server (default)                  │
+                       │       or MediaPipe heavy (fallback, GPU)   │
                        │  → PlayerLock (เลือก/ล็อกผู้เล่น 1 คน)       │
-                       │  → OneEuroFilter (ต่อ landmark ต่อแกน)       │
+                       │  → Stabilizer + OneEuroFilter               │
                        │  → BodyNormalizer (หน่วย = ความกว้างไหล่)     │
                        └──────────────────┬─────────────────────────┘
                                           │ PoseFrame (postMessage)
@@ -109,7 +112,8 @@ Display (TV input lag)              ~10–30 ms   ← ตั้ง TV เป็�
 | Language | TypeScript (`strict: true`) | Data contract ชัด, refactor ปลอดภัย |
 | Build | Vite | Dev เร็ว, รองรับ Worker เป็น module |
 | Package manager | pnpm | เร็ว, lockfile เข้ม |
-| Pose | `@mediapipe/tasks-vision` — PoseLandmarker | แม่น, เร็วบน GPU, 33 จุด + world coords |
+| Pose (หลัก) | Perception service: RTMPose-x + YOLOX-m ผ่าน rtmlib, ONNX Runtime GPU + TensorRT FP16 | นิ่งกว่า MediaPipe ~6 เท่า, 7.5 ms/เฟรม ([ADR-0007](adr/0007-perception-service-rtmpose.md)) |
+| Pose (สำรอง) | `@mediapipe/tasks-vision` — PoseLandmarker heavy ในเบราว์เซอร์ | ใช้เมื่อ service ล่ม; ไม่ต้องติดตั้งอะไรเพิ่ม |
 | 3D | Three.js (WebGL2) | Ecosystem ใหญ่, เสถียร |
 | Post-processing | `postprocessing` (pmndrs) | Bloom/SMAA ประสิทธิภาพดีกว่า EffectComposer เดิม |
 | Animation | GSAP | Timeline แม่นยำ, ease สวย |
@@ -225,6 +229,8 @@ stat-tec/
 
 ### 5.1 Capture — `perception/camera.ts`
 
+> ตั้งแต่ [ADR-0007](adr/0007-perception-service-rtmpose.md): กล้องเป็นของ perception service (เปิดได้ทีละโปรแกรม) — ส่วนนี้ใช้เฉพาะ source `mediapipe` (fallback)
+
 - `getUserMedia({ video: { width: 1920, height: 1080, frameRate: { ideal: 60 } } })`
 - เลือกกล้องจาก `deviceId` ที่บันทึกใน config (กันเลือกกล้องผิดตัวเมื่อเสียบหลายตัว)
 - ใช้ `MediaStreamTrackProcessor` อ่าน `VideoFrame` แล้ว **transfer** ไป Worker (ไม่ copy)
@@ -234,6 +240,8 @@ stat-tec/
 - ติดตาม `track.onended` / `readyState` → แจ้ง Watchdog
 
 ### 5.2 Perception Worker — `perception/perception.worker.ts`
+
+> source `server`: worker เชื่อม WebSocket ไปที่ perception service แล้วป้อน raw detections เข้า `PoseTracker` ตัวเดียวกัน; source `mediapipe`: ตามรายละเอียดด้านล่าง
 
 - โหลด `PoseLandmarker` จาก `/models/` และ `/wasm/` ในเครื่อง
 - `runningMode: 'VIDEO'`, `delegate: 'GPU'`, `numPoses: 3`
@@ -260,6 +268,13 @@ LOST   → SEARCHING หลัง 1.5 s
 ```
 
 - **ห้ามสลับผู้เล่นขณะ LOCKED** แม้จะมีคนที่ score สูงกว่า
+- **ขนาดตัว (scale)** = max(ความกว้างไหล่, 0.65 × ความยาวลำตัว) — ตอนหันข้างไหล่ซ้อนกันแต่ลำตัวไม่หด (ใช้ทั้ง PlayerLock, ตัวกรอง และ BodyNormalizer)
+- **Detection ซ้ำ:** กรอบที่ซ้อนอยู่ในอีกกรอบ ≥ 85% = คนเดียวกัน เก็บกรอบที่ใหญ่กว่า (ครบกว่า)
+- **"ผี" ของผู้เล่น:** MediaPipe บางครั้งให้ fit เพี้ยนตัวเล็กของผู้เล่นเอง (หันข้าง, ชูสองแขน, ปัดมือเร็ว) — ถ้าลำตัวอยู่ในกรอบผู้เล่น (+1 SW) และเล็กกว่า 1/1.7 เท่า → ไม่นับเป็นคนอื่น, ไม่ใช้เป็นตำแหน่งผู้เล่น แต่นับว่าผู้เล่นยังอยู่
+- จับคู่ผู้เล่นข้ามเฟรมด้วยตำแหน่ง **และ** ขนาด (ต่างจากขนาดเฉลี่ยแบบ EMA ไม่เกิน 1.7×) — fit เพี้ยนเฟรมเดียวลากค่าอ้างอิงไม่ได้
+- ทั้งหมดนี้ยืนยันด้วย replay test จาก session ที่อัดจริง (`app/tests/replay/`)
+- **แนวทางวางปุ่ม (สำรอง, research 010):** จากภาพ 2 มิติ "แขนชี้ตรงเข้ากล้อง" กับ "มือหน้าอก" แยกกันแทบไม่ได้ — หลีกเลี่ยงการวางปุ่มที่ *ต้องกด* ตรงตำแหน่งที่ผู้เล่นต้องชี้เข้ากล้อง (หน้าตัว/ใต้กล้อง); ปุ่มสำคัญวางขอบบนและสองข้างก่อน
+- **ท่าชูสองแขนทำงานเหมือนท่าชี้** (แขนตรง ยกสูง) → ฉากที่มีทั้งปุ่มและท่าชูแขนต้องปิด cursor ระหว่างช่วงชูแขน (`activeGestures`)
 - ตรวจ "พื้นที่ยืน": torso ต้องอยู่ในช่วง x ∈ [0.25, 0.75] ของเฟรมจึงเป็น candidate ได้
 
 ### 5.4 Filtering — `perception/one-euro.ts`
@@ -383,8 +398,8 @@ interface SceneResult {
 | ท่า | Intent | เงื่อนไขตรวจจับ | Hysteresis / Cooldown | ใช้ในฉาก |
 |---|---|---|---|---|
 | **ยืนเข้าจุด** | `presence` | PlayerLock = LOCKED | lost > 300 ms, leave > 8 s | ทุกฉาก |
-| **ชี้ (cursor)** | `cursor` | มือข้างที่สูงกว่า ภายใน "comfort box" x ∈ [−1.8, +1.8] SW, y ∈ [−2.5 (เหนือหัว), +1.5 (ระดับเอว)] SW → map เป็นจอ | แสดงเมื่อข้อมือสูงกว่าเอว; สลับมือเมื่ออีกข้างสูงกว่า > 0.3 SW | ทุกฉาก |
-| **ชี้ค้าง (dwell)** | `dwell` → `select` | cursor อยู่ในรัศมีเป้า ต่อเนื่อง 1200 ms | หลุดเป้า > 150 ms → reset; cooldown 800 ms | เมนู, เลือกกลุ่ม, ข้าม |
+| **ชี้ (cursor)** | `cursor` | **เริ่ม:** ข้อมือสูงกว่าสะโพก ≥ 0.8 SW, แขนเหยียด (ข้อมือ–ไหล่) ≥ 0.9 SW **และแขนตรง** (ไหล่–ข้อมือ ÷ (ต้นแขน+ปลายแขน)) ≥ 0.8 (RTMPose) / 0.7 (MediaPipe) ต่อเนื่อง 100 ms · **ค้าง:** สูง ≥ 0.3 SW, ตรง ≥ 0.5, และเหยียด ≥ 0.6 SW **หรือ** แขนดูสั้นแต่ยังตรง ≥ 0.65 (ชี้เข้ากล้อง) · แปลงตำแหน่งข้อมือใน**พื้นที่ข้างตัว** x ∈ [0.4, 1.7] SW ออกด้านข้าง, y ∈ [−1.2, 0.3] SW (มือซ้ายสะท้อน) เป็นจอ · ชี้อยู่แล้ว มือสูงกว่าสะโพก ≥ 1.0 SW = ชี้ต่อเสมอ | เริ่มยาก–ค้างง่าย; กอดอก/เกาหัวถูกกันด้วย "แขนตรง" (กอดอกใน RTMPose ระยะถึง 1.1 SW แต่ศอกงอ); เกณฑ์แยกตามแหล่ง pose (`cursorConfigFor`); ไม่สลับมือระหว่างชี้ — ค่ามาจาก session ที่อัดจริงทั้ง 2 แหล่ง; พื้นที่ข้างตัวแก้ปุ่มหน้าตัวกดไม่ได้ (research 010) | ทุกฉาก |
+| **ชี้ค้าง (dwell)** | `dwell` → `select` | cursor อยู่บนเป้า (+0.02 padding) ต่อเนื่อง 1200 ms | หลุดเป้า ≤ 150 ms ไม่นับ; เกินนั้น reset (ส่ง progress 0); เป้าเดิม cooldown 800 ms | เมนู, เลือกกลุ่ม, ข้าม |
 | **ปัด** | `swipe` | ข้อมือเคลื่อนแนวนอน > 1.2 SW ภายใน 400 ms, ความเร็วสูงสุด > 2.5 SW/s | cooldown 600 ms | สำรอง/ฉากเสริม |
 | **ยกมือ** | `raise` | level = ตำแหน่ง y ข้อมือ map จากเอว (0) → เหนือหัว 0.5 SW (1) | smoothing เพิ่ม + dead zone 0.05 | C ราคา, welcome |
 | **ยกสองแขน** | `raise both` | ข้อมือทั้งสอง สูงกว่าจมูก > 0.3 SW ต่อเนื่อง 300 ms | ออกเมื่อต่ำกว่าจมูก | ยืนยัน/ฉลอง |
@@ -627,7 +642,7 @@ synth/   (จำลอง, seed) ─┼─▶ clean/transform (polars) ─▶ mo
 | `F3` | แสดง skeleton ดิบ (ก่อนกรอง) ซ้อนบน debug overlay |
 | `F5` | กลับ attract ทันที |
 | `F8` | Pose recorder (dev build เท่านั้น) |
-| `F9` | Export สถิติวันนี้เป็น JSON |
+| `F9` | Export สถิติวันนี้เป็น JSON · ใน `?playground`: ดาวน์โหลดผลการกดปุ่ม + ท่าที่อัด (research 010) |
 | `F10` / `F11` | ลด / เพิ่มเสียง |
 
 ---
@@ -665,6 +680,7 @@ services:
 ```
 
 - **เบราว์เซอร์ kiosk รันบน host โดยตรง** (กล้อง + GPU ไม่ผ่าน container)
+- **Perception service รันบน host โดยตรง** (`uv` + systemd user unit, `Restart=always`) — ต้องใช้กล้องและ GPU ([ADR-0007](adr/0007-perception-service-rtmpose.md))
 - Bind เฉพาะ `127.0.0.1` — ไม่เปิดพอร์ตออกเครือข่าย
 
 ### 16.2 Kiosk — `scripts/kiosk.sh`
@@ -721,3 +737,5 @@ google-chrome \
 | R5 | Latency รวมเกิน 100 ms | รู้สึกหน่วง | กล้อง 60fps, TV game mode, วัดจริง | 1 |
 | R6 | ลิขสิทธิ์ข้อมูลจริง/เสียง | ใช้ไม่ได้ | ตรวจ license ก่อนใช้, บันทึกใน manifest | 4, 5 |
 | R7 | Font ไทยใน kiosk offline | ตัวอักษรเพี้ยน | self-host ฟอนต์ทั้งหมด | 3 |
+| R8 | Perception service ล่มหน้างาน | ไม่มี skeleton | systemd restart + fallback MediaPipe อัตโนมัติ + health ใน overlay | 2, 6 |
+| R9 | RTMPose ให้ score สูงกับข้อมือที่ซ่อนอยู่ (0.45–0.85) | cursor/ท่าทางจากมือที่ "เดา" | gestures พึ่งกฎเชิงท่าทาง ไม่ใช่ score; ยืนยันด้วย replay จาก session RTMPose | 2 |

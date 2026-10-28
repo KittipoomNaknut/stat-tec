@@ -3,7 +3,7 @@
 ประสบการณ์ **Data Science แบบควบคุมด้วยร่างกาย** สำหรับงาน Open House
 ผู้เล่นยืนหน้าจอใหญ่ กลายเป็น CEO และตัดสินใจทางธุรกิจด้วยข้อมูล ผ่านท่าทาง — ไม่มีเมาส์ ไม่มีคีย์บอร์ด
 
-> สถานะ: ✅ Phase 1 (Perception) เสร็จ — `v0.1.0` · 🚧 ต่อไป Phase 2 (Gesture & Input)
+> สถานะ: ✅ Phase 2 (คุมจอด้วยร่างกาย: ชี้ + ชี้ค้าง) — `v0.2.0` · 🚧 ต่อไป Phase 3 (Core Experience)
 
 ## Highlights
 
@@ -26,16 +26,26 @@
 ## Quick start
 
 ```bash
+# 1. Pose service on the host GPU (owns the camera) — see perception-server/README.md
+cd perception-server && uv sync --extra gpu && uv run --extra gpu stat-tec-perception
+
+# 2. App
 docker compose --profile dev up dev            # dev server → http://127.0.0.1:5173
 docker compose --profile data run --rm pipeline # build scene data → app/public/data
 docker compose up -d web                       # production → http://127.0.0.1:8080
 ./scripts/kiosk.sh                             # Chromium kiosk (Phase 6)
 ```
 
-Without Docker: `cd app && pnpm install && pnpm dev` / `cd data-pipeline && uv sync && uv run stat-tec-pipeline build`
+Without the service the app falls back to MediaPipe in the browser automatically
+(`?perception=mediapipe` forces it). Without Docker: `cd app && pnpm install && pnpm dev` / `cd data-pipeline && uv sync && uv run stat-tec-pipeline build`
 
 ## Requirements
 
-- Linux + NVIDIA GPU (พัฒนาบน RTX 4060 Laptop)
+- Linux + NVIDIA GPU + driver (พัฒนาบน RTX 4060 Laptop) — สำหรับ perception service
 - USB webcam 1080p@60
 - Docker + Docker Compose, Chromium
+
+## License
+
+Copyright © 2026 Kittipoom. **All rights reserved** — viewable only; see [LICENSE](LICENSE).
+Third-party components keep their own licenses: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

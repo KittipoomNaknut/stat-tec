@@ -1,6 +1,5 @@
 /// <reference lib="webworker" />
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
-import { OneEuroFilterBank } from './one-euro';
 import {
   LANDMARK_COUNT,
   LANDMARK_STRIDE,
@@ -8,20 +7,28 @@ import {
   type PerceptionOptions,
   type ToWorker,
 } from './protocol';
+import {
+  binaryKind,
+  decodeDetections,
+  DETECTIONS_MAGIC,
+  parseText,
+  PREVIEW_MAGIC,
+  previewJpeg,
+} from './server-protocol';
+import { PoseTracker } from './tracker';
 
 declare const self: DedicatedWorkerGlobalScope;
 
-const LEFT_SHOULDER = 11;
-const RIGHT_SHOULDER = 12;
-/** A gap this long means the player left; start the filter fresh. */
-const FILTER_RESET_GAP_MS = 500;
+/** Use MediaPipe instead if the perception service has not said hello by then. */
+const SERVER_CONNECT_TIMEOUT_MS = 3000;
+const SERVER_RECONNECT_MS = 2000;
 
 let landmarker: PoseLandmarker | null = null;
 let reader: ReadableStreamDefaultReader<VideoFrame> | null = null;
 let frameId = 0;
-/** One bank per axis (x, y, z), each with one channel per landmark. */
-let filters: OneEuroFilterBank[] = [];
-let lastPlayerAt = -Infinity;
+let tracker = new PoseTracker(null);
+let socket: WebSocket | null = null;
+let previewWanted = false;
 
 self.onmessage = (event: MessageEvent<ToWorker>) => {
   const message = event.data;
@@ -31,6 +38,10 @@ self.onmessage = (event: MessageEvent<ToWorker>) => {
       break;
     case 'frames':
       consume(message.stream).catch(fail);
+      break;
+    case 'preview':
+      previewWanted = message.enabled;
+      sendPreviewWish();
       break;
   }
 };
@@ -44,6 +55,96 @@ function fail(error: unknown): void {
 }
 
 async function init(options: PerceptionOptions): Promise<void> {
+  tracker = new PoseTracker(options.filter);
+  if (options.source === 'server') {
+    try {
+      const model = await connectServer(options.serverUrl);
+      post({ type: 'ready', options, model });
+      return;
+    } catch (error) {
+      console.warn('[perception] service unavailable, falling back to MediaPipe:', error);
+    }
+  }
+  await initMediaPipe({ ...options, source: 'mediapipe' });
+}
+
+// ---------- Source: perception service (ADR-0007) ----------
+
+/**
+ * Resolves with the service's model name once it says hello, or rejects if it does not within
+ * SERVER_CONNECT_TIMEOUT_MS. After a successful hello, a dropped connection retries forever.
+ */
+function connectServer(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let ready = false;
+    const ws = new WebSocket(url);
+    ws.binaryType = 'arraybuffer';
+    const timeout = setTimeout(() => {
+      ws.close();
+    }, SERVER_CONNECT_TIMEOUT_MS);
+
+    ws.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {
+      const data = event.data;
+      if (typeof data === 'string') {
+        const text = parseText(data);
+        if (text?.type === 'hello' && !ready) {
+          ready = true;
+          clearTimeout(timeout);
+          socket = ws;
+          sendPreviewWish();
+          post({ type: 'camera', camera: text.camera });
+          post({ type: 'server', connected: true, fps: 0, inferenceMs: 0 });
+          resolve(text.model);
+        } else if (text?.type === 'status') {
+          post({ type: 'server', connected: true, fps: text.fps, inferenceMs: text.inferenceMs });
+        }
+        return;
+      }
+      const kind = binaryKind(data);
+      if (kind === DETECTIONS_MAGIC) {
+        onServerDetections(data);
+      } else if (kind === PREVIEW_MAGIC) {
+        const jpeg = previewJpeg(data);
+        post({ type: 'preview', jpeg }, [jpeg]);
+      }
+    };
+    ws.onclose = () => {
+      clearTimeout(timeout);
+      if (socket === ws) socket = null;
+      if (!ready) {
+        reject(new Error(`no hello from ${url}`));
+        return;
+      }
+      post({ type: 'server', connected: false, fps: 0, inferenceMs: 0 });
+      reconnectLater(url);
+    };
+  });
+}
+
+function reconnectLater(url: string): void {
+  setTimeout(() => {
+    connectServer(url).catch(() => {
+      reconnectLater(url);
+    });
+  }, SERVER_RECONNECT_MS);
+}
+
+function sendPreviewWish(): void {
+  if (socket?.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: 'preview', enabled: previewWanted }));
+  }
+}
+
+function onServerDetections(message: ArrayBuffer): void {
+  const d = decodeDetections(message);
+  // Capture time on this worker's clock, so the filters see the real interval between frames.
+  const tMs = d.capturedAt - performance.timeOrigin;
+  publish(d.landmarks, d.people, d.width, d.height, d.capturedAt, d.inferenceMs, tMs);
+}
+
+// ---------- Source: MediaPipe in the browser (fallback) ----------
+
+async function initMediaPipe(options: PerceptionOptions): Promise<void> {
   // Absolute URLs: Vite's dev server would otherwise rewrite the loader's dynamic import.
   const base = new URL(import.meta.env.BASE_URL, self.location.origin).href;
   // Module build of the WASM loader: module workers cannot use importScripts.
@@ -67,9 +168,11 @@ async function init(options: PerceptionOptions): Promise<void> {
     delegate = 'CPU';
     landmarker = await create(delegate);
   }
-  const filter = options.filter;
-  filters = filter ? [0, 1, 2].map(() => new OneEuroFilterBank(LANDMARK_COUNT, filter)) : [];
-  post({ type: 'ready', options: { ...options, delegate } });
+  post({
+    type: 'ready',
+    options: { ...options, delegate },
+    model: `mediapipe ${options.model}/${delegate}`,
+  });
 }
 
 /** Reads frames as they arrive; the track processor drops frames while inference is busy. */
@@ -105,9 +208,31 @@ function detect(model: PoseLandmarker, frame: VideoFrame): void {
       landmarks[i++] = p.visibility;
     }
   }
+  publish(
+    landmarks,
+    poses.length,
+    frame.displayWidth,
+    frame.displayHeight,
+    receivedAt,
+    inferenceMs,
+    start,
+  );
+}
 
-  const player = poses.length > 0 ? filterPlayer(landmarks, start, frame) : null;
+// ---------- Shared ----------
 
+/** Runs the tracker on raw detections from either source and posts the result. */
+function publish(
+  landmarks: Float32Array,
+  poseCount: number,
+  width: number,
+  height: number,
+  receivedAt: number,
+  inferenceMs: number,
+  tMs: number,
+): void {
+  const tracked = tracker.process(landmarks, poseCount, width, height, tMs);
+  const { player, body, shown } = tracked;
   post(
     {
       type: 'detections',
@@ -115,40 +240,19 @@ function detect(model: PoseLandmarker, frame: VideoFrame): void {
         frameId: frameId++,
         receivedAt,
         inferenceMs,
-        width: frame.displayWidth,
-        height: frame.displayHeight,
-        poseCount: poses.length,
+        width,
+        height,
+        poseCount,
         landmarks,
+        lock: tracked.state,
+        playerId: tracked.playerId,
+        playerIndex: tracked.playerIndex,
+        otherIndices: tracked.otherIndices,
         player,
+        body,
+        playerShown: shown,
       },
     },
-    player ? [landmarks.buffer, player.buffer] : [landmarks.buffer],
+    [landmarks, player, body, shown].flatMap((a) => (a ? [a.buffer] : [])),
   );
-}
-
-/** Smoothed copy of the first pose. Speeds are measured in shoulder widths per second. */
-function filterPlayer(landmarks: Float32Array, tMs: number, frame: VideoFrame): Float32Array {
-  const player = landmarks.slice(0, LANDMARK_COUNT * LANDMARK_STRIDE);
-  if (filters.length === 0) return player;
-  if (tMs - lastPlayerAt > FILTER_RESET_GAP_MS) {
-    for (const f of filters) f.reset();
-  }
-  lastPlayerAt = tMs;
-
-  const w = frame.displayWidth;
-  const h = frame.displayHeight;
-  const at = (i: number, axis: number) => player[i * LANDMARK_STRIDE + axis] ?? 0;
-  const shoulderPx = Math.max(
-    Math.hypot(
-      (at(LEFT_SHOULDER, 0) - at(RIGHT_SHOULDER, 0)) * w,
-      (at(LEFT_SHOULDER, 1) - at(RIGHT_SHOULDER, 1)) * h,
-    ),
-    1,
-  );
-  // x and z are normalized by width, y by height.
-  const scales = [shoulderPx / w, shoulderPx / h, shoulderPx / w];
-  filters.forEach((f, axis) => {
-    f.filter(player, tMs, LANDMARK_STRIDE, axis, scales[axis]);
-  });
-  return player;
 }
