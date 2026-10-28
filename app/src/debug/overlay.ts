@@ -74,6 +74,10 @@ export class DebugOverlay {
     });
   }
 
+  setVisible(visible: boolean): void {
+    this.#root.hidden = !visible;
+  }
+
   setCameraStatus(status: CameraStatus): void {
     this.#camera.status = status;
   }

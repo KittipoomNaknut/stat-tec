@@ -1,0 +1,48 @@
+.playground {
+  position: fixed;
+  inset: 8vh 6vw 14vh;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 4vh 4vw;
+}
+
+.playground-button {
+  display: grid;
+  place-items: center;
+  font-size: var(--size-headline);
+  color: var(--text);
+  background: var(--panel);
+  border: 2px solid color-mix(in srgb, var(--primary) 30%, transparent);
+  border-radius: 3vh;
+  backdrop-filter: blur(12px);
+  transition:
+    border-color 200ms,
+    transform 200ms;
+}
+
+.playground-button.hover {
+  border-color: var(--primary);
+  transform: scale(1.03);
+}
+
+.playground-button.selected {
+  animation: playground-flash 600ms ease-out;
+}
+
+@keyframes playground-flash {
+  from {
+    background: color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+}
+
+.playground-status {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 4vh;
+  margin: 0;
+  text-align: center;
+  font-size: 3vh;
+  color: var(--text-dim);
+}

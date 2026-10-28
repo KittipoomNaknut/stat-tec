@@ -1,0 +1,40 @@
+.hud-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 900;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.hud-cursor[hidden] {
+  display: none;
+}
+
+.hud-cursor svg {
+  position: absolute;
+  width: 9vh;
+  height: 9vh;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  overflow: visible;
+  filter: drop-shadow(0 0 1.2vh color-mix(in srgb, var(--primary) 70%, transparent));
+}
+
+.hud-cursor-dot {
+  fill: var(--primary);
+}
+
+.hud-cursor-track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--primary) 30%, transparent);
+  stroke-width: 3;
+}
+
+.hud-cursor-progress {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+}

@@ -3,7 +3,12 @@ import { perceptionOptionsFromUrl } from './config/perception';
 import { startLoop } from './core/loop';
 import { BenchmarkView } from './debug/benchmark';
 import { DebugOverlay } from './debug/overlay';
+import { Playground } from './debug/playground';
 import { RecorderPanel } from './debug/recorder';
+import { GestureEngine } from './gestures/engine';
+import { IntentBus } from './input/intent-bus';
+import { MouseAdapter } from './input/mouse-adapter';
+import { TargetRegistry } from './input/targets';
 import { Camera, type CameraSettings } from './perception/camera';
 import { isPerceptionSupported, PerceptionClient } from './perception/client';
 import type { PerceptionOptions, PoseDetections } from './perception/protocol';
@@ -31,8 +36,30 @@ if (params.has('bench')) {
       recorder.setCamera(settings);
     },
   });
+} else if (params.has('playground')) {
+  startPlayground(root);
 } else {
   startOverlay(root);
+}
+
+function startPlayground(parent: HTMLElement): void {
+  const bus = new IntentBus();
+  const targets = new TargetRegistry();
+  const playground = new Playground(parent, bus, targets);
+  const engine = new GestureEngine(bus, targets);
+  const mouse = new MouseAdapter(window, bus, targets);
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'F2') return;
+    e.preventDefault();
+    mouse.enabled = !mouse.enabled;
+    engine.enabled = !mouse.enabled;
+    playground.setMode(mouse.enabled ? 'mouse' : 'body');
+  });
+  startOverlay(parent, {
+    onDetections: (detections) => {
+      engine.update(detections, performance.now());
+    },
+  }).setVisible(false);
 }
 
 function startBenchmark(parent: HTMLElement): void {
@@ -62,14 +89,14 @@ interface OverlayListeners {
   onCamera?: (settings: CameraSettings) => void;
 }
 
-function startOverlay(parent: HTMLElement, listeners: OverlayListeners = {}): void {
+function startOverlay(parent: HTMLElement, listeners: OverlayListeners = {}): DebugOverlay {
   const overlay = new DebugOverlay(parent);
   startLoop((dt, now) => {
     overlay.update(dt, now);
   });
   if (!isPerceptionSupported()) {
     overlay.setError(UNSUPPORTED);
-    return;
+    return overlay;
   }
 
   const perception = new PerceptionClient(perceptionOptionsFromUrl(location.search), {
@@ -104,4 +131,5 @@ function startOverlay(parent: HTMLElement, listeners: OverlayListeners = {}): vo
     },
     cameraHint,
   ).start();
+  return overlay;
 }
