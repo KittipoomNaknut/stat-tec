@@ -20,8 +20,13 @@ export const playerLockConfig = {
   trackRadius: 0.15,
   /** Wider radius when matching a lost player who comes back. */
   returnRadius: 0.25,
-  /** Two detections whose torsos are closer than this × shoulder width are one person. */
-  duplicateRadiusSW: 0.6,
-  /** …and only if their shoulder widths differ by less than this ratio (else it is a second person in front). */
-  duplicateMaxSizeRatio: 1.4,
+  /**
+   * Two detections are one person when the smaller one's box lies at least this much inside
+   * the larger. MediaPipe sometimes adds a degenerate second fit of the same person.
+   */
+  duplicateContainment: 0.85,
+  /** A match may differ from the player's (smoothed) body scale by at most this factor. */
+  maxScaleChange: 1.7,
+  /** Per-match weight of the newest scale in the player's smoothed scale (~0.3 s at 30 fps). */
+  scaleSmoothing: 0.1,
 } as const;

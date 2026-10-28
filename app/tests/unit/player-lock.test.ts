@@ -35,13 +35,28 @@ describe('PlayerLock', () => {
     expect(result.state).toBe('searching');
   });
 
-  it('merges two detections of the same person', () => {
+  it('merges a degenerate second fit of the same person, keeping the complete one', () => {
     const lock = new PlayerLock();
-    const twin = { ...CENTER, cx: CENTER.cx + 0.02, visibility: 0.8 };
-    const { result } = run(lock, [twin, CENTER], 0, 1000);
+    // As seen in recordings: a higher-confidence fit with collapsed shoulders inside the real one.
+    const ghost = { ...CENTER, sw: 0.05, visibility: 1 };
+    const { result } = run(lock, [ghost, CENTER], 0, 1000);
     expect(result.state).toBe('locked');
-    expect(result.playerIndex).toBe(1); // the more confident detection wins
+    expect(result.playerIndex).toBe(1);
     expect(result.otherIndices).toEqual([]);
+  });
+
+  it('does not count a ghost of the player as someone else when the real fit is missing', () => {
+    const lock = new PlayerLock();
+    const { t } = run(lock, [CENTER], 0, 1000);
+    const { result } = run(lock, [{ ...CENTER, sw: 0.03, visibility: 1 }], t, 0);
+    expect(result.otherIndices).toEqual([]);
+  });
+
+  it('keeps tracking a player who turns sideways', () => {
+    const lock = new PlayerLock();
+    const { t } = run(lock, [CENTER], 0, 1000);
+    const { result } = run(lock, [{ ...CENTER, shoulderSpread: 0.1 }], t, 500);
+    expect(result).toMatchObject({ state: 'locked', playerId: 1, playerIndex: 0 });
   });
 
   it('keeps the player when someone better placed walks in', () => {

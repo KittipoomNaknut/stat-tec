@@ -31,3 +31,29 @@ export function shoulderWidthPx(
     ((data[l + 1] ?? 0) - (data[r + 1] ?? 0)) * height,
   );
 }
+
+/**
+ * Shoulder width ≈ this × torso length (shoulder midpoint to hip midpoint) for an upright adult
+ * facing the camera — measured 0.64 on the first recorded session.
+ */
+export const TORSO_TO_SHOULDER_WIDTH = 0.65;
+
+/**
+ * Body size in source pixels, in shoulder-width units but robust to turning sideways: shoulders
+ * overlap when a person turns, the torso does not. Larger of shoulder width and scaled torso length.
+ */
+export function bodyScalePx(data: Float32Array, width: number, height: number, pose = 0): number {
+  const base = pose * LANDMARK_COUNT * LANDMARK_STRIDE;
+  const at = (i: number, axis: number) => data[base + i * LANDMARK_STRIDE + axis] ?? 0;
+  const midX = (a: number, b: number) => (at(a, 0) + at(b, 0)) / 2;
+  const midY = (a: number, b: number) => (at(a, 1) + at(b, 1)) / 2;
+  const torso = Math.hypot(
+    (midX(Landmark.LEFT_SHOULDER, Landmark.RIGHT_SHOULDER) -
+      midX(Landmark.LEFT_HIP, Landmark.RIGHT_HIP)) *
+      width,
+    (midY(Landmark.LEFT_SHOULDER, Landmark.RIGHT_SHOULDER) -
+      midY(Landmark.LEFT_HIP, Landmark.RIGHT_HIP)) *
+      height,
+  );
+  return Math.max(shoulderWidthPx(data, width, height, pose), TORSO_TO_SHOULDER_WIDTH * torso);
+}

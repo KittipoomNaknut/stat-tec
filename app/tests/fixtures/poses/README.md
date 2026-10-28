@@ -19,5 +19,6 @@ Clips and instructions live in `src/debug/record-script.ts`.
 
 ## Sessions
 
-| File | Person | Distance | Light | Camera | Notes |
-| ---- | ------ | -------- | ----- | ------ | ----- |
+| File                                       | Person                  | Distance | Light           | Camera                                                         | Notes                                                                                                      |
+| ------------------------------------------ | ----------------------- | -------- | --------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `2026-10-28-adult1-2m-indoor.pose.json.gz` | adult 1 (project owner) | ~1.5–2 m | indoor, evening | built-in HD Webcam 720p30, high angle (head sometimes cut off) | All 12 clips. Revealed ghost fits (turning, both arms up, swipe) and shoulder-width collapse when turning. |
