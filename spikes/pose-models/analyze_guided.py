@@ -104,6 +104,11 @@ def summarize(path: Path) -> None:
             f"{(1 - raw_mask[move][:, WATCHED].mean()) * 100:>13.0f}%{seen_hidden:>18.0f}%"
         )
 
+        key = f"{name}__fp16_diff"
+        if key in data and len(data[key]):
+            d = data[key]
+            print(f"{'  FP16 vs FP32':<20}{'':>20}  mean {d.mean():.2f} px · max {d.max():.2f} px over {len(d)} frames")
+
         tips = data[f"{name}__tips"]
         if not np.isnan(tips).all():
             tip_scale = scale[:, None]

@@ -18,7 +18,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from compare_live import BONES, MediaPipeModel, RtmModel
+from compare_live import BONES, COCO_INDEX, MediaPipeModel, RtmModel, open_camera
 
 HERE = Path(__file__).resolve().parent
 PHASES = [
@@ -26,6 +26,8 @@ PHASES = [
     ("move", 12, "MOVE - point around, raise arms, turn a little"),
     ("hidden", 6, "HIDE BOTH HANDS BEHIND YOUR BACK"),
 ]
+# RTM models only: same person box through the FP16 (TensorRT) and FP32 (CUDA) pose models.
+FP16_PHASE = ("fp16", 5, "STAND IN VIEW, move slowly (accuracy check)")
 COUNTDOWN_S = 3
 # COCO-WholeBody index fingertips (left hand 91-111, right hand 112-132; tip = base + 8)
 RTMW_FINGERTIPS = [99, 120]
@@ -41,8 +43,6 @@ class RtmwWithFingers(RtmModel):
             return nan, np.zeros(9), np.full((2, 2), np.nan), np.zeros(2)
         areas = [np.ptp(k[:17, 0]) * np.ptp(k[:17, 1]) for k in keypoints]
         p = int(np.argmax(areas))
-        from compare_live import COCO_INDEX
-
         return (
             keypoints[p][COCO_INDEX].astype(float),
             scores[p][COCO_INDEX].astype(float),
@@ -76,12 +76,7 @@ def main() -> None:
     parser.add_argument("--models", default="mediapipe,rtmpose:performance,rtmw:performance")
     args = parser.parse_args()
 
-    cap = cv2.VideoCapture(args.camera, cv2.CAP_V4L2)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    cap.set(cv2.CAP_PROP_FPS, 30)
-    if not cap.isOpened():
-        raise SystemExit("Cannot open camera — close the browser tab using it first.")
+    cap = open_camera(args.camera)
     window = "pose model benchmark - q to quit"
 
     saved: dict[str, np.ndarray] = {}
@@ -102,10 +97,12 @@ def main() -> None:
         threshold = 0.5 if name == "mediapipe" else 0.3
 
         rows = {k: [] for k in ("t", "phase", "xy", "score", "ms", "tips", "tip_score")}
+        fp16_diff: list[np.ndarray] = []
+        phases = PHASES + [FP16_PHASE] if isinstance(model, RtmModel) else PHASES
         start = None
         schedule = []
         t_acc = 0.0
-        for phase, seconds, text in PHASES:
+        for phase, seconds, text in phases:
             schedule.append((t_acc, t_acc + COUNTDOWN_S, None, f"Next: {text}"))
             t_acc += COUNTDOWN_S
             schedule.append((t_acc, t_acc + seconds, phase, text))
@@ -122,6 +119,18 @@ def main() -> None:
             if current is None:
                 break
             _, end, phase, text = current
+
+            if phase == "fp16" and isinstance(model, RtmModel):
+                boxes = model._model.det_model(frame)[:1]
+                if len(boxes):
+                    k16, _ = model._model.pose_model(frame, bboxes=boxes)
+                    k32, _ = model.reference(frame, bboxes=boxes)
+                    fp16_diff.append(np.linalg.norm(k16[0][COCO_INDEX] - k32[0][COCO_INDEX], axis=1))
+                lines = [f"{name} ({n}/{len(names)})", f"{text}   {end - elapsed:4.1f}s"]
+                cv2.imshow(window, banner(cv2.flip(frame, 1), lines))
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    raise SystemExit("Stopped.")
+                continue
 
             t0 = time.perf_counter()
             if isinstance(model, RtmwWithFingers):
@@ -149,6 +158,7 @@ def main() -> None:
 
         for key, values in rows.items():
             saved[f"{name}__{key}"] = np.array(values)
+        saved[f"{name}__fp16_diff"] = np.array(fp16_diff).reshape(-1, 9)
         del model
 
     cap.release()

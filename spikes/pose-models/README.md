@@ -33,5 +33,21 @@ uv run analyze_guided.py results/guided-<timestamp>.npz
 MediaPipe's Python package has no GPU delegate on Linux, so its timing here is CPU; use the
 browser benchmark (`/?bench`, ~17 ms on GPU) for MediaPipe speed.
 
+### GPU setup (`gpu.py`) — measured, RTX 4060 Laptop
+
+| Part | CUDA | TensorRT FP16 |
+|---|---|---|
+| RTMPose-x pose | 11.5 ms | **3.9 ms** |
+| RTMW-x pose | 10.8 ms | **4.5 ms** |
+| YOLOX-m detector | 22.2 ms | fails (in-graph NMS, TopK > 3840) |
+| YOLOX-x detector | 51.8 ms | fails |
+
+So: pose on TensorRT, detector YOLOX-m on CUDA every 7th frame → live loop 30.4 fps,
+8.2 ms avg / 29.7 ms p95 / 31 ms max. FP16 vs FP32 keypoints differ by 0.55 px mean (small
+sample; `guided.py` re-checks it). The first TensorRT run builds engines into
+`results/trt-cache/` (takes a minute).
+
+Camera must be opened as MJPEG: uncompressed YUYV at 720p only delivers 10 fps.
+
 Caveat: every model processes every captured frame in turn, so all of them see the same
 (lower) frame rate. Fair for comparing accuracy and stability, not for absolute fps.

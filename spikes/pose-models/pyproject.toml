@@ -11,6 +11,7 @@ dependencies = [
     "onnxruntime-gpu[cuda,cudnn]==1.31.0",
     "opencv-python==5.0.0.93",
     "rtmlib==0.0.16",
+    "tensorrt-cu13==10.16.1.11",
 ]
 
 [project.scripts]

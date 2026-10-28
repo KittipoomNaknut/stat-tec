@@ -71,22 +71,36 @@ class MediaPipeModel:
 
 
 class RtmModel:
-    """`rtmpose:<mode>` (COCO-17 body) or `rtmw:<mode>` (COCO-WholeBody 133), mode = performance|balanced|lightweight."""
+    """
+    `rtmpose:<mode>` (COCO-17 body) or `rtmw:<mode>` (COCO-WholeBody 133), mode = performance|balanced.
+
+    Pose model on TensorRT FP16 (3.9 ms vs 11.5 ms on CUDA for RTMPose-x). The person detector
+    stays on CUDA — TensorRT cannot build YOLOX's in-graph NMS (TopK > 3840) — and uses YOLOX-m
+    (22 ms) instead of YOLOX-x (52 ms); it only runs every 7th frame.
+    """
 
     def __init__(self, name: str) -> None:
-        import onnxruntime
-        from rtmlib import Body, PoseTracker, Wholebody
+        from rtmlib import YOLOX, Body, PoseTracker, RTMPose, Wholebody
 
-        # Load CUDA/cuDNN from the nvidia-* wheels; without this ORT silently falls back to CPU.
-        onnxruntime.preload_dlls()
+        from gpu import enable_gpu
+
+        enable_gpu()
         self.name = name
         family, _, mode = name.partition(":")
         solution = Wholebody if family == "rtmw" else Body
-        # Person detection every 7th frame; keypoints every frame from the tracked box (as in production).
-        self._model = PoseTracker(
-            solution, det_frequency=7, tracking=False, mode=mode or "performance",
-            backend="onnxruntime", device="cuda",
-        )
+        pose = solution.MODE[mode or "performance"]
+        det = Body.MODE["balanced"]
+        # Built with the cheapest mode, then its detector and pose model are swapped below.
+        self._model = PoseTracker(solution, det_frequency=7, tracking=False, mode="lightweight",
+                                  backend="onnxruntime", device="cuda")
+        self._model.det_model = YOLOX(det["det"], model_input_size=det["det_input_size"],
+                                      backend="onnxruntime", device="cuda")
+        self._model.det_mode = self._model.det_model.det_mode
+        self._model.pose_model = RTMPose(pose["pose"], model_input_size=pose["pose_input_size"],
+                                         backend="onnxruntime", device="tensorrt")
+        # FP32 twin of the pose model, used only to check FP16 accuracy (not timed).
+        self.reference = RTMPose(pose["pose"], model_input_size=pose["pose_input_size"],
+                                 backend="onnxruntime", device="cuda")
 
     def __call__(self, frame: np.ndarray, _t_ms: int) -> tuple[np.ndarray, np.ndarray]:
         keypoints, scores = self._model(frame)
@@ -96,6 +110,18 @@ class RtmModel:
         areas = [np.ptp(k[:17, 0]) * np.ptp(k[:17, 1]) for k in keypoints]
         p = int(np.argmax(areas))
         return keypoints[p][COCO_INDEX].astype(float), scores[p][COCO_INDEX].astype(float)
+
+
+def open_camera(index: int) -> cv2.VideoCapture:
+    """720p30 webcam. MJPEG is required: uncompressed YUYV at 720p only reaches 10 fps over USB."""
+    cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap.set(cv2.CAP_PROP_FPS, 30)
+    if not cap.isOpened():
+        raise SystemExit("Cannot open camera — close the browser tab using it first.")
+    return cap
 
 
 def draw(frame: np.ndarray, xy: np.ndarray, score: np.ndarray, label: str, ms: float, threshold: float) -> np.ndarray:
@@ -124,12 +150,7 @@ def main() -> None:
     thresholds = {"mediapipe": 0.5}
     tracks = [Track(m.name) for m in models]
 
-    cap = cv2.VideoCapture(args.camera, cv2.CAP_V4L2)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    cap.set(cv2.CAP_PROP_FPS, 30)
-    if not cap.isOpened():
-        raise SystemExit("Cannot open camera — close the browser tab using it first.")
+    cap = open_camera(args.camera)
 
     print("Warming up models…")
     ok, frame = cap.read()
