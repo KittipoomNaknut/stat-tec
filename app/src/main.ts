@@ -7,6 +7,9 @@ import { Playground } from './debug/playground';
 import { RecorderPanel } from './debug/recorder';
 import { SessionRecorder } from './debug/session-recorder';
 import { showStyleguide } from './debug/styleguide';
+import { renderConfigFromUrl } from './config/render';
+import { Experience } from './experience/experience';
+import { story } from './narrative/story';
 import { GestureEngine } from './gestures/engine';
 import { IntentBus } from './input/intent-bus';
 import { MouseAdapter } from './input/mouse-adapter';
@@ -42,8 +45,31 @@ if (params.has('styleguide')) {
   });
 } else if (params.has('playground')) {
   startPlayground(root);
-} else {
+} else if (params.has('debug')) {
   startOverlay(root);
+} else {
+  startExperience(root);
+}
+
+/** The visitor experience (default). F1 debug overlay, F2 mouse, F5 back to attract. */
+function startExperience(parent: HTMLElement): void {
+  const speed = Number(params.get('speed') ?? '1');
+  const experience = new Experience(parent, {
+    story,
+    speed: speed > 0 ? speed : 1,
+    maxInternalHeight: renderConfigFromUrl(location.search).maxInternalHeight,
+  });
+  startLoop((dt, now) => {
+    experience.frame(dt, now);
+  });
+  startOverlay(parent, {
+    onReady: (options) => {
+      experience.setPoseSource(options.source);
+    },
+    onDetections: (detections) => {
+      experience.onDetections(detections);
+    },
+  }).setVisible(false);
 }
 
 function startPlayground(parent: HTMLElement): void {

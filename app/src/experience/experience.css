@@ -1,0 +1,167 @@
+/* Layers above the WebGL canvas. Nothing here takes pointer events: input is the body
+   (or the staff mouse adapter, which hit-tests the target registry itself). */
+.hud-root,
+.scene-hud-layer,
+.scene-hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.scene-hud {
+  transition: opacity var(--dur-micro) linear;
+}
+
+/* ---------- Attract ---------- */
+.attract {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+  justify-items: center;
+  padding-top: 7vh;
+  text-align: center;
+}
+
+.attract-title {
+  margin-top: var(--space-1);
+  font-size: var(--size-display);
+}
+
+.attract-tagline {
+  margin: var(--space-1) 0 0;
+  font-size: var(--size-caption);
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.attract-tagline.is-entering {
+  animation: hud-rise var(--dur-ui) var(--ease-out) both;
+}
+
+.attract-prompt {
+  grid-row: 5;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding-bottom: 6vh;
+}
+
+.attract-prompt-text {
+  margin: 0;
+  font-size: var(--size-caption);
+  font-weight: 600;
+  color: var(--accent);
+  text-shadow: var(--glow-accent);
+}
+
+/* "Stand here": three chevrons pulsing down, slow (well under 3 flashes per second) */
+.attract-marker {
+  display: grid;
+  justify-items: center;
+}
+
+.attract-marker i {
+  width: 5vh;
+  height: 5vh;
+  margin-top: -2.8vh;
+  border-right: var(--stroke) solid var(--accent);
+  border-bottom: var(--stroke) solid var(--accent);
+  transform: rotate(45deg);
+  opacity: 0.2;
+  animation: attract-chevron 1800ms var(--ease-out) infinite;
+}
+
+.attract-marker i:nth-child(2) {
+  animation-delay: 200ms;
+}
+
+.attract-marker i:nth-child(3) {
+  animation-delay: 400ms;
+}
+
+@keyframes attract-chevron {
+  30% {
+    opacity: 1;
+  }
+}
+
+/* ---------- Report ---------- */
+.report {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: var(--space-1);
+  padding-top: 6vh;
+  text-align: center;
+}
+
+.report-cards {
+  display: grid;
+  grid-template-columns: 44vh repeat(3, 32vh);
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.report-card {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-1);
+  min-height: 30vh;
+  padding: var(--space-3);
+  opacity: 0;
+  transform: translateY(3vh) scale(0.96);
+  transition:
+    opacity var(--dur-ui) var(--ease-out),
+    transform var(--dur-ui) var(--ease-out);
+}
+
+.report-card.is-shown {
+  opacity: 1;
+  transform: none;
+}
+
+.report-card:nth-child(2) {
+  transition-delay: 400ms;
+}
+
+.report-card:nth-child(3) {
+  transition-delay: 800ms;
+}
+
+.report-profit .hud-number {
+  font-size: calc(var(--size-label) * 1.45);
+  white-space: nowrap;
+}
+
+.report-value {
+  margin: 0;
+  font-size: var(--size-label);
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.report-of {
+  font: 500 var(--size-micro) var(--font-mono);
+  color: var(--text-dim);
+}
+
+.report-note {
+  margin: 0;
+  font-size: var(--size-micro);
+  color: var(--text-dim);
+}
+
+/* Placeholder until the real QR (ROADMAP Phase 5) */
+.report-qr-code {
+  width: 16vh;
+  height: 16vh;
+  border-radius: var(--radius);
+  background:
+    repeating-linear-gradient(90deg, var(--text) 0 1.2vh, transparent 1.2vh 2.4vh),
+    repeating-linear-gradient(0deg, transparent 0 1.2vh, var(--bg) 1.2vh 2.4vh);
+  opacity: 0.8;
+}

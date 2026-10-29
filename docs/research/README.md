@@ -21,6 +21,7 @@
 | [010](010-dwell-failures.md)              | ทำไมปุ่มบางครั้งไม่ติด                              | ปุ่มหน้าตัว = แขนชี้เข้ากล้องยุบใน 2D → พื้นที่มือข้างตัว + ชี้ต่อเมื่อยกค้าง: ปุ่ม 5 0 → 3; ทางแก้ฝั่ง dwell (stay padding, decay) ไม่ได้ผล | PR #29, #30          |
 | [011](011-hud-design-system.md)           | Design system ของ HUD                               | Anuphan + JetBrains Mono; ปุ่ม dwell ≥ 26×15 vh เติมแสงที่ตัวปุ่ม; label ไทยห้าม tracking                                                    | PR #33               |
 | [012](012-renderer-frame-budget.md)       | Renderer: frame budget, backdrop blur, 4K           | blur หลัง panel ทำเฟรมหลุด (p95 16.8 → 33.4) → เลิกใช้; 4K ใน headless เชื่อไม่ได้                                                           | PR #34               |
+| [013](013-experience-layout.md)           | ประกอบทั้งรอบ: layout + flow                        | ครบรอบใน 66 s (×4) ไม่มี error; ดูภาพทีละจังหวะเจอ 7 จุดทับ/อ่านยาก → แก้หมด                                                                 | PR #39               |
 
 ## แม่แบบ
 
