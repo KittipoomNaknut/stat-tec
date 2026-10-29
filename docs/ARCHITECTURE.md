@@ -512,7 +512,8 @@ chapters:
 - กำไรต่อฉาก = `base × (0.4 + 0.6 × score)` → **ทุกคนได้กำไรเสมอ** (เด็กต้องรู้สึกดี)
 - `base` ต่อฉากตั้งใน config รวมแล้วอยู่ในหลักล้านบาท (ดูอลังการ)
 - **CEO Style** สะสมจากพฤติกรรม: `analyst` (ใกล้คำตอบโมเดล), `risk-taker` (เลือกสุดโต่ง), `intuitive` (ตัดสินใจเร็ว)
-- Leaderboard: เรียงตามกำไรรวม, รีเซ็ตทุกวัน, เก็บใน IndexedDB, แสดง codename เท่านั้น
+- Leaderboard: เรียงตามกำไรรวม, รีเซ็ตทุกวัน (key ตามวันที่), เก็บใน localStorage (≤ 500 รายการ/วัน — เล็กพอ, sync, ไม่ต้องใช้ IndexedDB), แสดง codename เท่านั้น
+- `base` ต่อบท: data 120k · coffee 280k · segments 320k · fraud 300k · forecast 380k → สูงสุด ฿1.4M, ต่ำสุด ฿560k (`config/scoring.ts`)
 
 | ฉาก | นิยาม score |
 |---|---|
