@@ -20,6 +20,7 @@ import { Renderer } from '../render/renderer';
 import { attractScene } from '../scenes/attract';
 import { SceneManager } from '../scenes/manager';
 import { coffeeScene } from '../scenes/coffee/scene';
+import { forecastScene } from '../scenes/forecast/scene';
 import { fraudScene } from '../scenes/fraud/scene';
 import { segmentsScene } from '../scenes/segments/scene';
 import { placeholderScene } from '../scenes/placeholder';
@@ -340,6 +341,7 @@ export class Experience {
       'c-coffee-pricing': coffeeScene,
       'd-segmentation': segmentsScene,
       'f-fraud': fraudScene,
+      'h-forecast': forecastScene,
     };
     const factory =
       real[chapter.scene]?.(chapter.id) ?? placeholderScene(chapter.scene, chapter.id);

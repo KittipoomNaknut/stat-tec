@@ -1,0 +1,291 @@
+/* EPISODE V — sales chart, forecast and the 11.11 warehouse (research 021). */
+.fc {
+  position: absolute;
+  inset: 0;
+}
+
+.fc-plot {
+  position: absolute;
+  left: 4.2vw;
+  top: 21vh;
+  width: 62vw;
+  bottom: 26.5vh;
+  padding: 2.4vh 3.2vh;
+}
+
+.fc-axis {
+  position: absolute;
+  margin: 0;
+  font-size: var(--size-micro);
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.fc.is-sale .fc-axis,
+.fc.is-sale .fc-area {
+  border-color: transparent;
+}
+
+.fc.is-sale .fc-axis {
+  opacity: 0;
+}
+
+.fc-axis-y {
+  left: 3.2vh;
+  top: 5vh;
+}
+
+.fc-area {
+  position: absolute;
+  left: 4vh;
+  right: 3vh;
+  top: 8.5vh;
+  bottom: 3vh;
+  border-left: 2px solid rgb(255 170 210 / 35%);
+  border-bottom: 2px solid rgb(255 170 210 / 35%);
+}
+
+.fc-area canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.fc-side {
+  position: absolute;
+  right: 4.2vw;
+  top: 21vh;
+  width: 25.5vw;
+  bottom: 26.5vh;
+  padding: 2.4vh 3vh;
+  display: grid;
+  align-content: start;
+  gap: 1.2vh;
+  overflow: hidden;
+}
+
+.fc-side p {
+  margin: 0;
+}
+
+.fc-month {
+  font: 800 4vh var(--font-display);
+  color: var(--accent);
+}
+
+.fc-total,
+.fc-nov,
+.fc-order {
+  font-size: 5.4vh;
+}
+
+.fc-sub,
+.fc-help {
+  font-size: var(--size-micro);
+  color: var(--text-dim);
+}
+
+.fc-sub b,
+.fc-help b,
+.fc-step b {
+  color: var(--accent);
+}
+
+.fc-step {
+  font-size: var(--size-label);
+  line-height: var(--leading-thai);
+}
+
+.fc-filled,
+.fc-timer {
+  height: 1vh;
+  border-radius: 0.5vh;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.fc-filled i,
+.fc-timer i {
+  display: block;
+  height: 100%;
+  background: var(--brand-gradient);
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform var(--dur-micro) var(--ease-out);
+}
+
+.fc-timer i {
+  transform: scaleX(1);
+  transition: none;
+}
+
+/* The warehouse: boxes stacking up from the floor, twenty to a row */
+.fc-stock {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap-reverse;
+  align-content: flex-start;
+  gap: 0.3vh;
+  width: calc(20 * 1.4vh + 19 * 0.3vh);
+  min-height: 12vh;
+}
+
+.fc-stock i {
+  width: 1.4vh;
+  height: 1.4vh;
+  border-radius: 0.25vh;
+  background: linear-gradient(180deg, #ffd2b8, #febb97);
+  box-shadow: inset 0 0 0 0.15vh rgb(18 7 20 / 35%);
+  animation: fc-drop 260ms var(--ease-out);
+}
+
+@keyframes fc-drop {
+  from {
+    transform: translateY(-1.2vh);
+    opacity: 0;
+  }
+}
+
+/* The AI's likely range, as a band across the rows of boxes (a row = 20 boxes = 1.7vh) */
+.fc-band-mark {
+  position: absolute;
+  left: -0.6vh;
+  right: -0.6vh;
+  bottom: calc(var(--lo) / 20 * 1.7vh);
+  height: max(0.6vh, calc((var(--hi) - var(--lo)) / 20 * 1.7vh));
+  border-block: 2px solid var(--positive);
+  background: rgb(79 227 176 / 16%);
+  pointer-events: none;
+}
+
+.fc-band-mark::after {
+  content: 'AI คาด';
+  position: absolute;
+  left: calc(100% + 0.8vh);
+  top: 50%;
+  transform: translateY(-50%);
+  font: 700 1.6vh var(--font-ui);
+  color: var(--positive);
+  white-space: nowrap;
+}
+
+.fc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6vh 2vh;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--size-micro);
+}
+
+.fc-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.8vh;
+}
+
+.fc-legend i {
+  width: 2.6vh;
+  height: 0.6vh;
+  border-radius: 0.3vh;
+  background: var(--c);
+}
+
+/* Seasonal index per month: 11.11 towers over the rest */
+.fc-season {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5vh;
+  height: 22vh;
+  padding-bottom: 2.6vh;
+}
+
+.fc-season i {
+  position: relative;
+  flex: 1;
+  height: calc(var(--h) * 100%);
+  border-radius: 0.4vh 0.4vh 0 0;
+  background: linear-gradient(180deg, rgb(255 190 220), var(--primary));
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+
+.fc-season.is-shown i {
+  transform: scaleY(1);
+}
+
+.fc-season i.is-peak {
+  background: linear-gradient(180deg, #fff0e6, var(--accent));
+  box-shadow: 0 0 2vh rgb(254 187 151 / 60%);
+}
+
+.fc-season span {
+  position: absolute;
+  left: 50%;
+  bottom: -2.6vh;
+  transform: translateX(-50%);
+  font-size: 1.5vh;
+  font-style: normal;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.fc-acc .hud-number {
+  font-size: 6vh;
+}
+
+.fc-acc small {
+  margin-left: 0.4vh;
+  font-size: 0.55em;
+}
+
+.fc-acc.is-player .hud-number {
+  color: var(--primary);
+}
+
+.fc-acc.is-ai .hud-number {
+  color: var(--accent);
+}
+
+.fc-acc.is-winner .hud-label-th::after {
+  content: ' ★';
+  color: var(--accent);
+}
+
+.fc-tally {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1vh;
+}
+
+.fc-tally .hud-number {
+  font-size: 4vh;
+}
+
+.fc-tally.is-short .hud-number {
+  color: var(--negative);
+}
+
+.fc-tally.is-left .hud-number {
+  color: #e8a25a;
+}
+
+.fc-tally.is-profit .hud-number {
+  color: var(--positive);
+}
+
+.fc-layers {
+  display: grid;
+  gap: 1.4vh;
+  margin: 0;
+  padding-left: 3vh;
+  font-size: var(--size-label);
+}
+
+.fc-layers b {
+  color: var(--accent);
+}
