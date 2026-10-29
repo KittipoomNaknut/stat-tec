@@ -1,0 +1,241 @@
+/* EPISODE III — customer map (research 018). Keeps the bottom-left caption zone free. */
+.sg {
+  position: absolute;
+  inset: 0;
+}
+
+.sg-plot {
+  position: absolute;
+  left: 4.2vw;
+  top: 21vh;
+  width: 62vw;
+  bottom: 26.5vh;
+  padding: 2.4vh 3.2vh;
+}
+
+.sg-axis {
+  position: absolute;
+  margin: 0;
+  font-size: var(--size-micro);
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.sg-axis-y {
+  left: 3.2vh;
+  top: 5vh;
+}
+
+.sg-axis-x {
+  right: 3.2vh;
+  bottom: 1.4vh;
+}
+
+.sg-area {
+  position: absolute;
+  left: 4vh;
+  right: 3vh;
+  top: 8.5vh;
+  bottom: 5.5vh;
+  border-left: 2px solid rgb(255 170 210 / 35%);
+  border-bottom: 2px solid rgb(255 170 210 / 35%);
+}
+
+.sg-area canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.sg-tags {
+  position: absolute;
+  inset: 0;
+}
+
+/* Group name tags, pinned above each group's center */
+.sg-tag {
+  position: absolute;
+  display: grid;
+  gap: 0.2vh;
+  padding: 1vh 1.8vh;
+  border-radius: 1vh;
+  border: 1px solid var(--c);
+  background: rgb(18 7 20 / 88%);
+  box-shadow: 0 0 2.4vh color-mix(in srgb, var(--c) 45%, transparent);
+  transform: translate(-50%, -135%);
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.sg-tag.is-side {
+  transform: translate(4vh, -50%);
+}
+
+.sg-tag b {
+  font-size: var(--size-label);
+  color: var(--c);
+}
+
+.sg-tag span {
+  font-size: var(--size-micro);
+  color: var(--text);
+}
+
+/* The groups themselves become the buttons: point at the group you want */
+.sg-choice {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.sg-choice .hud-button {
+  min-width: 36vh;
+  white-space: nowrap;
+  min-height: 14vh;
+  font-size: 4vh;
+  border-color: var(--c);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--c) 30%, var(--panel-top)),
+    var(--panel-strong)
+  );
+}
+
+.sg-side {
+  position: absolute;
+  right: 4.2vw;
+  top: 21vh;
+  width: 25.5vw;
+  bottom: 26.5vh;
+  padding: 2.4vh 3vh;
+  display: grid;
+  align-content: start;
+  gap: 1.4vh;
+}
+
+.sg-magnets {
+  display: flex;
+  gap: 2vh;
+  margin: 0.6vh 0;
+}
+
+.sg-magnets i {
+  display: grid;
+  place-items: center;
+  width: 7.4vh;
+  height: 7.4vh;
+  border-radius: 50%;
+  border: 2px dashed color-mix(in srgb, var(--c) 70%, transparent);
+  font: 800 3vh var(--font-display);
+  font-style: normal;
+  color: var(--c);
+  transition:
+    background var(--dur-ui) var(--ease-out),
+    box-shadow var(--dur-ui) var(--ease-out);
+}
+
+.sg-magnets i.is-placed {
+  border: 3px solid #fff;
+  background: var(--c);
+  color: #fff;
+  box-shadow: 0 0 2.4vh var(--c);
+}
+
+.sg-help {
+  margin: 0;
+  font-size: var(--size-micro);
+  color: var(--text-dim);
+}
+
+.sg-score .hud-number,
+.sg-sse {
+  font-size: 6vh;
+}
+
+.sg-round {
+  margin: 0;
+  min-height: 3.2vh;
+  font-size: 2.6vh;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.sg-compare {
+  margin: 0;
+  font-size: var(--size-micro);
+  color: var(--text);
+}
+
+/* SSE per round: shrinking bars */
+.sg-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.8vh;
+  height: 9vh;
+}
+
+.sg-bars i {
+  width: 2.4vh;
+  height: calc(var(--h) * 100%);
+  border-radius: 0.4vh 0.4vh 0 0;
+  background: linear-gradient(180deg, var(--accent), var(--primary));
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+
+.sg-bars i.is-shown {
+  transform: scaleY(1);
+}
+
+/* Elbow chart */
+.sg-elbow {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.sg-elbow text {
+  font-family: var(--font-ui);
+  fill: var(--text-dim);
+}
+
+.sg-elbow-axis {
+  stroke: rgb(255 170 210 / 40%);
+  stroke-width: 2;
+}
+
+.sg-elbow .sg-elbow-tick {
+  font: 700 34px var(--font-display);
+}
+
+.sg-elbow .sg-elbow-name {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.sg-elbow-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px rgb(254 187 151 / 70%));
+}
+
+.sg-elbow-dot {
+  fill: #fff;
+  transition: opacity var(--dur-micro);
+}
+
+.sg-elbow-mark circle {
+  fill: none;
+  stroke: var(--hot);
+  stroke-width: 4;
+  filter: drop-shadow(0 0 8px var(--hot));
+}
+
+.sg-elbow .sg-elbow-mark text {
+  font-size: 36px;
+  font-weight: 700;
+  fill: #ffb3d3;
+}
