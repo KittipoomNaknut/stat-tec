@@ -78,23 +78,27 @@ chapters:
       - type: tutorial
         gesture: raise
         lines: [ยกมือขึ้น = ขึ้นราคา · ลดมือลง = ลดราคา]
+        success: ใช่เลยครับ! ลองหาราคาที่ดีที่สุดดู
       - type: play
         durationSec: 30
         hints:
           - { afterSec: 6, text: ดูลูกค้าที่เดินเข้าร้านสิครับ }
-          - { afterSec: 14, text: เส้นสีทองคือรายได้ต่อวัน }
+          - { afterSec: 14, text: เส้นสีพีชคือรายได้ที่แต่ละราคาที่ท่านลอง }
           - { afterSec: 22, text: เจอจุดสูงสุดหรือยังครับ? }
       - type: reveal
         lines:
           - ท่านตั้งราคา **฿{price}** — รายได้ **฿{revenue}** / วัน
-          - { text: ทีนี้… ให้ AI วิเคราะห์บ้าง, cue: regression-line }
+          - { text: 'ทุกวันคือ 1 จุด: ราคา (X) กับแก้วที่ขายได้ (Y)', cue: data-points }
+          - { text: ทีนี้… ให้ AI ลากเส้นทำนายครับ, cue: fit-line }
+          - ทุกครั้งที่ลองใหม่ ความผิดพลาดรวม **(SSE)** ลดลง
+          - { text: 'รายได้ = ราคา × จำนวนแก้ว', cue: revenue-curve }
           - โมเดลแนะนำ **฿{optimalPrice}**
           - { text: ท่านเกือบเท่า AI เลยครับ!, when: close }
           - { text: ข้อมูลเห็นสิ่งที่สัญชาตญาณมองไม่เห็นครับ, when: '!close' }
       - type: lesson
         lines:
-          - เส้นโค้งนี้เรียกว่า **Demand Curve**
-          - Data Scientist ใช้ **Regression** หาจุดทำเงินสูงสุด
+          - เส้นนี้เรียกว่า **Demand Curve**
+          - '**Regression** = หาเส้นที่พลาดน้อยที่สุด'
           - แอปเรียกรถและจองโรงแรม ปรับราคาแบบนี้ทุกนาที
 
   - id: segments
@@ -126,7 +130,7 @@ chapters:
         lines:
           - นี่คือ **K-means Clustering**
           - เครื่องจัดกลุ่มเอง โดยไม่มีใครบอกคำตอบ
-          - แพลตฟอร์มดูหนัง ฟังเพลง ใช้แนวคิดนี้แนะนำของให้เรา
+          - แอปดูหนัง ฟังเพลง ใช้วิธีนี้แนะนำของให้เรา
 
   - id: fraud
     scene: f-fraud

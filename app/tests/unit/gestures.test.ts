@@ -3,6 +3,7 @@ import { gestureConfig } from '../../src/config/gestures';
 import { CursorTracker } from '../../src/gestures/cursor';
 import { DwellDetector } from '../../src/gestures/dwell';
 import { GestureEngine } from '../../src/gestures/engine';
+import { RaiseDetector } from '../../src/gestures/raise';
 import { IntentBus } from '../../src/input/intent-bus';
 import type { Intent } from '../../src/input/intents';
 import { TargetRegistry } from '../../src/input/targets';
@@ -159,6 +160,13 @@ describe('DwellDetector', () => {
     const events = [];
     for (let t = 33; t <= 2000; t += 33) events.push(...d.update(on, local, t));
     expect(events).toEqual([]);
+    // re-aiming inside the button arms it too
+    const r = new DwellDetector();
+    r.update(on, local, 0);
+    const moved = [];
+    for (let t = 33; t <= 1700; t += 33)
+      moved.push(...r.update({ ...on, x: t < 300 ? 0.5 : 0.56 }, local, t));
+    expect(moved.filter((e) => e.type === 'select')).toHaveLength(1);
     // leave and come back: now it is a deliberate dwell
     d.update(off, local, 2100);
     for (let t = 2133; t <= 3500; t += 33) events.push(...d.update(on, local, t));
@@ -171,6 +179,34 @@ describe('DwellDetector', () => {
     for (let t = 0; t <= 2000; t += 33)
       events.push(...d.update({ ...on, visible: false }, targets, t));
     expect(events).toEqual([]);
+  });
+});
+
+describe('RaiseDetector', () => {
+  it('maps the higher hand from hips (0) to overhead (1)', () => {
+    const r = new RaiseDetector();
+    expect(r.update(body(null), 0)?.level).toBe(0);
+    const overhead = new RaiseDetector().update(body([0.6, -1.2]), 0);
+    expect(overhead?.level).toBe(1);
+    expect(overhead?.hand).toBe('right');
+    const half = new RaiseDetector().update(body(null, [-0.6, 0.05]), 0);
+    expect(half?.level).toBeCloseTo(0.5, 1);
+    expect(half?.hand).toBe('left');
+  });
+
+  it('moves smoothly toward a new height', () => {
+    const r = new RaiseDetector();
+    r.update(body(null), 0);
+    const early = r.update(body([0.6, -1.2]), 33)?.level ?? 0;
+    expect(early).toBeGreaterThan(0.1);
+    expect(early).toBeLessThan(0.4);
+    let level = early;
+    for (let t = 66; t <= 1000; t += 33) level = r.update(body([0.6, -1.2]), t)?.level ?? 0;
+    expect(level).toBeGreaterThan(0.99);
+  });
+
+  it('reports nothing without a player', () => {
+    expect(new RaiseDetector().update(null, 0)).toBeNull();
   });
 });
 

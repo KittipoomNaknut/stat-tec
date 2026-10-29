@@ -7,6 +7,7 @@ import type { PerceptionSource } from '../perception/protocol';
 import { CursorTracker } from './cursor';
 import { CursorSmoother } from './cursor-smoother';
 import { DwellDetector } from './dwell';
+import { RaiseDetector } from './raise';
 
 /** What the engine needs from each perception frame. */
 export interface GestureInput {
@@ -26,6 +27,7 @@ export class GestureEngine {
   #cursor = new CursorTracker(cursorConfigFor('server'));
   readonly #smoother = new CursorSmoother();
   readonly #dwell = new DwellDetector();
+  readonly #raise = new RaiseDetector();
   #lock: LockState = 'searching';
   #playerId = 0;
   /** Lets the mouse take over without the body fighting it. */
@@ -55,6 +57,8 @@ export class GestureEngine {
     for (const event of this.#dwell.update(cursor, this.#targets, tMs)) {
       this.#bus.emit({ ...event, ...meta });
     }
+    const raise = this.#raise.update(input.lock === 'locked' ? input.body : null, tMs);
+    if (raise) this.#bus.emit({ type: 'raise', ...raise, ...meta });
   }
 
   #presence(input: GestureInput, meta: { t: number; source: IntentSource }): void {

@@ -32,6 +32,10 @@ export interface SceneModule {
   /** Return true to hold the story until the scene signals `continue`. */
   onCue?(cue: string): boolean;
   vars(): TemplateVars;
+  /** False while the player's hands are busy with something else (e.g. setting a price). */
+  showCursor?(): boolean;
+  /** True when the scene presents the lesson itself (the app then skips its lesson title). */
+  ownsLesson?(): boolean;
   /** Chapters only; welcome/attract/report return null. */
   result(): ChapterOutcome | null;
   dispose(): void;

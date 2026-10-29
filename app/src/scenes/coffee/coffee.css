@@ -1,0 +1,363 @@
+/* EPISODE II — Data Café (research 017). Layout keeps the bottom-left caption zone free. */
+
+/* ---------- Play ---------- */
+.cf-play {
+  position: absolute;
+  inset: 0;
+  transition: opacity var(--dur-ui) var(--ease-out);
+}
+
+.cf-play.is-preview {
+  opacity: 0.6;
+}
+
+.cf-price {
+  position: absolute;
+  left: 4.2vw;
+  top: 24vh;
+  width: 27vw;
+  height: 46vh;
+  padding: 3vh 3.2vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.cf-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cf-price-value {
+  font-size: 15vh;
+  line-height: 1;
+}
+
+/* The hand's height, as a laser column */
+.cf-gauge {
+  position: relative;
+  width: 1.2vh;
+  height: 28vh;
+  border-radius: 0.6vh;
+  background: rgb(255 255 255 / 10%);
+}
+
+.cf-gauge b {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.6vh;
+  background: linear-gradient(0deg, var(--primary), #fff);
+  box-shadow:
+    0 0 1.2vh #fff,
+    0 0 3vh var(--hot);
+  transform-origin: bottom;
+  transform: scaleY(0.33);
+}
+
+.cf-play.is-preview .cf-gauge {
+  opacity: 0;
+}
+
+.cf-price-hint {
+  margin: 0;
+  font-size: var(--size-micro);
+  color: var(--text-dim);
+}
+
+.cf-cafe {
+  position: absolute;
+  right: 4.2vw;
+  top: 24vh;
+  width: 59vw;
+  height: 46vh;
+  padding: 2.6vh 3.2vh;
+  display: grid;
+  grid-template-columns: 1fr 26vh;
+  grid-template-rows: auto 1fr auto;
+  column-gap: 3vh;
+}
+
+.cf-cafe > .hud-eyebrow {
+  grid-column: 1 / -1;
+}
+
+.cf-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.cf-stats {
+  grid-row: 2;
+  grid-column: 2;
+  display: grid;
+  align-content: center;
+  gap: 3vh;
+}
+
+.cf-stats .hud-number {
+  font-size: 5vh;
+}
+
+.cf-trace {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 12vh;
+  overflow: visible;
+}
+
+.cf-trace-axis {
+  stroke: var(--line);
+  stroke-width: 2;
+}
+
+.cf-trace-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 0.8vh rgb(254 187 151 / 70%));
+}
+
+.cf-trace-dot {
+  fill: #fff;
+  filter: drop-shadow(0 0 0.8vh var(--hot));
+}
+
+.cf-trace-label {
+  grid-column: 1 / -1;
+  margin: 0.6vh 0 0;
+  font-size: 2vh;
+  color: var(--accent);
+}
+
+/* ---------- Analysis (reveal + lesson) ---------- */
+.cf-analysis {
+  position: absolute;
+  left: 4.2vw;
+  right: 4.2vw;
+  top: 21vh;
+  bottom: 26.5vh;
+  padding: 2.4vh 3.2vh 1vh;
+  animation: hud-rise var(--dur-ui) var(--ease-out) both;
+}
+
+.cf-analysis-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.cf-sse {
+  text-align: right;
+}
+
+.cf-sse .hud-number {
+  font-size: 5vh;
+}
+
+/* SSE per attempt: bars appear one by one, each shorter than the last */
+.cf-sse-bars {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 0.6vh;
+  height: 5vh;
+  margin-top: 0.8vh;
+}
+
+.cf-sse-bars i {
+  width: 1.4vh;
+  height: calc(var(--h) * 100%);
+  border-radius: 0.3vh 0.3vh 0 0;
+  background: linear-gradient(180deg, var(--accent), var(--primary));
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+
+.cf-sse-bars i.is-shown {
+  transform: scaleY(1);
+}
+
+.cf-note {
+  position: absolute;
+  left: 34vh;
+  top: 2.2vh;
+  margin: 0;
+  font-size: var(--size-micro);
+  color: var(--accent);
+}
+
+.cf-svg {
+  position: absolute;
+  left: 2vh;
+  right: 2vh;
+  top: 6vh;
+  bottom: 1vh;
+  width: calc(100% - 4vh);
+  height: calc(100% - 7vh);
+  overflow: visible;
+}
+
+.cf-svg text {
+  font-family: var(--font-ui);
+  font-size: 30px;
+  fill: var(--text);
+}
+
+.cf-axis {
+  stroke: rgb(255 170 210 / 45%);
+  stroke-width: 2;
+}
+
+.cf-gridline {
+  stroke: rgb(255 170 210 / 10%);
+  stroke-width: 1.5;
+}
+
+.cf-svg .cf-tick {
+  fill: var(--text-dim);
+  font-size: 27px;
+}
+
+.cf-svg .cf-axis-name {
+  font-weight: 600;
+  fill: var(--text-dim);
+}
+
+.cf-guide {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 8;
+  opacity: 0.8;
+}
+
+.cf-point {
+  fill: #fff;
+  filter: drop-shadow(0 0 6px rgb(255 61 143 / 95%));
+}
+
+.cf-flash {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 3;
+}
+
+.cf-chip rect {
+  fill: rgb(40 10 35 / 92%);
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+
+.cf-chip.is-y rect {
+  stroke: var(--accent);
+}
+
+.cf-svg .cf-chip text {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 27px;
+}
+
+.cf-table-head text {
+  font-size: 24px;
+  fill: var(--text-dim);
+}
+
+.cf-row-bg {
+  fill: transparent;
+}
+
+.cf-row.is-active .cf-row-bg {
+  fill: rgb(255 61 143 / 20%);
+}
+
+.cf-svg .cf-row-day {
+  fill: var(--text-dim);
+}
+
+.cf-svg .cf-row-x {
+  fill: #ffb3d3;
+  font-weight: 700;
+}
+
+.cf-svg .cf-row-y {
+  fill: var(--accent);
+  font-weight: 700;
+}
+
+.cf-residual {
+  stroke: rgb(255 180 215 / 60%);
+  stroke-width: 2;
+  stroke-dasharray: 3 6;
+}
+
+.cf-laser {
+  stroke: #fff;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+.cf-laser-glow {
+  stroke: var(--hot);
+  stroke-width: 18;
+  stroke-linecap: round;
+  opacity: 0.55;
+  filter: blur(6px);
+}
+
+.cf-analysis.is-locked .cf-laser-glow {
+  animation: cf-lock 900ms var(--ease-out);
+}
+
+@keyframes cf-lock {
+  0% {
+    opacity: 1;
+    stroke-width: 34;
+  }
+}
+
+.cf-revenue {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgb(254 187 151 / 80%));
+}
+
+.cf-mark-drop {
+  stroke: rgb(255 255 255 / 30%);
+  stroke-width: 2;
+  stroke-dasharray: 4 6;
+}
+
+.cf-mark.is-best circle {
+  fill: var(--accent);
+  filter: drop-shadow(0 0 8px var(--accent));
+}
+
+.cf-mark.is-player circle {
+  fill: var(--bg);
+  stroke: #fff;
+  stroke-width: 3;
+}
+
+.cf-svg .cf-mark text {
+  font-weight: 700;
+  font-size: 30px;
+}
+
+.cf-svg .cf-mark.is-best text {
+  fill: var(--accent);
+}
+
+.cf-svg .cf-line-label text {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 38px;
+  letter-spacing: 0.08em;
+  fill: #ffb3d3;
+  filter: drop-shadow(0 0 8px rgb(255 61 143 / 80%));
+}

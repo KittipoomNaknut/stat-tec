@@ -2,6 +2,9 @@ import { gestureConfig } from '../config/gestures';
 import type { TargetRegistry } from '../input/targets';
 import type { CursorState } from './cursor';
 
+/** Re-aiming this far (screen units) inside a button that appeared under the cursor arms it. */
+const REARM_DISTANCE = 0.05;
+
 export type DwellEvent =
   { type: 'dwell'; targetId: string; progress: number } | { type: 'select'; targetId: string };
 
@@ -19,11 +22,13 @@ export class DwellDetector {
   /** Targets shown last update. */
   #known = new Set<string>();
   /**
-   * Targets that appeared under the cursor: not selectable until the cursor leaves them once.
+   * Targets that appeared under the cursor (with where the cursor was): not selectable until the
+   * cursor leaves them, or re-aims by moving `rearm` across the screen. Leaving alone was a trap:
+   * a player whose hand stays still on a new button waited forever (research 017).
    * Otherwise a button popping up under a hand still raised from the last choice selects itself
    * (found by the E2E test, research 014).
    */
-  readonly #disarmed = new Set<string>();
+  readonly #disarmed = new Map<string, { x: number; y: number }>();
 
   constructor(config: typeof gestureConfig.dwell = gestureConfig.dwell) {
     this.#config = config;
@@ -61,11 +66,12 @@ export class DwellDetector {
     const shown = new Set(targets.visibleIds());
     for (const id of shown) {
       if (!this.#known.has(id) && cursor.visible && this.#under(cursor, targets, id)) {
-        this.#disarmed.add(id);
+        this.#disarmed.set(id, { x: cursor.x, y: cursor.y });
       }
     }
-    for (const id of this.#disarmed) {
-      if (!shown.has(id) || !cursor.visible || !this.#under(cursor, targets, id)) {
+    for (const [id, at] of this.#disarmed) {
+      const moved = Math.hypot(cursor.x - at.x, cursor.y - at.y) >= REARM_DISTANCE;
+      if (!shown.has(id) || !cursor.visible || !this.#under(cursor, targets, id) || moved) {
         this.#disarmed.delete(id);
       }
     }
