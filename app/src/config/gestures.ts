@@ -63,6 +63,18 @@ export const gestureConfig = {
     dCutoff: 1,
     deadband: 0.004,
   },
+  /**
+   * Raise (EPISODE II: set the price with your hand). Level 0 when the higher wrist is this far
+   * above the hips (SW), 1 at `highAbove` — a hand overhead. Hanging arms measured ~0 above the
+   * hips; raised overhead 2.6–3.0 (research 009/010 recordings).
+   */
+  raise: {
+    lowAbove: 0.3,
+    highAbove: 2.6,
+    /** Smoothing time constant: steady value, still follows a deliberate move in ~¼ s. */
+    smoothingMs: 120,
+    minVisibility: 0.5,
+  },
   dwell: {
     holdMs: 1200,
     /** Leaving the target for less than this keeps the progress. */

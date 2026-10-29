@@ -69,8 +69,9 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
   await expect.poll(() => phase(page)).toBe('welcome');
   await expect(page.locator('.hud-caption')).toBeVisible();
 
-  // Tutorial: point at "พร้อมแล้ว" and hold.
+  // Tutorial: point at "พร้อมแล้ว" and hold, then lower the arm like a person does.
   await dwellOn(page, 'welcome-ready');
+  await player(page, 'rest');
   await expect.poll(() => phase(page)).toBe('chapter');
 
   const chapters = ['data', 'coffee', 'segments', 'fraud', 'forecast'];
@@ -99,8 +100,8 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
     await page.waitForTimeout(200);
   }
   expect([...seen]).toEqual(chapters);
-  // coffee, segments (play + reveal), fraud, forecast
-  expect(selected).toBe(5);
+  // segments (play + reveal), fraud, forecast — coffee is played by raising a hand
+  expect(selected).toBe(4);
 
   // Report: a real profit total and rank, then back to attract on its own.
   await expect.poll(() => phase(page)).toBe('report');

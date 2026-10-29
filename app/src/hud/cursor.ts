@@ -41,10 +41,18 @@ export class HudCursor {
     parent.append(this.#root);
   }
 
+  #suppressed = false;
+
+  /** Hide the cursor while the scene uses the hands for something else (dwell still works). */
+  set suppressed(value: boolean) {
+    this.#suppressed = value;
+    this.#root.hidden = value || !this.#visible;
+  }
+
   move(cursor: IntentOf<'cursor'>): void {
     const appearing = cursor.visible && !this.#visible;
     this.#visible = cursor.visible;
-    this.#root.hidden = !cursor.visible;
+    this.#root.hidden = this.#suppressed || !cursor.visible;
     if (!cursor.visible) return;
     this.#target = { x: cursor.x, y: cursor.y };
     // Appear where the hand is, not sliding in from the last place it was seen.

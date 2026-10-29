@@ -72,6 +72,8 @@ export class MouseAdapter {
     if (!this.#enabled) return;
     const { x, y } = this.#point(e);
     this.#bus.emit({ type: 'cursor', x, y, hand: 'right', visible: true, ...this.#meta() });
+    // Staff stand-in for raising a hand: the higher the pointer, the higher the hand.
+    this.#bus.emit({ type: 'raise', hand: 'right', level: 1 - y, ...this.#meta() });
     if (this.#dragging) {
       if (!this.#moved) this.#bus.emit({ type: 'draw', phase: 'start', x, y, ...this.#meta() });
       this.#moved = true;

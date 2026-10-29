@@ -19,6 +19,7 @@ import type { PerceptionSource, PoseDetections } from '../perception/protocol';
 import { Renderer } from '../render/renderer';
 import { attractScene } from '../scenes/attract';
 import { SceneManager } from '../scenes/manager';
+import { coffeeScene } from '../scenes/coffee/scene';
 import { placeholderScene } from '../scenes/placeholder';
 import { reportScene } from '../scenes/report';
 import type { SceneModule } from '../scenes/types';
@@ -248,6 +249,7 @@ export class Experience {
       this.#notice.hide();
     }
     this.#skeleton.draw();
+    this.#cursor.suppressed = this.#scene?.showCursor?.() === false;
     this.#cursor.frame(dtMs);
     document.body.dataset['beat'] = state?.beat?.type ?? '';
     this.#renderer.frame(dtMs, nowMs);
@@ -318,7 +320,12 @@ export class Experience {
     document.body.dataset['chapter'] = chapter.id;
     this.#topBar.setChapter(index, this.#story.chapters.length, chapter.concept, chapter.title);
     this.#header.hide();
-    this.#scene = this.#scenes.show(placeholderScene(chapter.scene, chapter.id));
+    // Real scenes replace placeholders one by one (Phase 4).
+    const factory =
+      chapter.scene === 'c-coffee-pricing'
+        ? coffeeScene(chapter.id)
+        : placeholderScene(chapter.scene, chapter.id);
+    this.#scene = this.#scenes.show(factory);
     this.#run(
       chapter.beats,
       () => {
@@ -373,8 +380,9 @@ export class Experience {
         document.body.dataset['beat'] = beat.type;
         if (concept !== undefined && title !== undefined) {
           // The episode title lives in the top bar; the lesson names the idea center stage.
-          if (beat.type === 'lesson') this.#header.show('Lesson', concept, 'lesson');
-          else if (title) this.#header.hide();
+          if (beat.type === 'lesson' && !scene?.ownsLesson?.()) {
+            this.#header.show('Lesson', concept, 'lesson');
+          } else if (title) this.#header.hide();
         }
         scene?.onBeat?.(beat);
       },
