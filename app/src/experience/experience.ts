@@ -1,5 +1,6 @@
 import { createActor } from 'xstate';
 import { APP_DELAYS, appMachine, phaseOf, type AppPhase } from '../core/app-machine';
+import { Watchdog } from '../core/watchdog';
 import { GestureEngine } from '../gestures/engine';
 import { Caption } from '../hud/caption';
 import { ChapterHeader } from '../hud/chapter-header';
@@ -63,6 +64,7 @@ export class Experience {
   readonly #skipRow: HTMLElement;
   readonly #skeleton: MiniSkeleton;
   readonly #notice: Notice;
+  readonly #watchdog: Watchdog;
 
   #phase: AppPhase = 'boot';
   /** Identifies what is on screen (session + chapter); pausing does not change it. */
@@ -114,6 +116,25 @@ export class Experience {
       'SKIP',
     );
     this.#notice = new Notice(hud);
+    this.#watchdog = new Watchdog({
+      reset: () => {
+        this.#actor.send({ type: 'RESET' });
+      },
+      reload: (reason) => {
+        console.error('[watchdog] reload:', reason);
+        location.reload();
+      },
+      onStall: () => undefined, // shown by frame() from `stalled`
+      log: (message) => {
+        console.warn('[watchdog]', message);
+      },
+    });
+    window.addEventListener('error', (e) => {
+      this.#watchdog.error(e.message, performance.now());
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      this.#watchdog.error(String(e.reason), performance.now());
+    });
 
     const cursor = new HudCursor(hud);
     this.bus.on('cursor', (c) => {
@@ -177,6 +198,7 @@ export class Experience {
   }
 
   onDetections(d: PoseDetections, nowMs = performance.now()): void {
+    this.#watchdog.frame(nowMs);
     this.#gestures.update(d, nowMs);
     this.#skeleton.setPose(d.lock === 'locked' ? d.player : null, d.playerShown);
     if (d.lock === 'locked' && d.player) this.#scenes.countPoseFrame();
@@ -187,6 +209,7 @@ export class Experience {
     input: { lock: PoseDetections['lock']; playerId: number; body: Float32Array | null },
     nowMs: number,
   ): void {
+    this.#watchdog.frame(nowMs);
     this.#gestures.update(input, nowMs);
     if (input.lock === 'locked' && input.body) this.#scenes.countPoseFrame();
   }
@@ -202,9 +225,18 @@ export class Experience {
     this.#caption.update(paused ? null : state);
     this.#countdown.update(paused ? null : (state?.remainingSec ?? null));
     this.#skipRow.hidden = paused || !state?.skippable;
-    if (paused) {
-      this.#pausedMs += dt;
-      this.#notice.show(this.#story.system.paused, this.#pausedMs / APP_DELAYS.pauseTimeout);
+    this.#watchdog.check(nowMs);
+    if (paused) this.#pausedMs += dt;
+    if (this.#watchdog.stalled) {
+      this.#notice.show('Reconnecting', this.#story.system.reconnecting);
+    } else if (paused) {
+      this.#notice.show(
+        'Signal lost',
+        this.#story.system.paused,
+        this.#pausedMs / APP_DELAYS.pauseTimeout,
+      );
+    } else {
+      this.#notice.hide();
     }
     this.#skeleton.draw();
     document.body.dataset['beat'] = state?.beat?.type ?? '';
@@ -219,7 +251,6 @@ export class Experience {
       if (was !== 'paused') this.#pausedMs = 0;
       return;
     }
-    this.#notice.hide();
     const key = `${phase}:${String(sessionId)}:${String(chapterIndex)}`;
     if (key === this.#activeKey) return; // resumed where we were
     this.#activeKey = key;
@@ -243,6 +274,9 @@ export class Experience {
   }
 
   #enterAttract(): void {
+    // A quiet moment: reload now if memory has crept up over the day.
+    const memory = (performance as { memory?: { usedJSHeapSize: number } }).memory;
+    this.#watchdog.idle(memory?.usedJSHeapSize ?? null);
     this.#narrative = null;
     this.#scene = this.#scenes.show(attractScene(this.#story));
     this.#topBar.visible = false;
