@@ -16,6 +16,7 @@ EXPOSE 5173
 CMD ["pnpm", "dev", "--host", "0.0.0.0", "--port", "5173", "--strictPort"]
 
 FROM deps AS build
+COPY --chown=node:node content/ /repo/content/
 COPY --chown=node:node app/ ./
 RUN pnpm build
 

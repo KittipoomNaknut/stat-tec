@@ -497,8 +497,10 @@ chapters:
         lines: ["เส้นนี้เรียกว่า Demand Curve"]
 ```
 
-- ตรวจด้วย zod ตอน build — บทพูดผิดรูปแบบ = build fail
-- Template `{var}` แทนค่าจาก `SceneResult.vars`; ตัวแปรที่ไม่มี = build/test fail
+- ตรวจด้วย zod (`narrative/schema.ts`) ใน unit test — บทพูดผิดรูปแบบ = CI fail
+- Template `{var}` แทนค่าจาก `SceneResult.vars`; แต่ละบทประกาศ `vars:` ที่ฉากส่งให้ → ตัวแปรที่ไม่มีใครส่ง = test fail
+- บรรทัดเขียนได้เป็นข้อความ หรือ `{ text, cue, when }`: `cue` สั่งฉากเล่น animation, `when: close` / `'!close'` แสดงตามผลของฉาก
+- ความยาว ≤ 52 ตัวอักษรที่กินที่ (ไม่นับสระบน/ล่าง วรรณยุกต์) → ลง 1 บรรทัดของกล่องบทพูด
 - Typewriter: ~35 ตัวอักษร/วินาที, ค้างบรรทัดละ `max(1.8s, ความยาว × 60ms)`
 - **กติกาข้อความ**: ≤ 12 คำ/บรรทัด, แสดงพร้อมกันไม่เกิน 2 บรรทัด
 

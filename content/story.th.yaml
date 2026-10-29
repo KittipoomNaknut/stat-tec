@@ -1,0 +1,221 @@
+# บทพูดทั้งหมดของ STAT_TEC — "CEO 5 นาที" (ต้นฉบับอ่านง่าย: docs/STORY.md)
+# ตรวจด้วย app/src/narrative/schema.ts — ผิดรูปแบบ / ตัวแปรที่ไม่มีใครส่งให้ = test fail
+#
+# บรรทัด (line) เขียนได้ 3 แบบ
+#   - "ข้อความ"                         แสดงเสมอ
+#   - { text: "...", when: close }      แสดงเมื่อฉากส่ง close = true
+#   - { cue: regression-line }          สั่งฉากให้เล่น animation (ไม่มีข้อความ)
+#   - { text: "...", cue: ... }         ทั้งสองอย่าง
+# {var} = ค่าที่แทนตอนเล่น · **ตัวหนา** = เน้นสีทอง · ≤ 12 คำต่อบรรทัด
+
+meta:
+  aiName: '[AI_NAME]'
+  locale: th
+
+attract:
+  title: เป็น CEO ใน 5 นาที
+  prompt: ยืนตรงจุดนี้ เพื่อเริ่ม
+  rotateSec: 6
+  taglines:
+    - ข้อมูล = อำนาจในการตัดสินใจ
+    - ลองบริหารบริษัทด้วยร่างกายของคุณ
+
+welcome:
+  beats:
+    - type: mission
+      lines:
+        - { text: ตรวจพบ CEO คนใหม่…, cue: scan }
+        - ยินดีต้อนรับครับ **CEO {codename}**
+        - ผมคือ {aiName} ผู้ช่วย AI ประจำบริษัท
+        - วันนี้ท่านต้องตัดสินใจเรื่องใหญ่ 4 เรื่อง
+        - ด้วยอาวุธเดียว… **ข้อมูล**
+    - type: tutorial
+      gesture: dwell
+      lines: [ยกแขนออกด้านข้าง แล้วชี้ไปที่ปุ่มนี้ค้างไว้ครับ]
+      success: เยี่ยมครับ! ท่านพร้อมแล้ว
+
+chapters:
+  - id: data
+    scene: a-you-are-data
+    title: น้องคือข้อมูล
+    concept: Data Collection
+    vars: [numbersCollected]
+    beats:
+      - type: mission
+        lines:
+          - ก่อนเริ่มงาน ขอผมสแกนท่านหน่อยนะครับ
+          - ลองขยับแขน ขยับตัวไปมาดูครับ
+      - type: play
+        durationSec: 15
+        hints:
+          - { afterSec: 4, text: 'ทุกจุดบนตัวท่าน คือตัวเลข x, y, z' }
+          - { afterSec: 9, text: 'ท่านกำลังส่งข้อมูลเกือบ 3,000 ตัวเลขต่อวินาที' }
+      - type: reveal
+        lines:
+          - 15 วินาที ท่านสร้างข้อมูลไป **{numbersCollected}** ตัวเลข
+      - type: lesson
+        lines:
+          - แอปที่ท่านใช้ทุกวัน ก็เก็บข้อมูลแบบนี้
+          - ใครอ่านข้อมูลเป็น… คนนั้นได้เปรียบ
+
+  - id: coffee
+    scene: c-coffee-pricing
+    title: ตั้งราคากาแฟ
+    concept: Regression & Optimization
+    vars: [price, revenue, optimalPrice, close]
+    beats:
+      - type: mission
+        lines:
+          - บริษัทเรามีร้านกาแฟชื่อ **'ดาต้าคาเฟ่'**
+          - ตอนนี้ขายแก้วละ 60 บาท
+          - ถูกไป กำไรน้อย… แพงไป ลูกค้าหนี
+          - ราคาไหนทำเงินได้มากที่สุด?
+      - type: tutorial
+        gesture: raise
+        lines: [ยกมือขึ้น = ขึ้นราคา · ลดมือลง = ลดราคา]
+      - type: play
+        durationSec: 30
+        hints:
+          - { afterSec: 6, text: ดูลูกค้าที่เดินเข้าร้านสิครับ }
+          - { afterSec: 14, text: เส้นสีทองคือรายได้ต่อวัน }
+          - { afterSec: 22, text: เจอจุดสูงสุดหรือยังครับ? }
+      - type: reveal
+        lines:
+          - ท่านตั้งราคา **฿{price}** — รายได้ **฿{revenue}** / วัน
+          - { text: ทีนี้… ให้ AI วิเคราะห์บ้าง, cue: regression-line }
+          - โมเดลแนะนำ **฿{optimalPrice}**
+          - { text: ท่านเกือบเท่า AI เลยครับ!, when: close }
+          - { text: ข้อมูลเห็นสิ่งที่สัญชาตญาณมองไม่เห็นครับ, when: '!close' }
+      - type: lesson
+        lines:
+          - เส้นโค้งนี้เรียกว่า **Demand Curve**
+          - Data Scientist ใช้ **Regression** หาจุดทำเงินสูงสุด
+          - แอปเรียกรถและจองโรงแรม ปรับราคาแบบนี้ทุกนาที
+
+  - id: segments
+    scene: d-segmentation
+    title: แบ่งกลุ่มลูกค้า
+    concept: K-means Clustering
+    vars: [magnetsLeft, lift]
+    beats:
+      - type: mission
+        lines:
+          - ร้านเราดังแล้วครับ! มีลูกค้า **10,000 คน**
+          - แต่งบโฆษณามีจำกัด
+          - เราต้องรู้ว่าลูกค้าแต่ละกลุ่มเป็นใคร
+      - type: tutorial
+        gesture: throw
+        lines: [เหวี่ยงมือ ขว้างแม่เหล็กลงไปในฝูงลูกค้า!]
+      - type: play
+        durationSec: 25
+        hints:
+          - { afterSec: 5, text: 'อีก {magnetsLeft} ลูก!' }
+          - { afterSec: 12, text: ดูสิครับ ลูกค้าเริ่มจับกลุ่มกันเอง }
+      - type: reveal
+        lines:
+          - { text: AI แบ่งลูกค้าได้ 3 กลุ่มครับ, cue: clusters }
+          - ท่านจะยิงโฆษณาไปที่กลุ่มไหน? ชี้ค้างไว้ครับ
+          - { cue: choose-segment }
+          - 'ผลลัพธ์: ยอดขายเพิ่ม **{lift}%**!'
+      - type: lesson
+        lines:
+          - นี่คือ **K-means Clustering**
+          - เครื่องจัดกลุ่มเอง โดยไม่มีใครบอกคำตอบ
+          - แพลตฟอร์มดูหนัง ฟังเพลง ใช้แนวคิดนี้แนะนำของให้เรา
+
+  - id: fraud
+    scene: f-fraud
+    title: จับโกง
+    concept: Anomaly Detection
+    vars: [caught, aiSeconds, falsePositives]
+    beats:
+      - type: mission
+        lines:
+          - ด่วนครับ ท่าน CEO!
+          - มีคนแอบใช้บัตรเครดิตของลูกค้าเรา
+          - รายการน่าสงสัยจะเรืองแสง **สีแดง**
+      - type: tutorial
+        gesture: slap
+        lines: [ตบรายการโกงทิ้งเลยครับ!]
+      - type: play
+        durationSec: 20
+        hints:
+          - { afterSec: 6, text: เร็วอีก! }
+          - { afterSec: 12, text: ระวัง อย่าตบลูกค้าดีนะครับ! }
+      - type: reveal
+        lines:
+          - ท่านจับได้ **{caught}** รายการ ใน 20 วินาที
+          - { text: ทีนี้… ให้ AI ลองบ้างครับ, cue: ai-storm }
+          - AI ตรวจ **1,000,000** รายการ ใน **{aiSeconds}** วินาที
+          - แต่ AI ก็พลาดได้ — จับผิดคนไป **{falsePositives}** ราย
+      - type: lesson
+        lines:
+          - นี่คือ **Anomaly Detection**
+          - ธนาคารใช้ AI จับโกงแบบนี้ ตลอด 24 ชั่วโมง
+          - Data Scientist คือคนที่ทำให้ AI พลาดน้อยลง
+
+  - id: forecast
+    scene: h-forecast
+    title: ทายยอดขาย 11.11
+    concept: Time-Series Forecasting
+    vars: [playerAcc, aiAcc, beatAi]
+    beats:
+      - type: mission
+        lines:
+          - เทศกาล **11.11** กำลังจะมาถึงครับ
+          - เราต้องสั่งของเข้าโกดังเท่าไหร่ดี?
+          - สั่งน้อยไป ของขาด… สั่งเยอะไป เงินจม
+          - นี่คือยอดขาย 3 ปีที่ผ่านมาครับ
+      - type: tutorial
+        gesture: draw
+        lines: [ยกมือเหนือไหล่ แล้วลากเส้นทายยอดขายเดือนหน้า]
+      - type: play
+        durationSec: 25
+        hints:
+          - { afterSec: 8, text: สังเกตทุกปีช่วงเดือน 11 สิครับ… }
+      - type: reveal
+        lines:
+          - { text: ท่านทาย…, cue: player-line }
+          - { text: AI ทาย…, cue: ai-line }
+          - { text: และยอดขายจริงคือ…, cue: actual-line }
+          - ท่านแม่นยำ **{playerAcc}%** · AI แม่นยำ **{aiAcc}%**
+          - { text: ว้าว! ท่านชนะ AI ครับ!, when: beatAi }
+          - { text: AI เห็นรูปแบบซ้ำในข้อมูล 3 ปีครับ, when: '!beatAi' }
+      - type: lesson
+        lines:
+          - นี่คือ **Time-Series Forecasting**
+          - บริษัทใช้มันวางแผนสต็อก คน และเงินทุน
+
+report:
+  lines:
+    - รายงานผลงาน **CEO {codename}**
+    - { text: 'กำไรรวม **฿{totalProfit}**', cue: profit-count }
+    - 'สไตล์ของท่าน: **{ceoStyle}**'
+    - อันดับ **{rank}** จาก {totalPlayers} คนวันนี้
+    - ทุกอย่างที่ท่านทำวันนี้…
+    - คืองานจริงของ **Data Scientist**
+    - { text: อยากทำแบบนี้ได้จริงไหมครับ? สแกนเลย, cue: qr }
+    - ขอบคุณครับ ท่าน CEO — ไว้พบกันใหม่
+
+styles:
+  analyst:
+    label: นักวิเคราะห์
+    description: ท่านคิดแบบ Data Scientist ตัวจริง
+  risk-taker:
+    label: นักเสี่ยง
+    description: กล้าได้กล้าเสีย — ข้อมูลจะช่วยให้ท่านเสี่ยงอย่างฉลาด
+  intuitive:
+    label: สายสัญชาตญาณ
+    description: เร็วและเฉียบ — ลองใช้ข้อมูลช่วยยืนยันดูครับ
+
+system:
+  paused: ท่าน CEO หายไปไหนครับ? กลับมายืนตรงจุดนี้นะครับ
+  tooFar: ขยับเข้ามาอีกนิดครับ ผมมองไม่ค่อยชัด
+  otherPerson: ขอโทษครับ ตอนนี้ผมดูแล CEO อยู่ 1 ท่าน
+  idle: ลองทำตามเงาข้างจอดูครับ
+  reconnecting: กำลังเชื่อมต่อระบบใหม่… รอสักครู่ครับ
+  skip: ข้าม
+
+codename:
+  animals: [เสือดาว, นกฮูก, ปลาโลมา, เหยี่ยว, หมาป่า, สิงโต, นากทะเล, แมวป่า, ม้าลาย, เต่าทะเล, ช้าง, กระทิง]
+  titles: [สายบุก, นักคิด, ตาไว, ใจเย็น, สายลุย, หัวไว, มือทอง, ตาเหยี่ยว, สายวางแผน, นักสำรวจ]
