@@ -12,6 +12,7 @@ import { Color, HalfFloatType, PerspectiveCamera, Scene, WebGLRenderer } from 't
 import { renderConfig } from '../config/render';
 import { AdaptiveResolution } from './adaptive-resolution';
 import { Stage } from './stage';
+import { palette } from '../config/palette';
 
 /** A lost context that is not restored within this long needs a page reload (§14). */
 const CONTEXT_RESTORE_TIMEOUT_MS = 3000;
@@ -58,7 +59,7 @@ export class Renderer {
       stencil: false,
       powerPreference: 'high-performance',
     });
-    this.scene.background = new Color('#050b18');
+    this.scene.background = new Color(palette.space);
     this.camera.position.set(0, 1.1, 7);
     this.camera.lookAt(0, 0.8, 0);
     this.stage = new Stage();
@@ -98,7 +99,7 @@ export class Renderer {
   frame(dtMs: number, nowMs: number): void {
     if (this.#lost) return;
     if (this.#adaptive?.update(dtMs, nowMs)) this.#resize();
-    this.stage.update(nowMs / 1000);
+    this.stage.update(nowMs / 1000, dtMs / 1000);
     this.#composer.render(dtMs / 1000);
   }
 

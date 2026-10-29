@@ -63,7 +63,7 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(URL);
   await expect.poll(() => phase(page)).toBe('attract');
-  await expect(page.locator('.attract-title')).toHaveText('เป็น CEO ใน 5 นาที');
+  await expect(page.locator('.attract-title')).toHaveText('STAT WARS');
 
   await player(page, 'enter');
   await expect.poll(() => phase(page)).toBe('welcome');

@@ -12,77 +12,181 @@
   transition: opacity var(--dur-micro) linear;
 }
 
-/* ---------- Attract ---------- */
+/* ---------- Attract (STAT WARS title, crawl, ring of light) ---------- */
 .attract {
   position: absolute;
   inset: 0;
-  display: grid;
-  grid-template-rows: auto auto auto 1fr auto;
-  justify-items: center;
-  padding-top: 7vh;
   text-align: center;
 }
 
-.attract-title {
-  margin-top: var(--space-1);
-  font-size: var(--size-display);
+.attract-corner {
+  position: absolute;
+  top: 4.5vh;
+  color: rgb(255 220 235 / 45%);
 }
 
-.attract-tagline {
-  margin: var(--space-1) 0 0;
-  font-size: var(--size-caption);
+.attract-corner.is-left {
+  left: 4.2vw;
+}
+
+.attract-corner.is-right {
+  right: 4.2vw;
+}
+
+.attract-kicker {
+  position: absolute;
+  top: 10vh;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-size: 3vh;
   font-weight: 500;
-  color: var(--text-dim);
+  color: #f6a4c4;
 }
 
-.attract-tagline.is-entering {
-  animation: hud-rise var(--dur-ui) var(--ease-out) both;
+.attract-title {
+  position: absolute;
+  top: 15vh;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font: 900 16vh / 1 var(--font-display);
+  letter-spacing: 0.08em;
+  background: linear-gradient(180deg, #fff 20%, #ffc6dc 55%, var(--primary) 100%);
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 3vh rgb(246 98 158 / 55%));
+  animation: attract-title var(--dur-scene) var(--ease-out) both;
+}
+
+@keyframes attract-title {
+  from {
+    opacity: 0;
+    letter-spacing: 0.3em;
+  }
+}
+
+.attract-subtitle {
+  position: absolute;
+  top: 34vh;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4vh;
+}
+
+.attract-subtitle i {
+  width: 16vh;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent));
+}
+
+.attract-subtitle i:last-child {
+  transform: scaleX(-1);
+}
+
+.attract-subtitle span {
+  margin-right: -0.7em;
+  font: 700 3.2vh var(--font-display);
+  letter-spacing: 0.7em;
+  color: var(--accent);
+  text-shadow: 0 0 1.6vh rgb(254 187 151 / 60%);
+}
+
+/* Opening crawl: text drifting up and away into space */
+.attract-crawl {
+  position: absolute;
+  left: 50%;
+  top: 44vh;
+  width: 96vh;
+  height: 30vh;
+  transform: translateX(-50%);
+  perspective: 36vh;
+  overflow: hidden;
+  mask: linear-gradient(transparent, #000 45%, #000 85%, transparent);
+}
+
+.attract-crawl-text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  transform-origin: 50% 0;
+  animation: attract-crawl 26s linear infinite;
+}
+
+.attract-crawl-text p {
+  margin: 0 0 1.6vh;
+  font-size: 3.6vh;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #ffd9c4;
+}
+
+@keyframes attract-crawl {
+  from {
+    transform: rotateX(26deg) translateY(0);
+  }
+
+  to {
+    transform: rotateX(26deg) translateY(-62vh);
+  }
 }
 
 .attract-prompt {
-  grid-row: 5;
+  position: absolute;
+  bottom: 6vh;
+  left: 0;
+  right: 0;
   display: grid;
   justify-items: center;
-  gap: var(--space-2);
-  padding-bottom: 6vh;
+  gap: 2.2vh;
 }
 
-.attract-prompt-text {
+.attract-prompt p {
   margin: 0;
-  font-size: var(--size-caption);
+  font-size: 3.8vh;
   font-weight: 600;
-  color: var(--accent);
-  text-shadow: var(--glow-accent);
+  text-shadow: 0 0 2vh rgb(246 98 158 / 70%);
 }
 
-/* "Stand here": three chevrons pulsing down, slow (well under 3 flashes per second) */
-.attract-marker {
-  display: grid;
-  justify-items: center;
+/* Where to stand: rings of light rippling outward (slow: well under 3 flashes per second) */
+.attract-pad {
+  position: relative;
+  width: 36vh;
+  height: 6.4vh;
 }
 
-.attract-marker i {
-  width: 5vh;
-  height: 5vh;
-  margin-top: -2.8vh;
-  border-right: var(--stroke) solid var(--accent);
-  border-bottom: var(--stroke) solid var(--accent);
-  transform: rotate(45deg);
-  opacity: 0.2;
-  animation: attract-chevron 1800ms var(--ease-out) infinite;
+.attract-pad i {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgb(255 140 190 / 90%);
+  box-shadow:
+    0 0 2.4vh rgb(246 98 158 / 90%),
+    inset 0 0 2vh rgb(246 98 158 / 50%);
+  animation: attract-ripple 2400ms var(--ease-out) infinite;
 }
 
-.attract-marker i:nth-child(2) {
-  animation-delay: 200ms;
+.attract-pad i:nth-child(2) {
+  animation-delay: 800ms;
 }
 
-.attract-marker i:nth-child(3) {
-  animation-delay: 400ms;
+.attract-pad i:nth-child(3) {
+  animation-delay: 1600ms;
 }
 
-@keyframes attract-chevron {
-  30% {
+@keyframes attract-ripple {
+  from {
     opacity: 1;
+    transform: scale(0.85);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.6);
   }
 }
 
@@ -96,6 +200,19 @@
   gap: var(--space-1);
   padding-top: 6vh;
   text-align: center;
+}
+
+.report-title {
+  /* Thai title in the display style: no tracking (it breaks Thai clusters) */
+  font-family: var(--font-ui);
+  letter-spacing: 0;
+}
+
+.report-name {
+  margin: 0;
+  font-size: var(--size-caption);
+  font-weight: 600;
+  color: var(--accent);
 }
 
 .report-cards {

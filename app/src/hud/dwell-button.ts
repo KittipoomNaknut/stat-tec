@@ -28,7 +28,10 @@ export class DwellButton {
     const sub = document.createElement('span');
     sub.className = 'hud-button-hint';
     sub.textContent = hint;
-    this.element.append(text, sub);
+    const beam = document.createElement('div');
+    beam.className = 'hud-beam';
+    beam.append(document.createElement('i'));
+    this.element.append(text, sub, beam);
     parent.append(this.element);
     this.#off.push(
       // A leaving scene marks its HUD inert: its buttons stop being targets at once.

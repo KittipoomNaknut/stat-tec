@@ -284,6 +284,7 @@ export class Experience {
   }
 
   #enterAttract(): void {
+    this.#renderer.stage.planet = true;
     // A quiet moment: reload now if memory has crept up over the day.
     const memory = (performance as { memory?: { usedJSHeapSize: number } }).memory;
     this.#watchdog.idle(memory?.usedJSHeapSize ?? null);
@@ -296,6 +297,7 @@ export class Experience {
   }
 
   #enterWelcome(): void {
+    this.#renderer.stage.planet = false;
     const today = new Set(this.#leaderboard.today().map((e) => e.codename));
     this.#codename = codename(this.#story.codename, Math.random, today);
     this.#outcomes = [];
@@ -314,8 +316,8 @@ export class Experience {
     const chapter = this.#story.chapters[index];
     if (!chapter) return;
     document.body.dataset['chapter'] = chapter.id;
-    this.#topBar.setChapter(index, this.#story.chapters.length);
-    this.#header.show(chapter.concept, chapter.title);
+    this.#topBar.setChapter(index, this.#story.chapters.length, chapter.concept, chapter.title);
+    this.#header.hide();
     this.#scene = this.#scenes.show(placeholderScene(chapter.scene, chapter.id));
     this.#run(
       chapter.beats,
@@ -333,6 +335,7 @@ export class Experience {
   }
 
   #enterReport(): void {
+    this.#renderer.stage.planet = true;
     document.body.dataset['chapter'] = 'report';
     this.#topBar.visible = false;
     this.#header.hide();
@@ -369,8 +372,9 @@ export class Experience {
       onBeat: (beat) => {
         document.body.dataset['beat'] = beat.type;
         if (concept !== undefined && title !== undefined) {
+          // The episode title lives in the top bar; the lesson names the idea center stage.
           if (beat.type === 'lesson') this.#header.show('Lesson', concept, 'lesson');
-          else this.#header.show(concept, title);
+          else if (title) this.#header.hide();
         }
         scene?.onBeat?.(beat);
       },

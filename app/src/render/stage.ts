@@ -1,5 +1,6 @@
 import {
   AdditiveBlending,
+  BackSide,
   BufferAttribute,
   BufferGeometry,
   Color,
@@ -8,37 +9,63 @@ import {
   PlaneGeometry,
   Points,
   ShaderMaterial,
+  SphereGeometry,
 } from 'three';
+import { palette } from '../config/palette';
 
-const PRIMARY = new Color('#3fe0ff');
-const DUST_COUNT = 2200;
-/** Dust lives in this box (world units) and wraps vertically as it drifts up. */
-const DUST_BOX = { x: 16, yMin: -2, yMax: 9, zMin: -22, zMax: 4 };
+/** Star layers: count, spread (world units), depth range, size. Far layers drift slower. */
+const STAR_LAYERS = [
+  { count: 2600, spread: 70, z: [-60, -35], size: 2.2, drift: 0.004 },
+  { count: 1200, spread: 45, z: [-35, -15], size: 2.8, drift: 0.009 },
+  { count: 260, spread: 30, z: [-15, -4], size: 3.2, drift: 0.018 },
+] as const;
+const PLANET_RADIUS = 40;
 
 /**
- * The holographic environment every scene plays in front of: a perspective grid floor that
- * slowly scrolls toward the viewer, drifting dust and a horizon glow. All motion runs in the
- * shaders from one time uniform, so a frame costs no allocation and no buffer upload.
+ * Deep space every scene plays in front of (STAT WARS, research 016): three star layers with
+ * parallax drift and twinkle, a slowly churning pink–violet nebula, and a planet whose glowing
+ * horizon rises for the attract screen and sinks out of the way during play. All motion runs
+ * in shaders from shared uniforms: no allocation and no buffer upload per frame.
  */
 export class Stage {
   readonly root = new Group();
   readonly #uniforms = {
     uTime: { value: 0 },
-    uColor: { value: PRIMARY },
     /** 0..1 — scenes dim the stage when they need the attention. */
     uIntensity: { value: 1 },
     /** Drawing-buffer height / 1080, so point sizes look the same at any render scale. */
     uResolution: { value: 1 },
+    uPink: { value: new Color(palette.pink) },
+    uPeach: { value: new Color(palette.peach) },
+    uViolet: { value: new Color(palette.violet) },
   };
+  readonly #layers: Points[] = [];
+  readonly #planet = new Group();
+  /** Planet rise 0..1 and where it is heading. */
+  #rise = 0;
+  #riseTarget = 0;
   readonly #disposables: { dispose: () => void }[] = [];
 
   constructor(random: () => number = Math.random) {
     this.root.name = 'stage';
-    this.root.add(this.#floor(), this.#horizon(), this.#backlight(), this.#dust(random));
+    this.root.add(this.#nebula());
+    for (const layer of STAR_LAYERS) {
+      const points = this.#stars(layer, random);
+      this.#layers.push(points);
+      this.root.add(points);
+    }
+    this.#buildPlanet();
+    this.root.add(this.#planet);
+    this.#placePlanet();
   }
 
   set intensity(value: number) {
     this.#uniforms.uIntensity.value = value;
+  }
+
+  /** Raise the planet's horizon into view (attract) or lower it (play). Animated. */
+  set planet(visible: boolean) {
+    this.#riseTarget = visible ? 1 : 0;
   }
 
   /** Height of the drawing buffer in device pixels. */
@@ -46,8 +73,18 @@ export class Stage {
     this.#uniforms.uResolution.value = height / 1080;
   }
 
-  update(timeSec: number): void {
+  update(timeSec: number, dtSec = 1 / 60): void {
     this.#uniforms.uTime.value = timeSec;
+    this.#layers.forEach((layer, i) => {
+      const drift = STAR_LAYERS[i]?.drift ?? 0;
+      layer.rotation.z = timeSec * drift * 0.4;
+      layer.position.x = Math.sin(timeSec * 0.05) * drift * 40;
+    });
+    // Ease the planet toward its target (about 2 s).
+    const k = 1 - Math.exp(-dtSec * 1.6);
+    this.#rise += (this.#riseTarget - this.#rise) * k;
+    this.#placePlanet();
+    this.#planet.rotation.y = timeSec * 0.01;
   }
 
   dispose(): void {
@@ -59,9 +96,15 @@ export class Stage {
     return resource;
   }
 
-  #floor(): Mesh {
-    const geometry = this.#track(new PlaneGeometry(120, 120));
-    geometry.rotateX(-Math.PI / 2);
+  #placePlanet(): void {
+    const ease = this.#rise * this.#rise * (3 - 2 * this.#rise);
+    // Horizon at the bottom fifth of the screen when risen, below the frame when lowered.
+    this.#planet.position.set(0, -PLANET_RADIUS - 3.1 - (1 - ease) * 3.2, -16);
+    this.#planet.visible = this.#rise > 0.01 || this.#riseTarget > 0;
+  }
+
+  #nebula(): Mesh {
+    const geometry = this.#track(new PlaneGeometry(220, 120));
     const material = this.#track(
       new ShaderMaterial({
         uniforms: this.#uniforms,
@@ -69,119 +112,53 @@ export class Stage {
         depthWrite: false,
         blending: AdditiveBlending,
         vertexShader: /* glsl */ `
-          varying vec3 vWorld;
+          varying vec2 vUv;
           void main() {
-            vec4 world = modelMatrix * vec4(position, 1.0);
-            vWorld = world.xyz;
-            gl_Position = projectionMatrix * viewMatrix * world;
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }`,
         fragmentShader: /* glsl */ `
+          precision highp float;
           uniform float uTime;
-          uniform vec3 uColor;
           uniform float uIntensity;
-          varying vec3 vWorld;
+          uniform vec3 uPink;
+          uniform vec3 uPeach;
+          uniform vec3 uViolet;
+          varying vec2 vUv;
 
-          // Anti-aliased grid line intensity for cells of the given size.
-          float grid(vec2 p, float size, float width) {
-            vec2 g = abs(fract(p / size - 0.5) - 0.5) / fwidth(p / size);
-            return 1.0 - min(min(g.x, g.y) / width, 1.0);
+          // Soft clouds: a few wide gaussian glows drifting slowly. (A value-noise nebula showed
+          // hard-edged blotches once bloom picked it up — research 016.)
+          float blob(vec2 uv, vec2 c, vec2 r) {
+            vec2 d = (uv - c) / r;
+            return exp(-dot(d, d));
           }
 
           void main() {
-            vec2 p = vWorld.xz + vec2(0.0, uTime * 0.35);
-            float minor = grid(p, 1.0, 1.0) * 0.45;
-            float major = grid(p, 5.0, 1.4) * 1.6;
-            float dist = length(vWorld.xz - vec2(0.0, 4.0));
-            float fade = exp(-dist * 0.06) * smoothstep(60.0, 18.0, dist);
-            // A scan pulse that sweeps toward the viewer every 7 s.
-            float wave = vWorld.z - (mod(uTime, 7.0) * 9.0 - 45.0);
-            float scan = exp(-wave * wave * 0.08) * 1.4;
-            float lines = max(minor, major);
-            float a = (lines * (1.0 + scan) + scan * 0.05) * fade * uIntensity;
-            gl_FragColor = vec4(uColor * a, min(a, 1.0));
+            float t = uTime * 0.03;
+            vec2 uv = vUv;
+            float pink = blob(uv, vec2(0.80 + 0.03 * sin(t), 0.88), vec2(0.30, 0.26))
+                       + 0.6 * blob(uv, vec2(0.62, 0.95 + 0.02 * cos(t * 1.3)), vec2(0.22, 0.12));
+            float peach = blob(uv, vec2(0.93, 0.70 + 0.03 * sin(t * 0.7)), vec2(0.14, 0.18));
+            float violet = blob(uv, vec2(0.16 + 0.03 * cos(t * 0.8), 0.18), vec2(0.30, 0.22))
+                         + 0.5 * blob(uv, vec2(0.42, 0.50), vec2(0.25, 0.10));
+            vec3 c = uPink * pink * 0.16 + uPeach * peach * 0.08 + uViolet * violet * 0.13;
+            gl_FragColor = vec4(c * uIntensity, 1.0);
           }`,
       }),
     );
     const mesh = new Mesh(geometry, material);
-    mesh.position.y = -1.6;
-    mesh.renderOrder = -2;
+    mesh.position.set(0, 4, -70);
+    mesh.renderOrder = -10;
     return mesh;
   }
 
-  #horizon(): Mesh {
-    const geometry = this.#track(new PlaneGeometry(90, 26));
-    const material = this.#track(
-      new ShaderMaterial({
-        uniforms: this.#uniforms,
-        transparent: true,
-        depthWrite: false,
-        blending: AdditiveBlending,
-        vertexShader: /* glsl */ `
-          varying vec2 vUv;
-          void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }`,
-        fragmentShader: /* glsl */ `
-          uniform vec3 uColor;
-          uniform float uIntensity;
-          varying vec2 vUv;
-          void main() {
-            // A thin bright band where the floor meets the sky, falling off upward.
-            float band = exp(-abs(vUv.y - 0.22) * 9.0);
-            float spread = smoothstep(0.5, 0.0, abs(vUv.x - 0.5));
-            float a = band * spread * 0.45 * uIntensity;
-            gl_FragColor = vec4(uColor * a, a);
-          }`,
-      }),
-    );
-    const mesh = new Mesh(geometry, material);
-    mesh.position.set(0, 2.2, -40);
-    mesh.renderOrder = -3;
-    return mesh;
-  }
-
-  /** Soft glow behind the center of the screen, where scenes put their main object. */
-  #backlight(): Mesh {
-    const geometry = this.#track(new PlaneGeometry(40, 40));
-    const material = this.#track(
-      new ShaderMaterial({
-        uniforms: this.#uniforms,
-        transparent: true,
-        depthWrite: false,
-        blending: AdditiveBlending,
-        vertexShader: /* glsl */ `
-          varying vec2 vUv;
-          void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }`,
-        fragmentShader: /* glsl */ `
-          uniform vec3 uColor;
-          uniform float uTime;
-          uniform float uIntensity;
-          varying vec2 vUv;
-          void main() {
-            float d = length(vUv - 0.5) * 2.0;
-            float breathe = 0.85 + 0.15 * sin(uTime * 0.4);
-            float a = exp(-d * d * 5.0) * 0.12 * breathe * uIntensity;
-            gl_FragColor = vec4(uColor * a, a);
-          }`,
-      }),
-    );
-    const mesh = new Mesh(geometry, material);
-    mesh.position.set(0, 2.5, -14);
-    mesh.renderOrder = -3;
-    return mesh;
-  }
-
-  #dust(random: () => number): Points {
-    const positions = new Float32Array(DUST_COUNT * 3);
-    const seeds = new Float32Array(DUST_COUNT);
-    for (let i = 0; i < DUST_COUNT; i++) {
-      positions[i * 3] = (random() * 2 - 1) * DUST_BOX.x;
-      positions[i * 3 + 1] = DUST_BOX.yMin + random() * (DUST_BOX.yMax - DUST_BOX.yMin);
-      positions[i * 3 + 2] = DUST_BOX.zMin + random() * (DUST_BOX.zMax - DUST_BOX.zMin);
+  #stars(layer: (typeof STAR_LAYERS)[number], random: () => number): Points {
+    const positions = new Float32Array(layer.count * 3);
+    const seeds = new Float32Array(layer.count);
+    for (let i = 0; i < layer.count; i++) {
+      positions[i * 3] = (random() * 2 - 1) * layer.spread;
+      positions[i * 3 + 1] = (random() * 2 - 1) * layer.spread * 0.55 + 3;
+      positions[i * 3 + 2] = layer.z[0] + random() * (layer.z[1] - layer.z[0]);
       seeds[i] = random();
     }
     const geometry = this.#track(new BufferGeometry());
@@ -189,46 +166,108 @@ export class Stage {
     geometry.setAttribute('aSeed', new BufferAttribute(seeds, 1));
     const material = this.#track(
       new ShaderMaterial({
-        uniforms: {
-          ...this.#uniforms,
-          uRange: { value: [DUST_BOX.yMin, DUST_BOX.yMax] },
-        },
+        uniforms: { ...this.#uniforms, uSize: { value: layer.size } },
         transparent: true,
         depthWrite: false,
         blending: AdditiveBlending,
         vertexShader: /* glsl */ `
           uniform float uTime;
-          uniform vec2 uRange;
           uniform float uResolution;
+          uniform float uSize;
           attribute float aSeed;
           varying float vAlpha;
+          varying float vWarm;
           void main() {
-            vec3 p = position;
-            float span = uRange.y - uRange.x;
-            p.y = uRange.x + mod(p.y - uRange.x + uTime * (0.05 + aSeed * 0.12), span);
-            p.x += sin(uTime * 0.2 + aSeed * 40.0) * 0.3;
-            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mv;
-            float twinkle = 0.55 + 0.45 * sin(uTime * (0.6 + aSeed) + aSeed * 90.0);
-            // Fade in/out at the wrap edges so particles never pop.
-            float edge = smoothstep(0.0, 1.0, p.y - uRange.x) * smoothstep(0.0, 1.5, uRange.y - p.y);
-            vAlpha = twinkle * edge;
-            gl_PointSize = (2.0 + aSeed * 3.0) * (16.0 / -mv.z) * uResolution;
+            // Most stars are faint; a few are bright. Each twinkles at its own pace.
+            float bright = pow(aSeed, 6.0);
+            float twinkle = 0.7 + 0.3 * sin(uTime * (0.8 + aSeed * 2.0) + aSeed * 60.0);
+            vAlpha = (0.45 + bright * 0.55) * twinkle;
+            vWarm = step(0.7, fract(aSeed * 13.0));
+            gl_PointSize = uSize * (0.6 + bright * 2.4) * uResolution;
           }`,
         fragmentShader: /* glsl */ `
-          uniform vec3 uColor;
           uniform float uIntensity;
+          uniform vec3 uPink;
           varying float vAlpha;
+          varying float vWarm;
           void main() {
             float d = length(gl_PointCoord - 0.5);
-            float a = smoothstep(0.5, 0.0, d) * vAlpha * 0.9 * uIntensity;
-            gl_FragColor = vec4(uColor * a, a);
+            float a = smoothstep(0.5, 0.0, d) * vAlpha * uIntensity;
+            vec3 c = mix(vec3(1.0), mix(vec3(1.0), uPink, 0.35), vWarm);
+            gl_FragColor = vec4(c * a, a);
           }`,
       }),
     );
     const points = new Points(geometry, material);
     points.frustumCulled = false;
-    points.renderOrder = -1;
+    points.renderOrder = -9;
     return points;
+  }
+
+  #buildPlanet(): void {
+    const sphere = this.#track(new SphereGeometry(PLANET_RADIUS, 96, 48));
+    const body = this.#track(
+      new ShaderMaterial({
+        uniforms: this.#uniforms,
+        vertexShader: /* glsl */ `
+          varying vec3 vNormal;
+          varying vec3 vView;
+          void main() {
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            vNormal = normalize(normalMatrix * normal);
+            vView = normalize(-mv.xyz);
+            gl_Position = projectionMatrix * mv;
+          }`,
+        fragmentShader: /* glsl */ `
+          uniform vec3 uPink;
+          uniform vec3 uPeach;
+          uniform float uIntensity;
+          varying vec3 vNormal;
+          varying vec3 vView;
+          void main() {
+            // Seen from above at a grazing angle: only the very limb catches the light.
+            float rim = pow(1.0 - max(dot(vNormal, vView), 0.0), 14.0);
+            vec3 night = vec3(0.028, 0.014, 0.036);
+            vec3 c = night + mix(uPink, uPeach, rim) * rim * 1.2;
+            gl_FragColor = vec4(c * uIntensity, 1.0);
+          }`,
+      }),
+    );
+    // Atmosphere: a slightly larger back-facing shell that glows at the limb.
+    const shell = this.#track(new SphereGeometry(PLANET_RADIUS * 1.035, 96, 48));
+    const atmosphere = this.#track(
+      new ShaderMaterial({
+        uniforms: this.#uniforms,
+        side: BackSide,
+        transparent: true,
+        depthWrite: false,
+        blending: AdditiveBlending,
+        vertexShader: /* glsl */ `
+          varying vec3 vNormal;
+          varying vec3 vView;
+          void main() {
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            vNormal = normalize(normalMatrix * normal);
+            vView = normalize(-mv.xyz);
+            gl_Position = projectionMatrix * mv;
+          }`,
+        fragmentShader: /* glsl */ `
+          uniform vec3 uPink;
+          uniform float uIntensity;
+          varying vec3 vNormal;
+          varying vec3 vView;
+          void main() {
+            float glow = pow(max(dot(vNormal, vView), 0.0), 5.0);
+            gl_FragColor = vec4(uPink * glow * 1.4 * uIntensity, glow);
+          }`,
+      }),
+    );
+    const planet = new Mesh(sphere, body);
+    planet.renderOrder = -5;
+    const air = new Mesh(shell, atmosphere);
+    air.renderOrder = -4;
+    this.#planet.add(planet, air);
   }
 }

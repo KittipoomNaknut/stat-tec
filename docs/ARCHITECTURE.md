@@ -551,33 +551,25 @@ chapters:
 - animate ด้วย `transform`/`opacity` เท่านั้น (compositor-only, ไม่ trigger layout)
 - Label ที่ผูกกับวัตถุ 3D ใช้ `CSS2DRenderer`
 
-### 11.3 Design tokens — สไตล์ "Holographic HUD"
+### 11.3 Design tokens — สไตล์ "STAT WARS" (research 016)
 
-| Token        | ค่า                                  | ใช้กับ                           |
-| ------------ | ------------------------------------ | -------------------------------- |
-| `--bg`       | `#050B18`                            | พื้นหลัง (กรมท่าเกือบดำ)         |
-| `--bg-grid`  | `#0D1B33`                            | เส้นกริดพื้นหลัง                 |
-| `--panel`    | `rgba(12, 32, 64, 0.55)` + blur 12px | กล่องข้อความ (glass)             |
-| `--primary`  | `#3FE0FF`                            | เส้นเรืองแสง, cursor, ข้อมูลหลัก |
-| `--accent`   | `#FFC857`                            | เงิน/กำไร/ไฮไลต์                 |
-| `--positive` | `#3DFFA2`                            | ขึ้น/ถูก                         |
-| `--negative` | `#FF4D6D`                            | ลง/โกง/ผิด                       |
-| `--text`     | `#E6F1FF`                            | ข้อความหลัก                      |
-| `--text-dim` | `#7E93B5`                            | ข้อความรอง                       |
+อวกาศลึกในสีของภาควิชาสถิติประยุกต์ (ชมพู → พีช) · ค่าเดียวกันใน `styles/tokens.css` และ `config/palette.ts`
 
-**Typography** (self-hosted, offline)
+| Token                   | ค่า                                              | ใช้กับ                                      |
+| ----------------------- | ------------------------------------------------ | ------------------------------------------- |
+| `--bg`                  | `#07040D`                                        | อวกาศ                                       |
+| `--primary`             | `#F6629E`                                        | ชมพูหลัก: เลเซอร์, เส้นข้อมูล, ตัวหัวเรื่อง |
+| `--hot`                 | `#FF3D8F`                                        | แสงเรือง, dwell                             |
+| `--accent`              | `#FEBB97`                                        | พีช: ตัวเลขเงิน, ไฮไลต์                     |
+| `--panel`               | ไล่ `rgb(44 15 42 / 78%)` → `rgb(26 9 26 / 78%)` | กรอบกระจกมืด (ไม่ blur)                     |
+| `--text` / `--text-dim` | `#FFF6FA` / `#A993A7`                            | ข้อความ                                     |
 
-- Thai/UI: **Anuphan** (หัวข้อ, ข้อความ AI)
-- ตัวเลข/ticker: **JetBrains Mono** (tabular figures — ตัวเลขวิ่งไม่ดิ้น)
+**Typography** (self-hosted)
 
-**ขนาดตามระยะยืน 2–2.5 m** (คิดจากความสูงจอ, หน่วย `vh`)
+- ไทย/UI: **Bai Jamjuree** · หัวข้ออังกฤษ/ตัวเลข: **Orbitron** (ไม่มี tabular figures → ตัวเลขที่วิ่งใช้ `hud/digits.ts`)
+- **ห้าม letter-spacing กับภาษาไทย** (eyebrow แบบ Orbitron ใช้กับละตินเท่านั้น)
 
-| ระดับ        | ขนาด     | ตัวอย่าง                                 |
-| ------------ | -------- | ---------------------------------------- |
-| Hero number  | 16–20 vh | "฿1,240,000" ตอน reveal                  |
-| Headline     | 8 vh     | ชื่อบท                                   |
-| Caption (AI) | 5 vh     | ข้อความ AI — **ขั้นต่ำ**                 |
-| HUD label    | 3.5 vh   | progress, กำไร (อ่านโดยคนดูด้านหลังด้วย) |
+**ขนาดตามระยะยืน 2–2.5 m**: hero 18 vh · headline 7.4 vh · caption 4.6 vh (ข้อความ AI) · label 3.4 vh · ปุ่มตัวเลือก ≥ 36 × 17 vh
 
 **Motion**
 

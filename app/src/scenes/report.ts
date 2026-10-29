@@ -1,6 +1,6 @@
 import { baht, CountUp } from '../hud/count-up';
+import { setDigits } from '../hud/digits';
 import type { Story } from '../narrative/schema';
-import { DataGlobe } from './globe';
 import type { SceneContext, SceneModule } from './types';
 
 export interface ReportData {
@@ -23,20 +23,18 @@ class ReportScene implements SceneModule {
   readonly id = 'report';
   readonly #ctx: SceneContext;
   readonly #data: ReportData;
-  readonly #globe = new DataGlobe(2400, 1.1);
   readonly #count = new CountUp(2600);
   readonly #profit: HTMLElement;
   #counting = false;
 
-  constructor(ctx: SceneContext, _story: Story, data: ReportData) {
+  constructor(ctx: SceneContext, story: Story, data: ReportData) {
     this.#ctx = ctx;
     this.#data = data;
-    this.#globe.root.position.set(0, 2.6, -3);
-    ctx.world.add(this.#globe.root);
     ctx.hud.innerHTML = `
       <section class="report">
-        <p class="hud-label hud-label-accent">CEO Report</p>
-        <h1 class="hud-headline report-name"></h1>
+        <p class="hud-eyebrow">Mission report</p>
+        <h1 class="hud-display report-title"></h1>
+        <p class="report-name"></p>
         <div class="report-cards">
           <div class="hud-panel report-card report-profit" data-cue="profit-count">
             <p class="hud-label-th">กำไรรวม</p>
@@ -58,26 +56,24 @@ class ReportScene implements SceneModule {
         </div>
       </section>`;
     const q = (sel: string) => ctx.hud.querySelector(sel) as HTMLElement;
+    q('.report-title').textContent = story.report.title;
     q('.report-name').textContent = `CEO ${data.codename}`;
     q('.report-style').textContent = data.style.label;
     q('.report-style-note').textContent = data.style.description;
     q('.report-rank').textContent = `#${String(data.rank)}`;
     q('.report-of').textContent = ` / ${String(data.totalPlayers)}`;
     this.#profit = q('.report-profit .hud-number');
-    this.#profit.textContent = baht(0);
+    setDigits(this.#profit, baht(0));
   }
 
   setFade(value: number): void {
-    this.#globe.opacity = value * 0.6;
     this.#ctx.hud.style.opacity = String(value);
   }
 
-  update(dtMs: number, timeSec: number): void {
-    this.#globe.update(timeSec);
-    this.#globe.resolution = window.innerHeight / 1080;
+  update(dtMs: number): void {
     if (this.#counting) {
       this.#count.update(dtMs);
-      this.#profit.textContent = baht(this.#count.value);
+      setDigits(this.#profit, baht(this.#count.value));
     }
   }
 
@@ -110,7 +106,6 @@ class ReportScene implements SceneModule {
   }
 
   dispose(): void {
-    this.#globe.root.removeFromParent();
-    this.#globe.dispose();
+    // Everything lives in the HUD layer; the planet belongs to the shared stage.
   }
 }

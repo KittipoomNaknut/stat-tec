@@ -11,7 +11,7 @@ export class ChapterHeader {
 
   constructor(parent: HTMLElement) {
     this.#root.className = 'hud-header';
-    this.#root.innerHTML = `<p class="hud-label hud-label-accent"></p><h1 class="hud-headline"></h1>`;
+    this.#root.innerHTML = `<p class="hud-eyebrow"></p><h1 class="hud-headline"></h1>`;
     this.#eyebrow = this.#root.querySelector('p') as HTMLElement;
     this.#title = this.#root.querySelector('h1') as HTMLElement;
     this.#root.hidden = true;
