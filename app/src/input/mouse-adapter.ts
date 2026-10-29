@@ -1,3 +1,4 @@
+import { SlapDetector } from '../gestures/slap';
 import type { IntentBus } from './intent-bus';
 import type { TargetRegistry } from './targets';
 
@@ -13,7 +14,8 @@ const ARROWS: Record<string, 'left' | 'right' | 'up' | 'down'> = {
 
 /**
  * Staff/dev fallback (F2): the mouse and keyboard emit the same intents as the body.
- * move → cursor · click → select (hit-tested) · drag → draw · wheel → zoom · arrows → swipe
+ * move → cursor (a fast flick also slaps) · click → select (hit-tested) · drag → draw ·
+ * wheel → zoom · arrows → swipe
  */
 export class MouseAdapter {
   readonly #bus: IntentBus;
@@ -22,6 +24,7 @@ export class MouseAdapter {
   #enabled = false;
   #dragging = false;
   #moved = false;
+  readonly #slap = new SlapDetector();
 
   constructor(
     source: EventTarget,
@@ -74,6 +77,8 @@ export class MouseAdapter {
     this.#bus.emit({ type: 'cursor', x, y, hand: 'right', visible: true, ...this.#meta() });
     // Staff stand-in for raising a hand: the higher the pointer, the higher the hand.
     this.#bus.emit({ type: 'raise', hand: 'right', level: 1 - y, ...this.#meta() });
+    const slap = this.#slap.update({ x, y, hand: 'right', visible: true }, performance.now());
+    if (slap) this.#bus.emit({ ...slap, ...this.#meta() });
     if (this.#dragging) {
       if (!this.#moved) this.#bus.emit({ type: 'draw', phase: 'start', x, y, ...this.#meta() });
       this.#moved = true;

@@ -6,8 +6,10 @@ import type { LockState } from '../perception/player-lock';
 import type { PerceptionSource } from '../perception/protocol';
 import { CursorTracker } from './cursor';
 import { CursorSmoother } from './cursor-smoother';
+import { DrawDetector } from './draw';
 import { DwellDetector } from './dwell';
 import { RaiseDetector } from './raise';
+import { SlapDetector } from './slap';
 
 /** What the engine needs from each perception frame. */
 export interface GestureInput {
@@ -17,8 +19,9 @@ export interface GestureInput {
 }
 
 /**
- * Turns tracked poses into intents: presence changes, cursor, dwell progress and selects.
- * Detectors for other gestures (raise, throw, slap, draw…) join here in later PRs.
+ * Turns tracked poses into intents: presence changes, cursor, dwell progress and selects, raise,
+ * slap and draw. Slap and draw are read off the smoothed cursor, so they land where the player
+ * sees their hand.
  */
 export class GestureEngine {
   readonly #bus: IntentBus;
@@ -28,6 +31,8 @@ export class GestureEngine {
   readonly #smoother = new CursorSmoother();
   readonly #dwell = new DwellDetector();
   readonly #raise = new RaiseDetector();
+  readonly #slap = new SlapDetector();
+  readonly #draw = new DrawDetector();
   #lock: LockState = 'searching';
   #playerId = 0;
   /** Lets the mouse take over without the body fighting it. */
@@ -57,6 +62,9 @@ export class GestureEngine {
     for (const event of this.#dwell.update(cursor, this.#targets, tMs)) {
       this.#bus.emit({ ...event, ...meta });
     }
+    const slap = this.#slap.update(cursor, tMs);
+    if (slap) this.#bus.emit({ ...slap, ...meta });
+    for (const event of this.#draw.update(cursor)) this.#bus.emit({ ...event, ...meta });
     const raise = this.#raise.update(input.lock === 'locked' ? input.body : null, tMs);
     if (raise) this.#bus.emit({ type: 'raise', ...raise, ...meta });
   }
