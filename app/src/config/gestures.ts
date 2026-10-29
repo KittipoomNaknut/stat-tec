@@ -75,6 +75,20 @@ export const gestureConfig = {
     smoothingMs: 120,
     minVisibility: 0.5,
   },
+  /**
+   * Slap (EPISODE IV): a fast sweep of the cursor, speed in screen heights per second over
+   * `windowMs` (research 019). Measured on the recordings: button play in the side zone stays
+   * under 3 (p99 2.4); deliberate swipes reach 4–7.
+   */
+  slap: {
+    windowMs: 100,
+    /** Ignore the first frames after the cursor appears: too short a span to judge speed. */
+    minSpanMs: 60,
+    startSpeed: 3.5,
+    keepSpeed: 2.5,
+    /** Screen width / height of the kiosk TV, so a sideways sweep counts like a vertical one. */
+    aspect: 16 / 9,
+  },
   dwell: {
     holdMs: 1200,
     /** Leaving the target for less than this keeps the progress. */
