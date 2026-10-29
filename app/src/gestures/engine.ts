@@ -5,6 +5,7 @@ import type { TargetRegistry } from '../input/targets';
 import type { LockState } from '../perception/player-lock';
 import type { PerceptionSource } from '../perception/protocol';
 import { CursorTracker } from './cursor';
+import { CursorPrecision } from './cursor-precision';
 import { CursorSmoother } from './cursor-smoother';
 import { DrawDetector } from './draw';
 import { DwellDetector } from './dwell';
@@ -20,8 +21,9 @@ export interface GestureInput {
 
 /**
  * Turns tracked poses into intents: presence changes, cursor, dwell progress and selects, raise,
- * slap and draw. Slap and draw are read off the smoothed cursor, so they land where the player
- * sees their hand.
+ * slap and draw. The cursor is mapped (CursorTracker), smoothed (CursorSmoother) and steadied
+ * (CursorPrecision); slap and draw are read off that cursor, so they land where the player sees
+ * their hand.
  */
 export class GestureEngine {
   readonly #bus: IntentBus;
@@ -29,6 +31,7 @@ export class GestureEngine {
   readonly #source: IntentSource;
   #cursor = new CursorTracker(cursorConfigFor('server'));
   readonly #smoother = new CursorSmoother();
+  readonly #precision = new CursorPrecision();
   readonly #dwell = new DwellDetector();
   readonly #raise = new RaiseDetector();
   readonly #slap = new SlapDetector();
@@ -44,6 +47,11 @@ export class GestureEngine {
     this.#source = source;
   }
 
+  /** Precision for held hands (default); off while the player draws, so the pen is on the hand. */
+  set precise(value: boolean) {
+    this.#precision.enabled = value;
+  }
+
   /** Use thresholds calibrated for the pose source actually in use. */
   setPoseSource(source: PerceptionSource): void {
     this.#cursor = new CursorTracker(cursorConfigFor(source));
@@ -54,8 +62,11 @@ export class GestureEngine {
     this.#presence(input, meta);
     if (!this.enabled) return;
 
-    const cursor = this.#smoother.update(
-      this.#cursor.update(input.lock === 'locked' ? input.body : null, tMs),
+    const cursor = this.#precision.update(
+      this.#smoother.update(
+        this.#cursor.update(input.lock === 'locked' ? input.body : null, tMs),
+        tMs,
+      ),
       tMs,
     );
     this.#bus.emit({ type: 'cursor', ...cursor, ...meta });

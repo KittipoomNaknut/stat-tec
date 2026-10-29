@@ -136,6 +136,11 @@ class ForecastScene implements SceneModule {
     return true;
   }
 
+  /** The pen must sit exactly on the hand while drawing (research 022). */
+  cursorPrecise(): boolean {
+    return this.#mode !== 'draw';
+  }
+
   /** The hand sets the order size: no pointing cursor then. While drawing, the cursor is the pen. */
   showCursor(): boolean {
     return !this.#controlling && this.#mode !== 'sale';

@@ -34,6 +34,8 @@ export interface SceneModule {
   vars(): TemplateVars;
   /** False while the player's hands are busy with something else (e.g. setting a price). */
   showCursor?(): boolean;
+  /** False while the cursor must sit exactly on the hand (drawing); default precise (022). */
+  cursorPrecise?(): boolean;
   /** True when the scene presents the lesson itself (the app then skips its lesson title). */
   ownsLesson?(): boolean;
   /** Chapters only; welcome/attract/report return null. */
