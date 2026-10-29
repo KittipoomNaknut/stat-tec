@@ -80,6 +80,7 @@ export class NarrativeEngine {
   #gestureDone = false;
   #sceneDone = false;
   #blocked = false;
+  #engaged = false;
   readonly state: NarrativeState = {
     beat: null,
     beatIndex: -1,
@@ -120,6 +121,14 @@ export class NarrativeEngine {
     this.#sceneDone = true;
   }
 
+  /**
+   * The player is part-way through selecting something (dwelling on a button). Tutorial and
+   * play time-outs wait for them: cutting a choice off under the player's hand feels broken.
+   */
+  setEngaged(engaged: boolean): void {
+    this.#engaged = engaged;
+  }
+
   /** Release a blocking cue. */
   continue(): void {
     if (!this.#blocked) return;
@@ -148,7 +157,9 @@ export class NarrativeEngine {
         this.#updateLine();
         break;
       case 'gesture':
-        if (this.#gestureDone || this.#beatMs >= step.timeoutMs) this.#enterStep(this.#step + 1);
+        if (this.#gestureDone || (!this.#engaged && this.#beatMs >= step.timeoutMs)) {
+          this.#enterStep(this.#step + 1);
+        }
         break;
       case 'play':
         this.#updatePlay(step);
@@ -266,8 +277,9 @@ export class NarrativeEngine {
         Math.floor((since * this.#config.charsPerSec) / 1000),
       );
     }
-    if (this.#sceneDone || this.#beatMs >= step.durationMs)
+    if (this.#sceneDone || (!this.#engaged && this.#beatMs >= step.durationMs)) {
       this.#startBeat(this.state.beatIndex + 1);
+    }
   }
 
   #blocks(line: Line): boolean {

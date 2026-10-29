@@ -7,6 +7,7 @@ import { Playground } from './debug/playground';
 import { RecorderPanel } from './debug/recorder';
 import { SessionRecorder } from './debug/session-recorder';
 import { showStyleguide } from './debug/styleguide';
+import { SyntheticPlayer } from './debug/synthetic-player';
 import { renderConfigFromUrl } from './config/render';
 import { Experience } from './experience/experience';
 import { story } from './narrative/story';
@@ -62,6 +63,14 @@ function startExperience(parent: HTMLElement): void {
   startLoop((dt, now) => {
     experience.frame(dt, now);
   });
+  if (params.get('player') === 'synthetic') {
+    // E2E: a scripted body instead of the camera (tests/e2e).
+    const player = new SyntheticPlayer((frame, now) => {
+      experience.onBody(frame, now);
+    });
+    Object.assign(window, { statTecSynthetic: player });
+    return;
+  }
   startOverlay(parent, {
     onReady: (options) => {
       experience.setPoseSource(options.source);

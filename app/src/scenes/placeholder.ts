@@ -218,7 +218,7 @@ class PlaceholderScene implements SceneModule {
     if (beat.type === 'play') {
       this.#playStartFrames = this.#ctx.poseFrames();
       if (this.#spec.choices.length > 0) {
-        this.#showChoices(this.#spec.choices, () => {
+        this.#showChoices('play', this.#spec.choices, () => {
           this.#ctx.signal('finished');
         });
       }
@@ -230,7 +230,7 @@ class PlaceholderScene implements SceneModule {
   onCue(cue: string): boolean {
     const cueChoices = this.#spec.cueChoices;
     if (cueChoices?.cue !== cue) return false;
-    this.#showChoices(cueChoices.choices, () => {
+    this.#showChoices(cue, cueChoices.choices, () => {
       this.#clearChoices();
       this.#ctx.signal('continue');
     });
@@ -255,7 +255,8 @@ class PlaceholderScene implements SceneModule {
     this.#holo.dispose();
   }
 
-  #showChoices(choices: Choice[], then: () => void): void {
+  /** `set` keeps target ids unique: a reused id would inherit the last select's cooldown. */
+  #showChoices(set: string, choices: Choice[], then: () => void): void {
     const row = document.createElement('div');
     row.className = 'hud-choices is-entering';
     this.#ctx.hud.append(row);
@@ -266,7 +267,7 @@ class PlaceholderScene implements SceneModule {
           row,
           this.#ctx.bus,
           this.#ctx.targets,
-          `${this.id}-choice-${String(i)}`,
+          `${this.id}-${set}-${String(i)}`,
           choice.label,
           () => {
             this.#picked = choice;
