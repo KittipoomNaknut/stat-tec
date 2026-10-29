@@ -64,6 +64,7 @@ export class Experience {
   readonly #skipRow: HTMLElement;
   readonly #skeleton: MiniSkeleton;
   readonly #notice: Notice;
+  readonly #cursor: HudCursor;
   readonly #watchdog: Watchdog;
 
   #phase: AppPhase = 'boot';
@@ -137,16 +138,19 @@ export class Experience {
     });
 
     const cursor = new HudCursor(hud);
+    this.#cursor = cursor;
     this.bus.on('cursor', (c) => {
       cursor.move(c);
     });
     this.bus.on('dwell', (d) => {
       cursor.setProgress(d.progress);
+      cursor.setMagnet(d.progress > 0 ? this.#targets.rectOf(d.targetId) : null, d.progress);
       // Mid-selection on a scene's button: time-outs wait (skip does not count).
       this.#narrative?.setEngaged(d.targetId !== 'skip' && d.progress > 0 && d.progress < 1);
     });
     this.bus.on('select', (s) => {
       cursor.setProgress(0);
+      cursor.setMagnet(null);
       this.#narrative?.setEngaged(false);
       // For tests and the debug overlay: what the player last selected.
       document.body.dataset['lastSelect'] = s.targetId;
@@ -244,6 +248,7 @@ export class Experience {
       this.#notice.hide();
     }
     this.#skeleton.draw();
+    this.#cursor.frame(dtMs);
     document.body.dataset['beat'] = state?.beat?.type ?? '';
     this.#renderer.frame(dtMs, nowMs);
   }
