@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import './support/synthetic';
 
 /**
  * A whole visit driven by a synthetic body through the real gesture engine (cursor activation,
@@ -12,21 +13,6 @@ import { expect, test, type Page } from '@playwright/test';
 const SPEED = 3;
 /** Low internal resolution: CI renders WebGL in software (~9 fps at full size). */
 const URL = `/?player=synthetic&speed=${String(SPEED)}&maxh=360`;
-
-interface Synthetic {
-  enter(): void;
-  lose(): void;
-  return(): void;
-  leave(): void;
-  pointAt(x: number, y: number): void;
-  rest(): void;
-}
-
-declare global {
-  interface Window {
-    statTecSynthetic: Synthetic;
-  }
-}
 
 const phase = (page: Page) => page.locator('body').getAttribute('data-phase');
 
@@ -100,9 +86,10 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
     await page.waitForTimeout(200);
   }
   expect([...seen]).toEqual(chapters);
-  // segments' ad choice, fraud, forecast — coffee is played by raising a hand, segments' play
-  // by holding still in the crowd (magnets drop by themselves when time runs out)
-  expect(selected).toBe(3);
+  // segments' ad choice and forecast — coffee is played by raising a hand, segments' play by
+  // holding still in the crowd (magnets drop by themselves when time runs out), fraud by slapping
+  // (fraud.spec.ts) and the hand's height for the ring
+  expect(selected).toBe(2);
 
   // Report: a real profit total and rank, then back to attract on its own.
   await expect.poll(() => phase(page)).toBe('report');

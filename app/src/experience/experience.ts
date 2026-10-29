@@ -20,6 +20,7 @@ import { Renderer } from '../render/renderer';
 import { attractScene } from '../scenes/attract';
 import { SceneManager } from '../scenes/manager';
 import { coffeeScene } from '../scenes/coffee/scene';
+import { fraudScene } from '../scenes/fraud/scene';
 import { segmentsScene } from '../scenes/segments/scene';
 import { placeholderScene } from '../scenes/placeholder';
 import { reportScene } from '../scenes/report';
@@ -338,6 +339,7 @@ export class Experience {
     const real: Record<string, (id: string) => SceneFactory> = {
       'c-coffee-pricing': coffeeScene,
       'd-segmentation': segmentsScene,
+      'f-fraud': fraudScene,
     };
     const factory =
       real[chapter.scene]?.(chapter.id) ?? placeholderScene(chapter.scene, chapter.id);
