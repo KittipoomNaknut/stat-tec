@@ -1,11 +1,12 @@
 /**
  * Research 019: slap and draw read off the smoothed cursor. Replays the owner's recorded clips
- * through the same chain as the engine (tracker → cursor → smoother → detector).
+ * through the same chain as the engine (tracker → cursor → smoother → precision → detector).
  */
 import { describe, expect, it } from 'vitest';
 import { cursorConfigFor } from '../../src/config/gestures';
 import { perceptionDefaults } from '../../src/config/perception';
 import { CursorTracker } from '../../src/gestures/cursor';
+import { CursorPrecision } from '../../src/gestures/cursor-precision';
 import { CursorSmoother } from '../../src/gestures/cursor-smoother';
 import { DrawDetector } from '../../src/gestures/draw';
 import { SlapDetector } from '../../src/gestures/slap';
@@ -21,6 +22,7 @@ async function replay(file: string, clipId: string): Promise<{ slaps: number; st
   const tracker = new PoseTracker(perceptionDefaults.filter);
   const cursor = new CursorTracker(cursorConfigFor('server'));
   const smoother = new CursorSmoother();
+  const precision = new CursorPrecision();
   const slap = new SlapDetector();
   const draw = new DrawDetector();
   let slaps = 0;
@@ -34,7 +36,10 @@ async function replay(file: string, clipId: string): Promise<{ slaps: number; st
       session.camera.height,
       f.t,
     );
-    const c = smoother.update(cursor.update(r.state === 'locked' ? r.body : null, f.t), f.t);
+    const c = precision.update(
+      smoother.update(cursor.update(r.state === 'locked' ? r.body : null, f.t), f.t),
+      f.t,
+    );
     const hit = slap.update(c, f.t) !== null;
     if (hit && !active) slaps++;
     active = hit;
@@ -44,7 +49,8 @@ async function replay(file: string, clipId: string): Promise<{ slaps: number; st
 }
 
 describe('slap on recorded clips', () => {
-  it('catches most of the six sweeps in the swipe clip', async () => {
+  it('catches the six sweeps in the swipe clip', async () => {
+    // 5 of 6 with the smoother alone; 6 with CursorPrecision (research 022)
     expect((await replay(RTMPOSE, 'swipe')).slaps).toBeGreaterThanOrEqual(5);
   });
 

@@ -257,6 +257,7 @@ export class Experience {
     }
     this.#skeleton.draw();
     this.#cursor.suppressed = this.#scene?.showCursor?.() === false;
+    this.#gestures.precise = this.#scene?.cursorPrecise?.() !== false;
     this.#cursor.frame(dtMs);
     document.body.dataset['beat'] = state?.beat?.type ?? '';
     this.#renderer.frame(dtMs, nowMs);

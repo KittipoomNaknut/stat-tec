@@ -64,6 +64,25 @@ export const gestureConfig = {
     deadband: 0.004,
   },
   /**
+   * Precision for a held hand (research 022), after smoothing: slow movement moves the cursor by
+   * `minGain` of itself, rising to 1:1 at `fastSpeed`; the cursor–hand gap closes with
+   * `recoverFastMs` while moving fast, `recoverSlowMs` otherwise. Speeds in screen heights per
+   * second (150 and 800 px/s at 1080p). Measured on the playground sessions: shake 1.84 → 1.00
+   * px, held still before a select 13.6 → 9.4 px, same selects, edges still reachable.
+   * `maxGap` bounds how far the cursor may trail the hand (a slow steady drag would otherwise
+   * trail it by ~140 px); scenes where the player draws switch precision off (`cursorPrecise`).
+   */
+  precision: {
+    windowMs: 100,
+    maxGap: 60 / 1080,
+    minGain: 0.3,
+    slowSpeed: 150 / 1080,
+    fastSpeed: 800 / 1080,
+    recoverFastMs: 60,
+    recoverSlowMs: 2000,
+    aspect: 16 / 9,
+  },
+  /**
    * Raise (EPISODE II: set the price with your hand). Level 0 when the higher wrist is this far
    * above the hips (SW), 1 at `highAbove` — a hand overhead. Hanging arms measured ~0 above the
    * hips; raised overhead 2.6–3.0 (research 009/010 recordings).
