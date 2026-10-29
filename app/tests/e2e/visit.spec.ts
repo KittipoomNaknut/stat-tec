@@ -78,7 +78,9 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
   let selected = 0;
   for (;;) {
     // Phase and chapter in one read: two reads can straddle the switch to the report.
-    const now = await page.evaluate(() => ({ ...document.body.dataset }));
+    const now = await page.evaluate(() =>
+      Object.fromEntries(Object.entries(document.body.dataset)),
+    );
     if (now['phase'] !== 'chapter') break;
     const chapter = now['chapter'] ?? '';
     seen.add(chapter);

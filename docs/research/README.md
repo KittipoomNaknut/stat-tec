@@ -22,7 +22,7 @@
 | [011](011-hud-design-system.md)           | Design system ของ HUD                               | Anuphan + JetBrains Mono; ปุ่ม dwell ≥ 26×15 vh เติมแสงที่ตัวปุ่ม; label ไทยห้าม tracking                                                    | PR #33               |
 | [012](012-renderer-frame-budget.md)       | Renderer: frame budget, backdrop blur, 4K           | blur หลัง panel ทำเฟรมหลุด (p95 16.8 → 33.4) → เลิกใช้; 4K ใน headless เชื่อไม่ได้                                                           | PR #34               |
 | [013](013-experience-layout.md)           | ประกอบทั้งรอบ: layout + flow                        | ครบรอบใน 66 s (×4) ไม่มี error; ดูภาพทีละจังหวะเจอ 7 จุดทับ/อ่านยาก → แก้หมด                                                                 | PR #39               |
-| [014](014-e2e-synthetic-player.md)        | E2E ด้วยผู้เล่นสังเคราะห์                           | ทั้งรอบผ่าน CI ไม่ใช้กล้อง; เจอ 2 บั๊กจริง: time-out ตัดการเลือกกลางคัน, id ปุ่มซ้ำทำ cooldown ติดข้ามชุด                                    | PR #41               |
+| [014](014-e2e-synthetic-player.md)        | E2E ด้วยผู้เล่นสังเคราะห์                           | ทั้งรอบผ่าน CI ไม่ใช้กล้อง; เจอ 3 บั๊กจริง: time-out ตัดการเลือกกลางคัน, id ปุ่มซ้ำ, ปุ่มโผล่ใต้มือแล้วเลือกเอง                              | PR #41               |
 
 ## แม่แบบ
 
