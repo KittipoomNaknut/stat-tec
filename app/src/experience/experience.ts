@@ -20,9 +20,10 @@ import { Renderer } from '../render/renderer';
 import { attractScene } from '../scenes/attract';
 import { SceneManager } from '../scenes/manager';
 import { coffeeScene } from '../scenes/coffee/scene';
+import { segmentsScene } from '../scenes/segments/scene';
 import { placeholderScene } from '../scenes/placeholder';
 import { reportScene } from '../scenes/report';
-import type { SceneModule } from '../scenes/types';
+import type { SceneFactory, SceneModule } from '../scenes/types';
 import { welcomeScene } from '../scenes/welcome';
 import { codename } from '../scoring/codename';
 import { chapterProfit, totalProfit, type ChapterOutcome } from '../scoring/profit';
@@ -36,6 +37,8 @@ export interface ExperienceOptions {
   speed?: number;
   /** Render scale cap (see config/render.ts). */
   maxInternalHeight?: number;
+  /** Dev/review: jump straight to this chapter id once a visit starts (`?chapter=segments`). */
+  startChapter?: string;
   /** Where the leaderboard lives (localStorage in the kiosk). */
   storage?: Storage;
 }
@@ -50,6 +53,7 @@ export class Experience {
   readonly #targets = new TargetRegistry();
   readonly #story: Story;
   readonly #speed: number;
+  readonly #startChapter: number;
   readonly #renderer: Renderer;
   readonly #scenes: SceneManager;
   readonly #gestures: GestureEngine;
@@ -80,6 +84,7 @@ export class Experience {
   constructor(parent: HTMLElement, options: ExperienceOptions) {
     this.#story = options.story;
     this.#speed = options.speed ?? 1;
+    this.#startChapter = this.#story.chapters.findIndex((c) => c.id === options.startChapter);
     this.#leaderboard = new Leaderboard(options.storage ?? window.localStorage);
     this.#renderer = new Renderer(parent, {
       ...(options.maxInternalHeight === undefined
@@ -275,14 +280,23 @@ export class Experience {
         break;
       case 'welcome':
         this.#enterWelcome();
+        if (this.#startChapter > 0) this.#skipTo();
         break;
       case 'chapter':
-        this.#enterChapter(chapterIndex);
+        if (chapterIndex < this.#startChapter) this.#skipTo();
+        else this.#enterChapter(chapterIndex);
         break;
       case 'report':
         this.#enterReport();
         break;
     }
+  }
+
+  /** Dev jump (`?chapter=`): leave the welcome / earlier chapters at once. */
+  #skipTo(): void {
+    queueMicrotask(() => {
+      this.#actor.send({ type: this.#phase === 'welcome' ? 'WELCOME_DONE' : 'CHAPTER_DONE' });
+    });
   }
 
   #enterAttract(): void {
@@ -321,10 +335,12 @@ export class Experience {
     this.#topBar.setChapter(index, this.#story.chapters.length, chapter.concept, chapter.title);
     this.#header.hide();
     // Real scenes replace placeholders one by one (Phase 4).
+    const real: Record<string, (id: string) => SceneFactory> = {
+      'c-coffee-pricing': coffeeScene,
+      'd-segmentation': segmentsScene,
+    };
     const factory =
-      chapter.scene === 'c-coffee-pricing'
-        ? coffeeScene(chapter.id)
-        : placeholderScene(chapter.scene, chapter.id);
+      real[chapter.scene]?.(chapter.id) ?? placeholderScene(chapter.scene, chapter.id);
     this.#scene = this.#scenes.show(factory);
     this.#run(
       chapter.beats,

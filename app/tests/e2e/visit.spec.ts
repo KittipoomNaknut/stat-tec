@@ -55,8 +55,8 @@ async function dwellOn(page: Page, id: string) {
     .toBe(id);
 }
 
-/** A choice button of the active scene (not one fading out). */
-const CHOICE = '.scene-hud:not(.is-leaving) .hud-choices .hud-button';
+/** Any selectable button of the active scene (not one fading out), wherever it sits. */
+const CHOICE = '.scene-hud:not(.is-leaving) .hud-button[data-target]';
 
 test('a visitor plays a whole visit with their body', async ({ page }) => {
   const errors: string[] = [];
@@ -100,8 +100,9 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
     await page.waitForTimeout(200);
   }
   expect([...seen]).toEqual(chapters);
-  // segments (play + reveal), fraud, forecast — coffee is played by raising a hand
-  expect(selected).toBe(4);
+  // segments' ad choice, fraud, forecast — coffee is played by raising a hand, segments' play
+  // by holding still in the crowd (magnets drop by themselves when time runs out)
+  expect(selected).toBe(3);
 
   // Report: a real profit total and rank, then back to attract on its own.
   await expect.poll(() => phase(page)).toBe('report');

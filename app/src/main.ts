@@ -58,6 +58,7 @@ function startExperience(parent: HTMLElement): void {
   const experience = new Experience(parent, {
     story,
     speed: speed > 0 ? speed : 1,
+    ...(params.has('chapter') ? { startChapter: params.get('chapter') ?? '' } : {}),
     maxInternalHeight: renderConfigFromUrl(location.search).maxInternalHeight,
   });
   startLoop((dt, now) => {
