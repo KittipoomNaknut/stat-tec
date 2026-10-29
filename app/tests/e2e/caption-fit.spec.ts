@@ -51,10 +51,13 @@ test('every story line fits on one caption line at 1920×1080', async ({ page })
       .join(''),
   );
   const result = await page.evaluate(async (lines) => {
-    // fonts.ready does not wait for faces nothing has used yet: load the caption's Thai faces
-    // explicitly, or a cold browser (CI) measures the fallback font (~10% wider).
+    // fonts.ready does not wait for faces nothing has used yet: load the caption's faces —
+    // every unicode-range subset (Thai, Latin, digits) — or a cold browser (CI) measures the
+    // fallback font (3–10% wider).
     await Promise.all(
-      ['600', '700'].map((w) => document.fonts.load(`${w} 50px "Bai Jamjuree"`, 'ภาษาไทย')),
+      ['600', '700'].map((w) =>
+        document.fonts.load(`${w} 50px "Bai Jamjuree"`, 'ภาษาไทย AI CEO 0123456789 ฿ —'),
+      ),
     );
     await document.fonts.ready;
     const box = document.createElement('div');
@@ -70,9 +73,16 @@ test('every story line fits on one caption line at 1920×1080', async ({ page })
     const avail = box.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
     return lines.map((l) => {
       p.innerHTML = l;
-      return { line: p.textContent, ratio: p.getBoundingClientRect().width / avail };
+      const text = p.textContent;
+      return {
+        line: text,
+        ratio: p.getBoundingClientRect().width / avail,
+        // Every glyph of the line must come from the real face, not a fallback
+        fontsReady: document.fonts.check('600 50px "Bai Jamjuree"', text),
+      };
     });
   }, html);
+  expect(result.filter((r) => !r.fontsReady).map((r) => r.line)).toEqual([]);
   // 8% margin: different digits, a longer codename, rendering differences on the kiosk
   const tooLong = result
     .filter((r) => r.ratio > 0.92)
