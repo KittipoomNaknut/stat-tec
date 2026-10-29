@@ -32,15 +32,15 @@
 
 ## 1. เป้าหมายและตัวชี้วัด
 
-| เป้าหมาย | ตัวชี้วัด (ต้องวัดได้จริง) | วิธีวัด |
-|---|---|---|
-| **ลื่น** | Render ≥ 60 fps คงที่ (p95 frame time ≤ 16.7 ms) | Debug overlay + perf log |
-| **แรง** | Pose inference ≥ 30 fps บนเครื่องเป้าหมาย | `inferenceMs` ใน `PoseFrame` |
-| **แม่นยำ** | Motion-to-photon latency ≤ 100 ms (p95) | วัดด้วยกล้องความเร็วสูง/LED test (Phase 1) |
-| **แม่นยำ** | Gesture false-trigger ≤ 1 ครั้ง / 5 นาทีเล่น | Pose replay test suite |
-| **แม่นยำ** | Dwell-select สำเร็จ ≥ 95% ในครั้งแรก | Playtest กับคนจริง ≥ 10 คน |
-| **สวย** | ผ่าน design review ทุกฉาก + ไม่มี jank ระหว่าง transition | Review checklist |
-| **ทนทาน** | Soak test 8 ชม. ไม่ crash, memory ไม่โตเกิน 10% | Soak test (Phase 6) |
+| เป้าหมาย   | ตัวชี้วัด (ต้องวัดได้จริง)                                | วิธีวัด                                    |
+| ---------- | --------------------------------------------------------- | ------------------------------------------ |
+| **ลื่น**   | Render ≥ 60 fps คงที่ (p95 frame time ≤ 16.7 ms)          | Debug overlay + perf log                   |
+| **แรง**    | Pose inference ≥ 30 fps บนเครื่องเป้าหมาย                 | `inferenceMs` ใน `PoseFrame`               |
+| **แม่นยำ** | Motion-to-photon latency ≤ 100 ms (p95)                   | วัดด้วยกล้องความเร็วสูง/LED test (Phase 1) |
+| **แม่นยำ** | Gesture false-trigger ≤ 1 ครั้ง / 5 นาทีเล่น              | Pose replay test suite                     |
+| **แม่นยำ** | Dwell-select สำเร็จ ≥ 95% ในครั้งแรก                      | Playtest กับคนจริง ≥ 10 คน                 |
+| **สวย**    | ผ่าน design review ทุกฉาก + ไม่มี jank ระหว่าง transition | Review checklist                           |
+| **ทนทาน**  | Soak test 8 ชม. ไม่ crash, memory ไม่โตเกิน 10%           | Soak test (Phase 6)                        |
 
 ### Performance budget (ต่อเฟรม)
 
@@ -55,7 +55,7 @@ Display (TV input lag)              ~10–30 ms   ← ตั้ง TV เป็�
 ```
 
 **เครื่องเป้าหมาย (dev + เครื่องหน้างาน):** Linux, NVIDIA RTX 4060 Laptop 8 GB
-**กล้องที่แนะนำ:** USB webcam 1080p@60 มุมกว้าง (เช่น Logitech Brio / C922) — *ยังต้องจัดหา*
+**กล้องที่แนะนำ:** USB webcam 1080p@60 มุมกว้าง (เช่น Logitech Brio / C922) — _ยังต้องจัดหา_
 
 ---
 
@@ -106,26 +106,26 @@ Display (TV input lag)              ~10–30 ms   ← ตั้ง TV เป็�
 
 ## 3. Tech Stack
 
-| หมวด | เลือกใช้ | เหตุผล |
-|---|---|---|
-| Runtime | Google Chrome .deb (kiosk mode, ล็อกเวอร์ชัน) | WebGL2/WebGPU, MediaPipe GPU delegate, MediaStreamTrackProcessor ([ADR-0006](adr/0006-kiosk-browser.md)) |
-| Language | TypeScript (`strict: true`) | Data contract ชัด, refactor ปลอดภัย |
-| Build | Vite | Dev เร็ว, รองรับ Worker เป็น module |
-| Package manager | pnpm | เร็ว, lockfile เข้ม |
-| Pose (หลัก) | Perception service: RTMPose-x + YOLOX-m ผ่าน rtmlib, ONNX Runtime GPU + TensorRT FP16 | นิ่งกว่า MediaPipe ~6 เท่า, 7.5 ms/เฟรม ([ADR-0007](adr/0007-perception-service-rtmpose.md)) |
-| Pose (สำรอง) | `@mediapipe/tasks-vision` — PoseLandmarker heavy ในเบราว์เซอร์ | ใช้เมื่อ service ล่ม; ไม่ต้องติดตั้งอะไรเพิ่ม |
-| 3D | Three.js (WebGL2) | Ecosystem ใหญ่, เสถียร |
-| Post-processing | `postprocessing` (pmndrs) | Bloom/SMAA ประสิทธิภาพดีกว่า EffectComposer เดิม |
-| Animation | GSAP | Timeline แม่นยำ, ease สวย |
-| State machine | XState v5 | State ของแอปชัดเจน, visualize ได้, test ได้ |
-| Validation | zod | ตรวจ `story.th.yaml` และ data manifest ตอน build |
-| Audio | Howler.js | Sprite, fade, ducking |
-| Lint/Format | ESLint + Prettier | มาตรฐาน |
-| Unit test | Vitest | เร็ว, เข้ากับ Vite |
-| E2E | Playwright + Chromium fake camera (`.y4m`) | ทดสอบทั้งระบบโดยไม่ต้องมีกล้อง |
-| Data pipeline | Python 3.12 + uv + polars + numpy + scikit-learn | Reproducible, เร็ว |
-| Container | Docker + Compose | Dev/CI/pipeline/serve ([ADR-0004](adr/0004-hybrid-docker.md)) |
-| CI | GitHub Actions | lint → typecheck → test → build |
+| หมวด            | เลือกใช้                                                                              | เหตุผล                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Runtime         | Google Chrome .deb (kiosk mode, ล็อกเวอร์ชัน)                                         | WebGL2/WebGPU, MediaPipe GPU delegate, MediaStreamTrackProcessor ([ADR-0006](adr/0006-kiosk-browser.md)) |
+| Language        | TypeScript (`strict: true`)                                                           | Data contract ชัด, refactor ปลอดภัย                                                                      |
+| Build           | Vite                                                                                  | Dev เร็ว, รองรับ Worker เป็น module                                                                      |
+| Package manager | pnpm                                                                                  | เร็ว, lockfile เข้ม                                                                                      |
+| Pose (หลัก)     | Perception service: RTMPose-x + YOLOX-m ผ่าน rtmlib, ONNX Runtime GPU + TensorRT FP16 | นิ่งกว่า MediaPipe ~6 เท่า, 7.5 ms/เฟรม ([ADR-0007](adr/0007-perception-service-rtmpose.md))             |
+| Pose (สำรอง)    | `@mediapipe/tasks-vision` — PoseLandmarker heavy ในเบราว์เซอร์                        | ใช้เมื่อ service ล่ม; ไม่ต้องติดตั้งอะไรเพิ่ม                                                            |
+| 3D              | Three.js (WebGL2)                                                                     | Ecosystem ใหญ่, เสถียร                                                                                   |
+| Post-processing | `postprocessing` (pmndrs)                                                             | Bloom/SMAA ประสิทธิภาพดีกว่า EffectComposer เดิม                                                         |
+| Animation       | GSAP                                                                                  | Timeline แม่นยำ, ease สวย                                                                                |
+| State machine   | XState v5                                                                             | State ของแอปชัดเจน, visualize ได้, test ได้                                                              |
+| Validation      | zod                                                                                   | ตรวจ `story.th.yaml` และ data manifest ตอน build                                                         |
+| Audio           | Howler.js                                                                             | Sprite, fade, ducking                                                                                    |
+| Lint/Format     | ESLint + Prettier                                                                     | มาตรฐาน                                                                                                  |
+| Unit test       | Vitest                                                                                | เร็ว, เข้ากับ Vite                                                                                       |
+| E2E             | Playwright + Chromium fake camera (`.y4m`)                                            | ทดสอบทั้งระบบโดยไม่ต้องมีกล้อง                                                                           |
+| Data pipeline   | Python 3.12 + uv + polars + numpy + scikit-learn                                      | Reproducible, เร็ว                                                                                       |
+| Container       | Docker + Compose                                                                      | Dev/CI/pipeline/serve ([ADR-0004](adr/0004-hybrid-docker.md))                                            |
+| CI              | GitHub Actions                                                                        | lint → typecheck → test → build                                                                          |
 
 > เวอร์ชันทุกตัว pin แบบ exact ใน `package.json` / `pyproject.toml` และ lockfile — ห้ามใช้ `^` หรือ `latest`
 
@@ -273,7 +273,7 @@ LOST   → SEARCHING หลัง 1.5 s
 - **"ผี" ของผู้เล่น:** MediaPipe บางครั้งให้ fit เพี้ยนตัวเล็กของผู้เล่นเอง (หันข้าง, ชูสองแขน, ปัดมือเร็ว) — ถ้าลำตัวอยู่ในกรอบผู้เล่น (+1 SW) และเล็กกว่า 1/1.7 เท่า → ไม่นับเป็นคนอื่น, ไม่ใช้เป็นตำแหน่งผู้เล่น แต่นับว่าผู้เล่นยังอยู่
 - จับคู่ผู้เล่นข้ามเฟรมด้วยตำแหน่ง **และ** ขนาด (ต่างจากขนาดเฉลี่ยแบบ EMA ไม่เกิน 1.7×) — fit เพี้ยนเฟรมเดียวลากค่าอ้างอิงไม่ได้
 - ทั้งหมดนี้ยืนยันด้วย replay test จาก session ที่อัดจริง (`app/tests/replay/`)
-- **แนวทางวางปุ่ม (สำรอง, research 010):** จากภาพ 2 มิติ "แขนชี้ตรงเข้ากล้อง" กับ "มือหน้าอก" แยกกันแทบไม่ได้ — หลีกเลี่ยงการวางปุ่มที่ *ต้องกด* ตรงตำแหน่งที่ผู้เล่นต้องชี้เข้ากล้อง (หน้าตัว/ใต้กล้อง); ปุ่มสำคัญวางขอบบนและสองข้างก่อน
+- **แนวทางวางปุ่ม (สำรอง, research 010):** จากภาพ 2 มิติ "แขนชี้ตรงเข้ากล้อง" กับ "มือหน้าอก" แยกกันแทบไม่ได้ — หลีกเลี่ยงการวางปุ่มที่ _ต้องกด_ ตรงตำแหน่งที่ผู้เล่นต้องชี้เข้ากล้อง (หน้าตัว/ใต้กล้อง); ปุ่มสำคัญวางขอบบนและสองข้างก่อน
 - **ท่าชูสองแขนทำงานเหมือนท่าชี้** (แขนตรง ยกสูง) → ฉากที่มีทั้งปุ่มและท่าชูแขนต้องปิด cursor ระหว่างช่วงชูแขน (`activeGestures`)
 - ตรวจ "พื้นที่ยืน": torso ต้องอยู่ในช่วง x ∈ [0.25, 0.75] ของเฟรมจึงเป็น candidate ได้
 
@@ -321,15 +321,15 @@ threshold ของท่าทางทั้งหมดใช้หน่ว�
 ```ts
 interface SceneModule {
   id: SceneId;
-  activeGestures: GestureKind[];           // ท่าที่ฉากนี้ใช้
+  activeGestures: GestureKind[]; // ท่าที่ฉากนี้ใช้
   preload(ctx: SceneContext): Promise<void>; // โหลด data/texture ล่วงหน้า (ตอน attract)
-  enter(ctx: SceneContext): Promise<void>;   // animate in
-  onBeat(beat: StoryBeat): void;             // narrative แจ้งว่าเข้าจังหวะไหน
+  enter(ctx: SceneContext): Promise<void>; // animate in
+  onBeat(beat: StoryBeat): void; // narrative แจ้งว่าเข้าจังหวะไหน
   onIntent(intent: Intent): void;
-  update(dt: number, t: number): void;       // ทุกเฟรม
-  result(): SceneResult;                     // ส่งให้ scoring + template
-  exit(): Promise<void>;                     // animate out
-  dispose(): void;                           // คืน GPU memory
+  update(dt: number, t: number): void; // ทุกเฟรม
+  result(): SceneResult; // ส่งให้ scoring + template
+  exit(): Promise<void>; // animate out
+  dispose(): void; // คืน GPU memory
 }
 ```
 
@@ -342,48 +342,53 @@ interface SceneModule {
 
 ```ts
 // ---------- Perception → Main ----------
-interface Landmark { x: number; y: number; z: number; visibility: number }
+interface Landmark {
+  x: number;
+  y: number;
+  z: number;
+  visibility: number;
+}
 
 interface TrackedPlayer {
-  id: number;                       // เปลี่ยนเมื่อเป็นคนใหม่
-  image: Landmark[];                // 33 จุด, normalized [0,1], mirrored, filtered
-  body: Landmark[];                 // 33 จุด, หน่วย SW, origin = กลางไหล่
-  world: Landmark[];                // 33 จุด, เมตร (จาก MediaPipe)
-  shoulderWidth: number;            // สัดส่วนของความกว้างเฟรม (ใช้ประมาณระยะ)
-  confidence: number;               // เฉลี่ย visibility ของจุดสำคัญ
+  id: number; // เปลี่ยนเมื่อเป็นคนใหม่
+  image: Landmark[]; // 33 จุด, normalized [0,1], mirrored, filtered
+  body: Landmark[]; // 33 จุด, หน่วย SW, origin = กลางไหล่
+  world: Landmark[]; // 33 จุด, เมตร (จาก MediaPipe)
+  shoulderWidth: number; // สัดส่วนของความกว้างเฟรม (ใช้ประมาณระยะ)
+  confidence: number; // เฉลี่ย visibility ของจุดสำคัญ
 }
 
 interface PoseFrame {
   frameId: number;
-  t: number;                        // performance.now() ตอนถ่าย (ms)
+  t: number; // performance.now() ตอนถ่าย (ms)
   inferenceMs: number;
-  lock: 'searching' | 'candidate' | 'locked' | 'lost';
+  lock: "searching" | "candidate" | "locked" | "lost";
   player: TrackedPlayer | null;
-  others: number;                   // จำนวนคนอื่นในเฟรม
+  others: number; // จำนวนคนอื่นในเฟรม
 }
 
 // ---------- Input → App ----------
-type IntentSource = 'pose' | 'mouse' | 'replay';
-type Hand = 'left' | 'right';
+type IntentSource = "pose" | "mouse" | "replay";
+type Hand = "left" | "right";
 
 type Intent = { t: number; source: IntentSource } & (
-  | { type: 'presence'; state: 'enter' | 'lost' | 'return' | 'leave' }
-  | { type: 'cursor'; x: number; y: number; hand: Hand; visible: boolean }   // screen [0,1]
-  | { type: 'dwell'; targetId: string; progress: number }                    // 0..1
-  | { type: 'select'; targetId: string }
-  | { type: 'swipe'; dir: 'left' | 'right' | 'up' | 'down'; speed: number }
-  | { type: 'raise'; hand: Hand | 'both'; level: number }                    // 0..1
-  | { type: 'lean'; value: number }                                          // -1..1
-  | { type: 'zoom'; scale: number }                                          // relative
-  | { type: 'throw'; x: number; y: number; vx: number; vy: number }
-  | { type: 'slap'; x: number; y: number; speed: number }
-  | { type: 'draw'; phase: 'start' | 'move' | 'end'; x: number; y: number }
+  | { type: "presence"; state: "enter" | "lost" | "return" | "leave" }
+  | { type: "cursor"; x: number; y: number; hand: Hand; visible: boolean } // screen [0,1]
+  | { type: "dwell"; targetId: string; progress: number } // 0..1
+  | { type: "select"; targetId: string }
+  | { type: "swipe"; dir: "left" | "right" | "up" | "down"; speed: number }
+  | { type: "raise"; hand: Hand | "both"; level: number } // 0..1
+  | { type: "lean"; value: number } // -1..1
+  | { type: "zoom"; scale: number } // relative
+  | { type: "throw"; x: number; y: number; vx: number; vy: number }
+  | { type: "slap"; x: number; y: number; speed: number }
+  | { type: "draw"; phase: "start" | "move" | "end"; x: number; y: number }
 );
 
 // ---------- Scene → Scoring / Narrative ----------
 interface SceneResult {
   sceneId: SceneId;
-  score: number;                    // 0..1 (ความใกล้เคียงคำตอบที่ดีที่สุด)
+  score: number; // 0..1 (ความใกล้เคียงคำตอบที่ดีที่สุด)
   vars: Record<string, string | number>; // สำหรับแทนค่าในบทพูด เช่น { price: 75 }
   style: Partial<Record<CeoStyle, number>>;
 }
@@ -395,19 +400,19 @@ interface SceneResult {
 
 หน่วย: **SW** = ความกว้างไหล่, **SW/s** = ความเร็ว. ค่าทั้งหมดเป็น **ค่าเริ่มต้น** อยู่ใน `config/gestures.ts` และจูนด้วย replay ใน Phase 2
 
-| ท่า | Intent | เงื่อนไขตรวจจับ | Hysteresis / Cooldown | ใช้ในฉาก |
-|---|---|---|---|---|
-| **ยืนเข้าจุด** | `presence` | PlayerLock = LOCKED | lost > 300 ms, leave > 8 s | ทุกฉาก |
-| **ชี้ (cursor)** | `cursor` | **เริ่ม:** ข้อมือสูงกว่าสะโพก ≥ 0.8 SW, แขนเหยียด (ข้อมือ–ไหล่) ≥ 0.9 SW **และแขนตรง** (ไหล่–ข้อมือ ÷ (ต้นแขน+ปลายแขน)) ≥ 0.8 (RTMPose) / 0.7 (MediaPipe) ต่อเนื่อง 100 ms · **ค้าง:** สูง ≥ 0.3 SW, ตรง ≥ 0.5, และเหยียด ≥ 0.6 SW **หรือ** แขนดูสั้นแต่ยังตรง ≥ 0.65 (ชี้เข้ากล้อง) · แปลงตำแหน่งข้อมือใน**พื้นที่ข้างตัว** x ∈ [0.4, 1.7] SW ออกด้านข้าง, y ∈ [−1.2, 0.3] SW (มือซ้ายสะท้อน) เป็นจอ · ชี้อยู่แล้ว มือสูงกว่าสะโพก ≥ 1.0 SW = ชี้ต่อเสมอ | เริ่มยาก–ค้างง่าย; กอดอก/เกาหัวถูกกันด้วย "แขนตรง" (กอดอกใน RTMPose ระยะถึง 1.1 SW แต่ศอกงอ); เกณฑ์แยกตามแหล่ง pose (`cursorConfigFor`); ไม่สลับมือระหว่างชี้ — ค่ามาจาก session ที่อัดจริงทั้ง 2 แหล่ง; พื้นที่ข้างตัวแก้ปุ่มหน้าตัวกดไม่ได้ (research 010) | ทุกฉาก |
-| **ชี้ค้าง (dwell)** | `dwell` → `select` | cursor อยู่บนเป้า (+0.02 padding) ต่อเนื่อง 1200 ms | หลุดเป้า ≤ 150 ms ไม่นับ; เกินนั้น reset (ส่ง progress 0); เป้าเดิม cooldown 800 ms | เมนู, เลือกกลุ่ม, ข้าม |
-| **ปัด** | `swipe` | ข้อมือเคลื่อนแนวนอน > 1.2 SW ภายใน 400 ms, ความเร็วสูงสุด > 2.5 SW/s | cooldown 600 ms | สำรอง/ฉากเสริม |
-| **ยกมือ** | `raise` | level = ตำแหน่ง y ข้อมือ map จากเอว (0) → เหนือหัว 0.5 SW (1) | smoothing เพิ่ม + dead zone 0.05 | C ราคา, welcome |
-| **ยกสองแขน** | `raise both` | ข้อมือทั้งสอง สูงกว่าจมูก > 0.3 SW ต่อเนื่อง 300 ms | ออกเมื่อต่ำกว่าจมูก | ยืนยัน/ฉลอง |
-| **เอียงตัว** | `lean` | มุมของเส้น กลางสะโพก→กลางไหล่ กับแนวดิ่ง; dead zone ±5°, เต็มสเกล ±20° | low-pass เพิ่ม | ฉากเสริม (B, G) |
-| **ขว้าง** | `throw` | ความเร็วข้อมือพีค > 3.0 SW/s แล้วลดลง > 50% ใน 100 ms → จุดปล่อย + เวกเตอร์ | cooldown 500 ms | D แม่เหล็ก |
-| **ตบ** | `slap` | ความเร็วข้อมือ > 3.0 SW/s และ cursor อยู่ในเป้า | cooldown ต่อมือ 250 ms | F จับโกง |
-| **วาดเส้น** | `draw` | "ปากกาลง" เมื่อข้อมือสูงกว่าไหล่; ยกเลิกเมื่อต่ำกว่าไหล่ > 200 ms; sample 30 Hz | ปากกาลง/ขึ้นใช้ threshold ต่างกัน 0.2 SW | H พยากรณ์ |
-| **กาง/หุบแขน** | `zoom` | ทั้งสองมืออยู่ใน comfort box; scale = ระยะสองมือตอนนี้ / ตอนเริ่ม | เริ่มเมื่อสองมือขึ้นพร้อมกัน ≤ 300 ms | ฉากเสริม (I) |
+| ท่า                 | Intent             | เงื่อนไขตรวจจับ                                                                                                                                                                                                                                                                                                                                                                                                                                           | Hysteresis / Cooldown                                                                                                                                                                                                                                        | ใช้ในฉาก               |
+| ------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
+| **ยืนเข้าจุด**      | `presence`         | PlayerLock = LOCKED                                                                                                                                                                                                                                                                                                                                                                                                                                       | lost > 300 ms, leave > 8 s                                                                                                                                                                                                                                   | ทุกฉาก                 |
+| **ชี้ (cursor)**    | `cursor`           | **เริ่ม:** ข้อมือสูงกว่าสะโพก ≥ 0.8 SW, แขนเหยียด (ข้อมือ–ไหล่) ≥ 0.9 SW **และแขนตรง** (ไหล่–ข้อมือ ÷ (ต้นแขน+ปลายแขน)) ≥ 0.8 (RTMPose) / 0.7 (MediaPipe) ต่อเนื่อง 100 ms · **ค้าง:** สูง ≥ 0.3 SW, ตรง ≥ 0.5, และเหยียด ≥ 0.6 SW **หรือ** แขนดูสั้นแต่ยังตรง ≥ 0.65 (ชี้เข้ากล้อง) · แปลงตำแหน่งข้อมือใน**พื้นที่ข้างตัว** x ∈ [0.4, 1.7] SW ออกด้านข้าง, y ∈ [−1.2, 0.3] SW (มือซ้ายสะท้อน) เป็นจอ · ชี้อยู่แล้ว มือสูงกว่าสะโพก ≥ 1.0 SW = ชี้ต่อเสมอ | เริ่มยาก–ค้างง่าย; กอดอก/เกาหัวถูกกันด้วย "แขนตรง" (กอดอกใน RTMPose ระยะถึง 1.1 SW แต่ศอกงอ); เกณฑ์แยกตามแหล่ง pose (`cursorConfigFor`); ไม่สลับมือระหว่างชี้ — ค่ามาจาก session ที่อัดจริงทั้ง 2 แหล่ง; พื้นที่ข้างตัวแก้ปุ่มหน้าตัวกดไม่ได้ (research 010) | ทุกฉาก                 |
+| **ชี้ค้าง (dwell)** | `dwell` → `select` | cursor อยู่บนเป้า (+0.02 padding) ต่อเนื่อง 1200 ms                                                                                                                                                                                                                                                                                                                                                                                                       | หลุดเป้า ≤ 150 ms ไม่นับ; เกินนั้น reset (ส่ง progress 0); เป้าเดิม cooldown 800 ms                                                                                                                                                                          | เมนู, เลือกกลุ่ม, ข้าม |
+| **ปัด**             | `swipe`            | ข้อมือเคลื่อนแนวนอน > 1.2 SW ภายใน 400 ms, ความเร็วสูงสุด > 2.5 SW/s                                                                                                                                                                                                                                                                                                                                                                                      | cooldown 600 ms                                                                                                                                                                                                                                              | สำรอง/ฉากเสริม         |
+| **ยกมือ**           | `raise`            | level = ตำแหน่ง y ข้อมือ map จากเอว (0) → เหนือหัว 0.5 SW (1)                                                                                                                                                                                                                                                                                                                                                                                             | smoothing เพิ่ม + dead zone 0.05                                                                                                                                                                                                                             | C ราคา, welcome        |
+| **ยกสองแขน**        | `raise both`       | ข้อมือทั้งสอง สูงกว่าจมูก > 0.3 SW ต่อเนื่อง 300 ms                                                                                                                                                                                                                                                                                                                                                                                                       | ออกเมื่อต่ำกว่าจมูก                                                                                                                                                                                                                                          | ยืนยัน/ฉลอง            |
+| **เอียงตัว**        | `lean`             | มุมของเส้น กลางสะโพก→กลางไหล่ กับแนวดิ่ง; dead zone ±5°, เต็มสเกล ±20°                                                                                                                                                                                                                                                                                                                                                                                    | low-pass เพิ่ม                                                                                                                                                                                                                                               | ฉากเสริม (B, G)        |
+| **ขว้าง**           | `throw`            | ความเร็วข้อมือพีค > 3.0 SW/s แล้วลดลง > 50% ใน 100 ms → จุดปล่อย + เวกเตอร์                                                                                                                                                                                                                                                                                                                                                                               | cooldown 500 ms                                                                                                                                                                                                                                              | D แม่เหล็ก             |
+| **ตบ**              | `slap`             | ความเร็วข้อมือ > 3.0 SW/s และ cursor อยู่ในเป้า                                                                                                                                                                                                                                                                                                                                                                                                           | cooldown ต่อมือ 250 ms                                                                                                                                                                                                                                       | F จับโกง               |
+| **วาดเส้น**         | `draw`             | "ปากกาลง" เมื่อข้อมือสูงกว่าไหล่; ยกเลิกเมื่อต่ำกว่าไหล่ > 200 ms; sample 30 Hz                                                                                                                                                                                                                                                                                                                                                                           | ปากกาลง/ขึ้นใช้ threshold ต่างกัน 0.2 SW                                                                                                                                                                                                                     | H พยากรณ์              |
+| **กาง/หุบแขน**      | `zoom`             | ทั้งสองมืออยู่ใน comfort box; scale = ระยะสองมือตอนนี้ / ตอนเริ่ม                                                                                                                                                                                                                                                                                                                                                                                         | เริ่มเมื่อสองมือขึ้นพร้อมกัน ≤ 300 ms                                                                                                                                                                                                                        | ฉากเสริม (I)           |
 
 **การป้องกัน false trigger**
 
@@ -452,7 +457,11 @@ Global (จากทุก state ยกเว้น boot/attract):
   staff:reset (F5)      → attract
 ```
 
-- implement ด้วย XState v5, export diagram ไว้ใน docs ได้
+- implement ด้วย XState v5 (`core/app-machine.ts`) — paused กลับไปที่เดิมด้วย deep history
+- ตอน paused ถ้า**คนใหม่**ถูกล็อก (`presence:enter`) = เริ่มรอบใหม่ ไม่ใช่ resume ของคนเก่า
+- ตอน report ถ้าผู้เล่นหาย/เดินออก → attract ทันที (ผลถูกบันทึกแล้ว ไม่ต้อง pause)
+- report ค้าง 20 s **หลังบรรทัดสุดท้าย** (`REPORT_DONE`) เพื่อให้มีเวลาสแกน QR
+- timer ทั้งหมดเป็น named delay → test ใช้ `SimulatedClock`
 - Session = 1 รอบเล่น มี `sessionId`, `codename`, เวลาเริ่ม/จบ, ผลแต่ละฉาก
 
 ---
@@ -461,14 +470,14 @@ Global (จากทุก state ยกเว้น boot/attract):
 
 ### 9.1 Beat types
 
-| Beat | หน้าที่ | ท่าที่เปิด | จบเมื่อ |
-|---|---|---|---|
-| `mission` | AI เล่าโจทย์ | `dwell` (ข้าม) | ครบทุกบรรทัด / ข้าม |
-| `tutorial` | เงาคนโปร่งแสงสาธิตท่า | ท่าของฉาก | ผู้เล่นทำท่าสำเร็จ 1 ครั้ง / 8 s |
-| `play` | เล่นจริง | ท่าของฉาก | ครบเวลา / scene บอกว่าเสร็จ |
-| `reveal` | ตัวเลขใหญ่ + ผลลัพธ์ | `dwell` (ข้าม) | ครบบรรทัด |
-| `lesson` | การ์ด "สิ่งที่น้องทำคือ…" | `dwell` (ข้าม) | ครบบรรทัด |
-| `transition` | กำไรวิ่ง → ฉากถัดไป | – | animation จบ |
+| Beat         | หน้าที่                   | ท่าที่เปิด     | จบเมื่อ                          |
+| ------------ | ------------------------- | -------------- | -------------------------------- |
+| `mission`    | AI เล่าโจทย์              | `dwell` (ข้าม) | ครบทุกบรรทัด / ข้าม              |
+| `tutorial`   | เงาคนโปร่งแสงสาธิตท่า     | ท่าของฉาก      | ผู้เล่นทำท่าสำเร็จ 1 ครั้ง / 8 s |
+| `play`       | เล่นจริง                  | ท่าของฉาก      | ครบเวลา / scene บอกว่าเสร็จ      |
+| `reveal`     | ตัวเลขใหญ่ + ผลลัพธ์      | `dwell` (ข้าม) | ครบบรรทัด                        |
+| `lesson`     | การ์ด "สิ่งที่น้องทำคือ…" | `dwell` (ข้าม) | ครบบรรทัด                        |
+| `transition` | กำไรวิ่ง → ฉากถัดไป       | –              | animation จบ                     |
 
 ### 9.2 Story file — `content/story.th.yaml`
 
@@ -497,8 +506,10 @@ chapters:
         lines: ["เส้นนี้เรียกว่า Demand Curve"]
 ```
 
-- ตรวจด้วย zod ตอน build — บทพูดผิดรูปแบบ = build fail
-- Template `{var}` แทนค่าจาก `SceneResult.vars`; ตัวแปรที่ไม่มี = build/test fail
+- ตรวจด้วย zod (`narrative/schema.ts`) ใน unit test — บทพูดผิดรูปแบบ = CI fail
+- Template `{var}` แทนค่าจาก `SceneResult.vars`; แต่ละบทประกาศ `vars:` ที่ฉากส่งให้ → ตัวแปรที่ไม่มีใครส่ง = test fail
+- บรรทัดเขียนได้เป็นข้อความ หรือ `{ text, cue, when }`: `cue` สั่งฉากเล่น animation, `when: close` / `'!close'` แสดงตามผลของฉาก
+- ความยาว ≤ 52 ตัวอักษรที่กินที่ (ไม่นับสระบน/ล่าง วรรณยุกต์) → ลง 1 บรรทัดของกล่องบทพูด
 - Typewriter: ~35 ตัวอักษร/วินาที, ค้างบรรทัดละ `max(1.8s, ความยาว × 60ms)`
 - **กติกาข้อความ**: ≤ 12 คำ/บรรทัด, แสดงพร้อมกันไม่เกิน 2 บรรทัด
 
@@ -510,15 +521,16 @@ chapters:
 - กำไรต่อฉาก = `base × (0.4 + 0.6 × score)` → **ทุกคนได้กำไรเสมอ** (เด็กต้องรู้สึกดี)
 - `base` ต่อฉากตั้งใน config รวมแล้วอยู่ในหลักล้านบาท (ดูอลังการ)
 - **CEO Style** สะสมจากพฤติกรรม: `analyst` (ใกล้คำตอบโมเดล), `risk-taker` (เลือกสุดโต่ง), `intuitive` (ตัดสินใจเร็ว)
-- Leaderboard: เรียงตามกำไรรวม, รีเซ็ตทุกวัน, เก็บใน IndexedDB, แสดง codename เท่านั้น
+- Leaderboard: เรียงตามกำไรรวม, รีเซ็ตทุกวัน (key ตามวันที่), เก็บใน localStorage (≤ 500 รายการ/วัน — เล็กพอ, sync, ไม่ต้องใช้ IndexedDB), แสดง codename เท่านั้น
+- `base` ต่อบท: data 120k · coffee 280k · segments 320k · fraud 300k · forecast 380k → สูงสุด ฿1.4M, ต่ำสุด ฿560k (`config/scoring.ts`)
 
-| ฉาก | นิยาม score |
-|---|---|
-| A | ไม่มีคะแนน (warm-up) — ได้ base คงที่ |
-| C | `1 − |price − optimal| / range` |
-| D | ความเหมาะสมของกลุ่มที่เลือกยิงโฆษณา (ROI จำลอง) |
-| F | F1-score ของการตบ (จับถูก vs ตบลูกค้าดี) |
-| H | `1 − MAPE` ของเส้นที่วาดเทียบค่าจริง (clamp) |
+| ฉาก | นิยาม score                                     |
+| --- | ----------------------------------------------- |
+| A   | ไม่มีคะแนน (warm-up) — ได้ base คงที่           |
+| C   | `1 −                                            | price − optimal | / range` |
+| D   | ความเหมาะสมของกลุ่มที่เลือกยิงโฆษณา (ROI จำลอง) |
+| F   | F1-score ของการตบ (จับถูก vs ตบลูกค้าดี)        |
+| H   | `1 − MAPE` ของเส้นที่วาดเทียบค่าจริง (clamp)    |
 
 ---
 
@@ -541,32 +553,34 @@ chapters:
 
 ### 11.3 Design tokens — สไตล์ "Holographic HUD"
 
-| Token | ค่า | ใช้กับ |
-|---|---|---|
-| `--bg` | `#050B18` | พื้นหลัง (กรมท่าเกือบดำ) |
-| `--bg-grid` | `#0D1B33` | เส้นกริดพื้นหลัง |
-| `--panel` | `rgba(12, 32, 64, 0.55)` + blur 12px | กล่องข้อความ (glass) |
-| `--primary` | `#3FE0FF` | เส้นเรืองแสง, cursor, ข้อมูลหลัก |
-| `--accent` | `#FFC857` | เงิน/กำไร/ไฮไลต์ |
-| `--positive` | `#3DFFA2` | ขึ้น/ถูก |
-| `--negative` | `#FF4D6D` | ลง/โกง/ผิด |
-| `--text` | `#E6F1FF` | ข้อความหลัก |
-| `--text-dim` | `#7E93B5` | ข้อความรอง |
+| Token        | ค่า                                  | ใช้กับ                           |
+| ------------ | ------------------------------------ | -------------------------------- |
+| `--bg`       | `#050B18`                            | พื้นหลัง (กรมท่าเกือบดำ)         |
+| `--bg-grid`  | `#0D1B33`                            | เส้นกริดพื้นหลัง                 |
+| `--panel`    | `rgba(12, 32, 64, 0.55)` + blur 12px | กล่องข้อความ (glass)             |
+| `--primary`  | `#3FE0FF`                            | เส้นเรืองแสง, cursor, ข้อมูลหลัก |
+| `--accent`   | `#FFC857`                            | เงิน/กำไร/ไฮไลต์                 |
+| `--positive` | `#3DFFA2`                            | ขึ้น/ถูก                         |
+| `--negative` | `#FF4D6D`                            | ลง/โกง/ผิด                       |
+| `--text`     | `#E6F1FF`                            | ข้อความหลัก                      |
+| `--text-dim` | `#7E93B5`                            | ข้อความรอง                       |
 
 **Typography** (self-hosted, offline)
+
 - Thai/UI: **Anuphan** (หัวข้อ, ข้อความ AI)
 - ตัวเลข/ticker: **JetBrains Mono** (tabular figures — ตัวเลขวิ่งไม่ดิ้น)
 
 **ขนาดตามระยะยืน 2–2.5 m** (คิดจากความสูงจอ, หน่วย `vh`)
 
-| ระดับ | ขนาด | ตัวอย่าง |
-|---|---|---|
-| Hero number | 16–20 vh | "฿1,240,000" ตอน reveal |
-| Headline | 8 vh | ชื่อบท |
-| Caption (AI) | 5 vh | ข้อความ AI — **ขั้นต่ำ** |
-| HUD label | 3.5 vh | progress, กำไร (อ่านโดยคนดูด้านหลังด้วย) |
+| ระดับ        | ขนาด     | ตัวอย่าง                                 |
+| ------------ | -------- | ---------------------------------------- |
+| Hero number  | 16–20 vh | "฿1,240,000" ตอน reveal                  |
+| Headline     | 8 vh     | ชื่อบท                                   |
+| Caption (AI) | 5 vh     | ข้อความ AI — **ขั้นต่ำ**                 |
+| HUD label    | 3.5 vh   | progress, กำไร (อ่านโดยคนดูด้านหลังด้วย) |
 
 **Motion**
+
 - Ease หลัก: `expo.out` (เข้า), `power2.in` (ออก)
 - ระยะเวลา: micro 200 ms / UI 500 ms / ฉาก 1200 ms
 - **ห้ามกะพริบเร็วเกิน 3 ครั้ง/วินาที** (photosensitive safety)
@@ -606,14 +620,14 @@ synth/   (จำลอง, seed) ─┼─▶ clean/transform (polars) ─▶ mo
 
 ### 13.3 ข้อมูลรายฉาก
 
-| ฉาก | ประเภท | แหล่ง / วิธี | สิ่งที่คำนวณใน browser (live) |
-|---|---|---|---|
-| A | Live | ข้อมูลจากตัวผู้เล่นเอง | นับจำนวนตัวเลขที่เก็บได้จริง |
-| C | Simulated | Demand แบบ log-linear + noise + ฤดูกาล | Fit regression สดจากราคาที่ผู้เล่นลอง |
-| D | Simulated | ลูกค้า 10,000 คนจาก Gaussian mixture (RFM: recency, frequency, monetary) | **K-means รันจริงใน browser** (animate ทุก iteration) |
-| F | Simulated | ธุรกรรม 1,000,000 รายการ, anomaly ~0.5% | **รันโมเดลจริงใน browser แล้วจับเวลาจริง** (ตัวเลขที่โชว์เป็นของจริง) |
-| H | Simulated | ยอดขายรายวัน 3 ปี: trend + weekly/annual seasonality + spike 11.11/12.12 | เทียบเส้นที่วาดกับค่าจริง; เส้นโมเดล precompute (SARIMA/GBM) |
-| B, G, I (เสริม) | Real | ต้องตรวจ license ก่อนใช้ (Phase 4+) | – |
+| ฉาก             | ประเภท    | แหล่ง / วิธี                                                             | สิ่งที่คำนวณใน browser (live)                                         |
+| --------------- | --------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| A               | Live      | ข้อมูลจากตัวผู้เล่นเอง                                                   | นับจำนวนตัวเลขที่เก็บได้จริง                                          |
+| C               | Simulated | Demand แบบ log-linear + noise + ฤดูกาล                                   | Fit regression สดจากราคาที่ผู้เล่นลอง                                 |
+| D               | Simulated | ลูกค้า 10,000 คนจาก Gaussian mixture (RFM: recency, frequency, monetary) | **K-means รันจริงใน browser** (animate ทุก iteration)                 |
+| F               | Simulated | ธุรกรรม 1,000,000 รายการ, anomaly ~0.5%                                  | **รันโมเดลจริงใน browser แล้วจับเวลาจริง** (ตัวเลขที่โชว์เป็นของจริง) |
+| H               | Simulated | ยอดขายรายวัน 3 ปี: trend + weekly/annual seasonality + spike 11.11/12.12 | เทียบเส้นที่วาดกับค่าจริง; เส้นโมเดล precompute (SARIMA/GBM)          |
+| B, G, I (เสริม) | Real      | ต้องตรวจ license ก่อนใช้ (Phase 4+)                                      | –                                                                     |
 
 > บนจอทุกฉากติดป้าย **"ข้อมูลจริง"** หรือ **"ข้อมูลจำลอง"** ชัดเจน
 
@@ -621,44 +635,44 @@ synth/   (จำลอง, seed) ─┼─▶ clean/transform (polars) ─▶ mo
 
 ## 14. Robustness
 
-| เหตุการณ์ | การตรวจจับ | การกู้คืน |
-|---|---|---|
-| กล้องหลุด / ถูกถอด | `track.onended`, ไม่มีเฟรม > 1 s | หน้าจอ "กำลังเชื่อมต่อกล้อง…", retry `getUserMedia` ทุก 2 s |
-| Worker crash / ค้าง | `error` event, ไม่มี PoseFrame > 2 s | terminate + respawn, เกิน 3 ครั้ง/นาที → reload หน้า |
-| WebGL context lost | `webglcontextlost` | สร้าง resource ใหม่ตอน `restored`, ไม่ได้ใน 3 s → reload |
-| FPS ตก | p95 frame time | adaptive resolution (§11.1) |
-| Memory รั่ว | `performance.memory` sampling | log + reload ตอนกลับเข้า attract ถ้าเกินเกณฑ์ |
-| JS error ไม่คาดคิด | `window.onerror` / `unhandledrejection` | log + กลับ attract; error ซ้ำ → reload |
-| Chromium ปิด | systemd `Restart=always` | เปิดใหม่อัตโนมัติ |
-| มีคนแทรกเข้าเฟรม | `others > 0` | ไม่เปลี่ยนผู้เล่น; AI พูดสุภาพ (ครั้งเดียว) |
-| แสงย้อน / confidence ต่ำ | `confidence < 0.6` ต่อเนื่อง | ข้อความแนะนำให้ขยับเข้ามา; staff แก้หน้างาน |
+| เหตุการณ์                | การตรวจจับ                              | การกู้คืน                                                   |
+| ------------------------ | --------------------------------------- | ----------------------------------------------------------- |
+| กล้องหลุด / ถูกถอด       | `track.onended`, ไม่มีเฟรม > 1 s        | หน้าจอ "กำลังเชื่อมต่อกล้อง…", retry `getUserMedia` ทุก 2 s |
+| Worker crash / ค้าง      | `error` event, ไม่มี PoseFrame > 2 s    | terminate + respawn, เกิน 3 ครั้ง/นาที → reload หน้า        |
+| WebGL context lost       | `webglcontextlost`                      | สร้าง resource ใหม่ตอน `restored`, ไม่ได้ใน 3 s → reload    |
+| FPS ตก                   | p95 frame time                          | adaptive resolution (§11.1)                                 |
+| Memory รั่ว              | `performance.memory` sampling           | log + reload ตอนกลับเข้า attract ถ้าเกินเกณฑ์               |
+| JS error ไม่คาดคิด       | `window.onerror` / `unhandledrejection` | log + กลับ attract; error ซ้ำ → reload                      |
+| Chromium ปิด             | systemd `Restart=always`                | เปิดใหม่อัตโนมัติ                                           |
+| มีคนแทรกเข้าเฟรม         | `others > 0`                            | ไม่เปลี่ยนผู้เล่น; AI พูดสุภาพ (ครั้งเดียว)                 |
+| แสงย้อน / confidence ต่ำ | `confidence < 0.6` ต่อเนื่อง            | ข้อความแนะนำให้ขยับเข้ามา; staff แก้หน้างาน                 |
 
 **Staff hotkeys** (ซ่อน ไม่แสดงบนจอ)
 
-| ปุ่ม | ทำอะไร |
-|---|---|
-| `F1` | Debug overlay (FPS, latency, skeleton, lock state, confidence) |
-| `F2` | สลับ Mouse mode |
-| `F3` | แสดง skeleton ดิบ (ก่อนกรอง) ซ้อนบน debug overlay |
-| `F5` | กลับ attract ทันที |
-| `F8` | Pose recorder (dev build เท่านั้น) |
-| `F9` | Export สถิติวันนี้เป็น JSON · ใน `?playground`: ดาวน์โหลดผลการกดปุ่ม + ท่าที่อัด (research 010) |
-| `F10` / `F11` | ลด / เพิ่มเสียง |
+| ปุ่ม          | ทำอะไร                                                                                          |
+| ------------- | ----------------------------------------------------------------------------------------------- |
+| `F1`          | Debug overlay (FPS, latency, skeleton, lock state, confidence)                                  |
+| `F2`          | สลับ Mouse mode                                                                                 |
+| `F3`          | แสดง skeleton ดิบ (ก่อนกรอง) ซ้อนบน debug overlay                                               |
+| `F5`          | กลับ attract ทันที                                                                              |
+| `F8`          | Pose recorder (dev build เท่านั้น)                                                              |
+| `F9`          | Export สถิติวันนี้เป็น JSON · ใน `?playground`: ดาวน์โหลดผลการกดปุ่ม + ท่าที่อัด (research 010) |
+| `F10` / `F11` | ลด / เพิ่มเสียง                                                                                 |
 
 ---
 
 ## 15. Testing Strategy
 
-| ระดับ | เครื่องมือ | ครอบคลุม |
-|---|---|---|
-| Unit | Vitest | OneEuroFilter, BodyNormalizer, PlayerLock, gesture detectors, scoring, template, story schema |
-| Pose replay | Vitest + `tests/fixtures/poses/*.pose.json.gz` | ป้อนท่าที่อัดจริงเข้า GestureEngine → ตรวจ intent ที่ออกมา (เช่น "ไฟล์ `swipe-left-kid-01` ต้องได้ swipe left 1 ครั้ง, false trigger 0") |
-| Negative replay | เหมือนบน | ไฟล์ "ยืนเฉยๆ", "เดินผ่าน", "เกาหัว" → **ต้องไม่มี intent** |
-| E2E | Playwright + `--use-file-for-fake-video-capture=*.y4m` | เปิดแอปจริง + วิดีโอปลอม → ผ่าน attract → welcome → ฉากแรก |
-| Data | pytest | schema output, seed คงที่ได้ผลเดิม, ไม่มี NaN |
-| Performance | สคริปต์วัด + debug overlay | fps/latency บนเครื่องเป้าหมาย ก่อน merge เข้า `main` |
-| Soak | รันวนอัตโนมัติด้วย replay 8 ชม. | memory, crash |
-| Playtest | คนจริง (เด็ก/ผู้ใหญ่ ≥ 10 คน) | ความเข้าใจท่าทาง, อ่านทันไหม, สนุกไหม |
+| ระดับ           | เครื่องมือ                                                         | ครอบคลุม                                                                                                                                 |
+| --------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit            | Vitest                                                             | OneEuroFilter, BodyNormalizer, PlayerLock, gesture detectors, scoring, template, story schema                                            |
+| Pose replay     | Vitest + `tests/fixtures/poses/*.pose.json.gz`                     | ป้อนท่าที่อัดจริงเข้า GestureEngine → ตรวจ intent ที่ออกมา (เช่น "ไฟล์ `swipe-left-kid-01` ต้องได้ swipe left 1 ครั้ง, false trigger 0") |
+| Negative replay | เหมือนบน                                                           | ไฟล์ "ยืนเฉยๆ", "เดินผ่าน", "เกาหัว" → **ต้องไม่มี intent**                                                                              |
+| E2E             | Playwright + ผู้เล่นสังเคราะห์ (`?player=synthetic`, research 014) | เปิดแอปจริง → ร่างกายสังเคราะห์ยกแขน ชี้ ค้าง ผ่าน gesture engine จริง → ครบรอบ attract → … → report → attract, pause/resume, F5         |
+| Data            | pytest                                                             | schema output, seed คงที่ได้ผลเดิม, ไม่มี NaN                                                                                            |
+| Performance     | สคริปต์วัด + debug overlay                                         | fps/latency บนเครื่องเป้าหมาย ก่อน merge เข้า `main`                                                                                     |
+| Soak            | รันวนอัตโนมัติด้วย replay 8 ชม.                                    | memory, crash                                                                                                                            |
+| Playtest        | คนจริง (เด็ก/ผู้ใหญ่ ≥ 10 คน)                                      | ความเข้าใจท่าทาง, อ่านทันไหม, สนุกไหม                                                                                                    |
 
 **Fixture set ขั้นต่ำ**: ผู้ใหญ่ 3 คน + (ถ้าได้รับอนุญาต) วัยรุ่น 2 คน, แต่ละท่า × 3 ระยะ (1.8 / 2.3 / 3 m) × 2 สภาพแสง
 — เก็บแค่ landmark ไม่เก็บภาพ (§17)
@@ -672,11 +686,11 @@ synth/   (จำลอง, seed) ─┼─▶ clean/transform (polars) ─▶ mo
 ```yaml
 # docker-compose.yml (โครงร่าง)
 services:
-  web:        # nginx เสิร์ฟ app/dist ที่ build แล้ว
+  web: # nginx เสิร์ฟ app/dist ที่ build แล้ว
     ports: ["127.0.0.1:8080:80"]
     restart: always
-  dev:        # vite dev server (profile: dev)
-  pipeline:   # python data pipeline (profile: data)
+  dev: # vite dev server (profile: dev)
+  pipeline: # python data pipeline (profile: data)
 ```
 
 - **เบราว์เซอร์ kiosk รันบน host โดยตรง** (กล้อง + GPU ไม่ผ่าน container)
@@ -728,14 +742,14 @@ google-chrome \
 
 ## 18. Risks และสิ่งที่ต้องพิสูจน์
 
-| # | ความเสี่ยง | ผลกระทบ | แผนพิสูจน์/รับมือ | Phase |
-|---|---|---|---|---|
-| R1 | ~~MediaPipe GPU delegate ใน Web Worker อาจมีข้อจำกัด~~ | – | ✅ **ปิดแล้ว** — GPU delegate ทำงานใน module worker บน RTX 4060 ([ADR-0002](adr/0002-perception-in-worker.md)) | 1 |
-| R2 | ยังไม่มีกล้องตัวจริง (ตอนนี้ใช้เว็บแคมในตัว 720p30) | latency/fps ที่วัดได้ยังไม่ใช่ของหน้างาน | จัดหา webcam 1080p@60 แล้ววัดซ้ำ (`/?bench`) | 1–6 |
-| R3 | ความแม่นยำของ pose ที่ระยะ 2–3 m กับเด็กตัวเล็ก | ท่าทางพลาด | Body-normalized thresholds + playtest กับวัยรุ่น | 2, 6 |
-| R4 | แสงหน้างานไม่ดี | confidence ต่ำ | สำรวจสถานที่ล่วงหน้า, เตรียมไฟส่องหน้า | 6 |
-| R5 | Latency รวมเกิน 100 ms | รู้สึกหน่วง | กล้อง 60fps, TV game mode, วัดจริง | 1 |
-| R6 | ลิขสิทธิ์ข้อมูลจริง/เสียง | ใช้ไม่ได้ | ตรวจ license ก่อนใช้, บันทึกใน manifest | 4, 5 |
-| R7 | Font ไทยใน kiosk offline | ตัวอักษรเพี้ยน | self-host ฟอนต์ทั้งหมด | 3 |
-| R8 | Perception service ล่มหน้างาน | ไม่มี skeleton | systemd restart + fallback MediaPipe อัตโนมัติ + health ใน overlay | 2, 6 |
-| R9 | RTMPose ให้ score สูงกับข้อมือที่ซ่อนอยู่ (0.45–0.85) | cursor/ท่าทางจากมือที่ "เดา" | gestures พึ่งกฎเชิงท่าทาง ไม่ใช่ score; ยืนยันด้วย replay จาก session RTMPose | 2 |
+| #   | ความเสี่ยง                                             | ผลกระทบ                                  | แผนพิสูจน์/รับมือ                                                                                              | Phase |
+| --- | ------------------------------------------------------ | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----- |
+| R1  | ~~MediaPipe GPU delegate ใน Web Worker อาจมีข้อจำกัด~~ | –                                        | ✅ **ปิดแล้ว** — GPU delegate ทำงานใน module worker บน RTX 4060 ([ADR-0002](adr/0002-perception-in-worker.md)) | 1     |
+| R2  | ยังไม่มีกล้องตัวจริง (ตอนนี้ใช้เว็บแคมในตัว 720p30)    | latency/fps ที่วัดได้ยังไม่ใช่ของหน้างาน | จัดหา webcam 1080p@60 แล้ววัดซ้ำ (`/?bench`)                                                                   | 1–6   |
+| R3  | ความแม่นยำของ pose ที่ระยะ 2–3 m กับเด็กตัวเล็ก        | ท่าทางพลาด                               | Body-normalized thresholds + playtest กับวัยรุ่น                                                               | 2, 6  |
+| R4  | แสงหน้างานไม่ดี                                        | confidence ต่ำ                           | สำรวจสถานที่ล่วงหน้า, เตรียมไฟส่องหน้า                                                                         | 6     |
+| R5  | Latency รวมเกิน 100 ms                                 | รู้สึกหน่วง                              | กล้อง 60fps, TV game mode, วัดจริง                                                                             | 1     |
+| R6  | ลิขสิทธิ์ข้อมูลจริง/เสียง                              | ใช้ไม่ได้                                | ตรวจ license ก่อนใช้, บันทึกใน manifest                                                                        | 4, 5  |
+| R7  | Font ไทยใน kiosk offline                               | ตัวอักษรเพี้ยน                           | self-host ฟอนต์ทั้งหมด                                                                                         | 3     |
+| R8  | Perception service ล่มหน้างาน                          | ไม่มี skeleton                           | systemd restart + fallback MediaPipe อัตโนมัติ + health ใน overlay                                             | 2, 6  |
+| R9  | RTMPose ให้ score สูงกับข้อมือที่ซ่อนอยู่ (0.45–0.85)  | cursor/ท่าทางจากมือที่ "เดา"             | gestures พึ่งกฎเชิงท่าทาง ไม่ใช่ score; ยืนยันด้วย replay จาก session RTMPose                                  | 2     |

@@ -1,0 +1,9 @@
+/* Self-hosted fonts (offline kiosk). Only the weights the HUD uses; unicode-range in each
+   @font-face makes the browser fetch just the Thai/Latin files the page needs. Research 011. */
+@import '@fontsource/anuphan/400.css';
+@import '@fontsource/anuphan/500.css';
+@import '@fontsource/anuphan/600.css';
+@import '@fontsource/anuphan/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/700.css';

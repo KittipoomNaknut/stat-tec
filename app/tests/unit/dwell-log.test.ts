@@ -14,6 +14,8 @@ function run(script: { cursor: typeof ON; frames: number }[]) {
   targets.register('button', () => ({ x: 0.4, y: 0.4, w: 0.2, h: 0.2 }));
   const log = new DwellAttemptLog(bus, targets);
   const dwell = new DwellDetector();
+  // The button is already on screen before the script starts (not popping up under the cursor).
+  dwell.update({ ...ON, visible: false }, targets, -FRAME);
   let t = 0;
   for (const step of script) {
     for (let i = 0; i < step.frames; i++, t += FRAME) {

@@ -6,6 +6,11 @@ import { DebugOverlay } from './debug/overlay';
 import { Playground } from './debug/playground';
 import { RecorderPanel } from './debug/recorder';
 import { SessionRecorder } from './debug/session-recorder';
+import { showStyleguide } from './debug/styleguide';
+import { SyntheticPlayer } from './debug/synthetic-player';
+import { renderConfigFromUrl } from './config/render';
+import { Experience } from './experience/experience';
+import { story } from './narrative/story';
 import { GestureEngine } from './gestures/engine';
 import { IntentBus } from './input/intent-bus';
 import { MouseAdapter } from './input/mouse-adapter';
@@ -22,7 +27,9 @@ if (!root) throw new Error('#app root element not found');
 const params = new URLSearchParams(location.search);
 const cameraHint = params.get('camera');
 
-if (params.has('bench')) {
+if (params.has('styleguide')) {
+  showStyleguide(root, location.search);
+} else if (params.has('bench')) {
   startBenchmark(root);
 } else if (params.has('record')) {
   const recorder = new RecorderPanel(root, location.search);
@@ -39,8 +46,39 @@ if (params.has('bench')) {
   });
 } else if (params.has('playground')) {
   startPlayground(root);
-} else {
+} else if (params.has('debug')) {
   startOverlay(root);
+} else {
+  startExperience(root);
+}
+
+/** The visitor experience (default). F1 debug overlay, F2 mouse, F5 back to attract. */
+function startExperience(parent: HTMLElement): void {
+  const speed = Number(params.get('speed') ?? '1');
+  const experience = new Experience(parent, {
+    story,
+    speed: speed > 0 ? speed : 1,
+    maxInternalHeight: renderConfigFromUrl(location.search).maxInternalHeight,
+  });
+  startLoop((dt, now) => {
+    experience.frame(dt, now);
+  });
+  if (params.get('player') === 'synthetic') {
+    // E2E: a scripted body instead of the camera (tests/e2e).
+    const player = new SyntheticPlayer((frame, now) => {
+      experience.onBody(frame, now);
+    });
+    Object.assign(window, { statTecSynthetic: player });
+    return;
+  }
+  startOverlay(parent, {
+    onReady: (options) => {
+      experience.setPoseSource(options.source);
+    },
+    onDetections: (detections) => {
+      experience.onDetections(detections);
+    },
+  }).setVisible(false);
 }
 
 function startPlayground(parent: HTMLElement): void {

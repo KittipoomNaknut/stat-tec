@@ -16,6 +16,14 @@ export class DwellDetector {
   #start = 0;
   #lastOn = 0;
   readonly #cooldownUntil = new Map<string, number>();
+  /** Targets shown last update. */
+  #known = new Set<string>();
+  /**
+   * Targets that appeared under the cursor: not selectable until the cursor leaves them once.
+   * Otherwise a button popping up under a hand still raised from the last choice selects itself
+   * (found by the E2E test, research 014).
+   */
+  readonly #disarmed = new Set<string>();
 
   constructor(config: typeof gestureConfig.dwell = gestureConfig.dwell) {
     this.#config = config;
@@ -23,7 +31,9 @@ export class DwellDetector {
 
   update(cursor: CursorState, targets: TargetRegistry, tMs: number): DwellEvent[] {
     const c = this.#config;
-    const hit = cursor.visible ? targets.hitTest(cursor.x, cursor.y, c.padding) : null;
+    this.#arm(cursor, targets);
+    const raw = cursor.visible ? targets.hitTest(cursor.x, cursor.y, c.padding) : null;
+    const hit = raw !== null && this.#disarmed.has(raw) ? null : raw;
     const resting = hit !== null && (this.#cooldownUntil.get(hit) ?? 0) > tMs;
     const events: DwellEvent[] = [];
 
@@ -45,6 +55,33 @@ export class DwellDetector {
       events.push(this.#abandon());
     }
     return events;
+  }
+
+  #arm(cursor: CursorState, targets: TargetRegistry): void {
+    const shown = new Set(targets.visibleIds());
+    for (const id of shown) {
+      if (!this.#known.has(id) && cursor.visible && this.#under(cursor, targets, id)) {
+        this.#disarmed.add(id);
+      }
+    }
+    for (const id of this.#disarmed) {
+      if (!shown.has(id) || !cursor.visible || !this.#under(cursor, targets, id)) {
+        this.#disarmed.delete(id);
+      }
+    }
+    this.#known = shown;
+  }
+
+  #under(cursor: CursorState, targets: TargetRegistry, id: string): boolean {
+    const r = targets.rectOf(id);
+    const p = this.#config.padding;
+    return (
+      r !== null &&
+      cursor.x >= r.x - p &&
+      cursor.x <= r.x + r.w + p &&
+      cursor.y >= r.y - p &&
+      cursor.y <= r.y + r.h + p
+    );
   }
 
   #abandon(): DwellEvent {

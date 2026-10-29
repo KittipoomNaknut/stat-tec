@@ -18,6 +18,11 @@ export class RollingWindow {
     this.#count = Math.min(this.#count + 1, this.#values.length);
   }
 
+  clear(): void {
+    this.#next = 0;
+    this.#count = 0;
+  }
+
   mean(): number {
     if (this.#count === 0) return 0;
     let sum = 0;
