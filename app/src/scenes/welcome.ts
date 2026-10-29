@@ -3,6 +3,7 @@ import { DwellButton } from '../hud/dwell-button';
 import type { Beat } from '../narrative/schema';
 import { HologramObject } from './hologram-object';
 import type { SceneContext, SceneModule } from './types';
+import { palette } from '../config/palette';
 
 /**
  * "New CEO detected": scan rings sweep up as the AI greets the player, then the first lesson —
@@ -20,7 +21,7 @@ class WelcomeScene implements SceneModule {
     (i) =>
       new HologramObject(
         new TorusGeometry(1.6 - i * 0.25, 0.015, 6, 128),
-        i === 1 ? '#ffc857' : '#3fe0ff',
+        i === 1 ? palette.peach : palette.pink,
         90,
       ),
   );

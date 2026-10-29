@@ -13,12 +13,17 @@ meta:
   locale: th
 
 attract:
-  title: เป็น CEO ใน 5 นาที
-  prompt: ยืนตรงจุดนี้ เพื่อเริ่ม
-  rotateSec: 6
-  taglines:
-    - ข้อมูล = อำนาจในการตัดสินใจ
-    - ลองบริหารบริษัทด้วยร่างกายของคุณ
+  kicker: กาลครั้งหนึ่ง ในภาควิชาอันไกลโพ้น…
+  title: STAT WARS
+  subtitle: DATA AWAKENS
+  # ข้อความเลื่อนหายไปในอวกาศ วนทุก crawlSec วินาที
+  crawl:
+    - บริษัทกำลังจะล่มสลาย เพราะตัดสินใจด้วยความรู้สึก
+    - ข้อมูลนับล้านกำลังรอคอย
+    - CEO คนใหม่ ผู้อ่านมันออก…
+    - ใช้ร่างกายของท่าน บริหารบริษัทใน 5 นาที
+  crawlSec: 26
+  prompt: ก้าวเข้ามาในวงแสง เพื่อเริ่มภารกิจ
 
 welcome:
   beats:
@@ -37,7 +42,7 @@ welcome:
 chapters:
   - id: data
     scene: a-you-are-data
-    title: น้องคือข้อมูล
+    title: กำเนิดข้อมูล
     concept: Data Collection
     vars: [numbersCollected]
     beats:
@@ -60,8 +65,8 @@ chapters:
 
   - id: coffee
     scene: c-coffee-pricing
-    title: ตั้งราคากาแฟ
-    concept: Regression & Optimization
+    title: ศึกราคากาแฟ
+    concept: Regression
     vars: [price, revenue, optimalPrice, close]
     beats:
       - type: mission
@@ -94,8 +99,8 @@ chapters:
 
   - id: segments
     scene: d-segmentation
-    title: แบ่งกลุ่มลูกค้า
-    concept: K-means Clustering
+    title: สามกลุ่มแห่งลูกค้า
+    concept: K-means
     vars: [magnetsLeft, lift]
     beats:
       - type: mission
@@ -125,7 +130,7 @@ chapters:
 
   - id: fraud
     scene: f-fraud
-    title: จับโกง
+    title: จับโกงข้ามกาแล็กซี
     concept: Anomaly Detection
     vars: [caught, aiSeconds, falsePositives]
     beats:
@@ -156,8 +161,8 @@ chapters:
 
   - id: forecast
     scene: h-forecast
-    title: ทายยอดขาย 11.11
-    concept: Time-Series Forecasting
+    title: พยากรณ์ 11.11
+    concept: Forecasting
     vars: [playerAcc, aiAcc, beatAi]
     beats:
       - type: mission
@@ -187,6 +192,7 @@ chapters:
           - บริษัทใช้มันวางแผนสต็อก คน และเงินทุน
 
 report:
+  title: ภารกิจสำเร็จ
   lines:
     - รายงานผลงาน **CEO {codename}**
     - { text: 'กำไรรวม **฿{totalProfit}**', cue: profit-count }

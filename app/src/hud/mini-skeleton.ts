@@ -76,8 +76,8 @@ export class MiniSkeleton {
     const py = (i: number) => h / 2 + ((p[i * LANDMARK_STRIDE + 1] ?? 0) - cy) * scale;
 
     ctx.lineCap = 'round';
-    ctx.strokeStyle = '#3fe0ff';
-    ctx.shadowColor = 'rgba(63, 224, 255, 0.8)';
+    ctx.strokeStyle = '#ffe3ef';
+    ctx.shadowColor = 'rgba(255, 61, 143, 0.9)';
     ctx.shadowBlur = 8 * devicePixelRatio;
     ctx.lineWidth = 2.5 * devicePixelRatio;
     ctx.beginPath();

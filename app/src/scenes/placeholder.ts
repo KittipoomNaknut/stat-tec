@@ -12,6 +12,7 @@ import type { Beat, CeoStyle } from '../narrative/schema';
 import type { TemplateVars } from '../narrative/template';
 import { HologramObject } from './hologram-object';
 import type { SceneContext, SceneModule } from './types';
+import { palette } from '../config/palette';
 
 /**
  * Stand-in chapters (ROADMAP 3.10) so the whole visit can be played with the body before the
@@ -55,14 +56,14 @@ const clusters = () =>
 
 export const PLACEHOLDERS: Record<string, PlaceholderSpec> = {
   'a-you-are-data': {
-    color: '#3fe0ff',
+    color: palette.pink,
     geometry: () => new IcosahedronGeometry(1.3, 2),
     choices: [],
     initial: { numbersCollected: 0 },
     scored: false,
   },
   'c-coffee-pricing': {
-    color: '#ffc857',
+    color: palette.peach,
     geometry: () => new TorusKnotGeometry(0.9, 0.28, 140, 18),
     choices: [
       {
@@ -88,7 +89,7 @@ export const PLACEHOLDERS: Record<string, PlaceholderSpec> = {
     scored: true,
   },
   'd-segmentation': {
-    color: '#b18cff',
+    color: palette.violet,
     geometry: clusters,
     choices: [
       { label: 'ขว้าง 3 ลูก', vars: { magnetsLeft: 0 }, score: 0, style: { intuitive: 0.5 } },
@@ -105,7 +106,7 @@ export const PLACEHOLDERS: Record<string, PlaceholderSpec> = {
     scored: true,
   },
   'f-fraud': {
-    color: '#ff4d6d',
+    color: palette.hot,
     geometry: () => new OctahedronGeometry(1.2, 0),
     choices: [
       {
@@ -131,7 +132,7 @@ export const PLACEHOLDERS: Record<string, PlaceholderSpec> = {
     scored: true,
   },
   'h-forecast': {
-    color: '#3dffa2',
+    color: palette.positive,
     geometry: bars,
     choices: [
       {
@@ -160,7 +161,7 @@ export const PLACEHOLDERS: Record<string, PlaceholderSpec> = {
 
 /** Fallback for a scene id without a spec (keeps the flow playable). */
 const DEFAULT_SPEC: PlaceholderSpec = {
-  color: '#3fe0ff',
+  color: palette.pink,
   geometry: () => new TorusGeometry(1, 0.3, 16, 64),
   choices: [],
   initial: {},

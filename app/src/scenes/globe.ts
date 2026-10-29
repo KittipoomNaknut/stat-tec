@@ -9,6 +9,7 @@ import {
   TorusGeometry,
 } from 'three';
 import { HologramObject } from './hologram-object';
+import { palette } from '../config/palette';
 
 /**
  * A data globe: thousands of points on a sphere that pulse in waves, circled by orbit rings.
@@ -41,8 +42,8 @@ export class DataGlobe {
       uniforms: {
         uTime: { value: 0 },
         uOpacity: { value: 1 },
-        uColor: { value: new Color('#3fe0ff') },
-        uAccent: { value: new Color('#ffc857') },
+        uColor: { value: new Color(palette.pink) },
+        uAccent: { value: new Color(palette.peach) },
         uResolution: { value: 1 },
       },
       transparent: true,
@@ -79,8 +80,8 @@ export class DataGlobe {
     });
     this.#points = new Points(geometry, this.#material);
     this.#rings = [
-      new HologramObject(new TorusGeometry(radius * 1.35, 0.012, 6, 160), '#3fe0ff', 90),
-      new HologramObject(new TorusGeometry(radius * 1.6, 0.008, 6, 160), '#ffc857', 90),
+      new HologramObject(new TorusGeometry(radius * 1.35, 0.012, 6, 160), palette.pink, 90),
+      new HologramObject(new TorusGeometry(radius * 1.6, 0.008, 6, 160), palette.peach, 90),
     ];
     const [inner, outer] = this.#rings;
     if (inner) inner.root.rotation.set(Math.PI / 2.3, 0, 0.2);

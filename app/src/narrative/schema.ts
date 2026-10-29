@@ -100,15 +100,17 @@ export const storySchema = z
     meta: z.object({ aiName: text, locale: z.literal('th') }).strict(),
     attract: z
       .object({
+        kicker: text,
         title: text,
+        subtitle: text,
+        crawl: z.array(text).min(1),
+        crawlSec: z.number().positive(),
         prompt: text,
-        rotateSec: z.number().positive(),
-        taglines: z.array(text).min(1),
       })
       .strict(),
     welcome: z.object({ beats: z.array(beatSchema).min(1) }).strict(),
     chapters: z.array(chapterSchema).min(1),
-    report: z.object({ lines }).strict(),
+    report: z.object({ title: text, lines }).strict(),
     styles: z.object({
       analyst: styleSchema,
       'risk-taker': styleSchema,
