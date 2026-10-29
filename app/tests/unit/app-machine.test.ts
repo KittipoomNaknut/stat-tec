@@ -6,7 +6,7 @@ function start(chapterCount = 3) {
   const clock = new SimulatedClock();
   const actor = createActor(appMachine, { input: { chapterCount }, clock }).start();
   const send = (...events: AppEvent['type'][]) => {
-    for (const type of events) actor.send({ type } as AppEvent);
+    for (const type of events) actor.send({ type });
   };
   const phase = () => phaseOf(actor.getSnapshot().value);
   const ctx = () => actor.getSnapshot().context;
