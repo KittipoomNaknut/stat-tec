@@ -452,7 +452,11 @@ Global (จากทุก state ยกเว้น boot/attract):
   staff:reset (F5)      → attract
 ```
 
-- implement ด้วย XState v5, export diagram ไว้ใน docs ได้
+- implement ด้วย XState v5 (`core/app-machine.ts`) — paused กลับไปที่เดิมด้วย deep history
+- ตอน paused ถ้า**คนใหม่**ถูกล็อก (`presence:enter`) = เริ่มรอบใหม่ ไม่ใช่ resume ของคนเก่า
+- ตอน report ถ้าผู้เล่นหาย/เดินออก → attract ทันที (ผลถูกบันทึกแล้ว ไม่ต้อง pause)
+- report ค้าง 20 s **หลังบรรทัดสุดท้าย** (`REPORT_DONE`) เพื่อให้มีเวลาสแกน QR
+- timer ทั้งหมดเป็น named delay → test ใช้ `SimulatedClock`
 - Session = 1 รอบเล่น มี `sessionId`, `codename`, เวลาเริ่ม/จบ, ผลแต่ละฉาก
 
 ---
