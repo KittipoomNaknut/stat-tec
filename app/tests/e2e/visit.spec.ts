@@ -76,8 +76,11 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
   const chapters = ['data', 'coffee', 'segments', 'fraud', 'forecast'];
   const seen = new Set<string>();
   let selected = 0;
-  while ((await phase(page)) === 'chapter') {
-    const chapter = (await page.locator('body').getAttribute('data-chapter')) ?? '';
+  for (;;) {
+    // Phase and chapter in one read: two reads can straddle the switch to the report.
+    const now = await page.evaluate(() => ({ ...document.body.dataset }));
+    if (now['phase'] !== 'chapter') break;
+    const chapter = now['chapter'] ?? '';
     seen.add(chapter);
     const id = await page
       .locator(CHOICE)
