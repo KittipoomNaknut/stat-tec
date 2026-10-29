@@ -3,6 +3,26 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: [SemVer](https://semver.org/)
 
+## [Unreleased]
+
+Phase 4 (Scenes), first part: the STAT WARS theme and EPISODE II–V as real, played scenes, plus a steadier cursor.
+
+### Added
+
+- STAT WARS theme in the department's pink: layered starfield and nebula, crawl attract, INCOMING TRANSMISSION captions, laser-fill buttons, Bai Jamjuree + Orbitron with fixed-width digits (#45) — research 016
+- EPISODE II ศึกราคากาแฟ (Regression): set the price with a raised hand, the AI's line retries until SSE falls, revenue curve (#46) — research 017
+- EPISODE III สามกลุ่มแห่งลูกค้า (K-means): drop magnets by holding still, the AI's blind start and rounds, Elbow (Kneedle) k = 3, choose the ad group on the map (#47) — research 018
+- Gestures: slap (a fast cursor sweep) and draw (pen = cursor), both also with the mouse (#48) — research 019
+- EPISODE IV จับโกงข้ามกาแล็กซี (Anomaly Detection): slash fraud with a laser, a 1,000,000-transaction storm scored for real in the browser, set the outlier ring with your hand against a U-shaped damage curve (#49) — research 020
+- EPISODE V พยากรณ์ 11.11 (Forecasting): draw the next 12 months, the AI builds trend → folded seasons → trend × season with a band, the real year draws in, then order 11.11 stock and run the sale day (#50) — research 021
+- Cursor precision for held hands (PRISM-style gain, gap ≤ 60 px, off while drawing) and a replay "cursor lab" for measuring cursor changes (#51) — research 022
+
+### Changed
+
+- Cursor: screen-space 2D One Euro + deadband, drawn at 60 fps (#44) — research 015 · with precision: shake 6.3 → 1.05 px, held-still spread 13.6 → 9.4 px, same selects
+- Full-visit E2E: only EPISODE III's ad choice is still a dwell button; the other chapters are played with raise / slap / draw (fraud.spec, forecast.spec)
+- Only chapter A remains a placeholder scene
+
 ## [0.3.0] — 2026-10-29
 
 Phase 3 (Core Experience): the whole visit is playable — attract → welcome → 5 placeholder chapters → CEO report → attract — driven by the body through the real gesture engine.

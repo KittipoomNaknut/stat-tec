@@ -73,26 +73,26 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 
 ## Phase 2 — Gesture & Input
 
-| #    | งาน                                                                                        | Branch                                    |
-| ---- | ------------------------------------------------------------------------------------------ | ----------------------------------------- |
-| 2.1  | ~~OneEuroFilter + BodyNormalizer~~ ✅ (#8, #15)                                            | `feature/perception-filtering`            |
-| 2.2  | ~~PlayerLock~~ ✅ (#16, #19)                                                               | `feature/perception-player-lock`          |
-| 2.3  | ~~Pose recorder~~ ✅ (#18)                                                                 | `feature/tools-pose-recorder`             |
-| 2.4  | อัด fixture set ขั้นต่ำ — ✅ ชุดแรก (#19); ⏳ คนอื่น/ระยะอื่น/กล้องจริง                    | `test/pose-fixtures`                      |
-| 2.5  | ~~Intent Bus + types + MouseAdapter~~ ✅ (#20)                                             | `feature/input-intent-bus`                |
-| 2.6  | ~~Gesture: cursor + dwell~~ ✅ + playground เบื้องต้น                                      | `feature/gesture-cursor-dwell`            |
-| 2.6a | ~~Stabilizer: ไม่ให้ skeleton กะพริบ~~ ✅ (#22)                                            | `feature/perception-visibility-stability` |
-| 2.6b | ~~Spike เทียบโมเดล → RTMPose-x~~ ✅ (#23, ADR-0007)                                        | `spike/pose-model-comparison`             |
-| 2.6c | ~~Perception service (Python): กล้อง → RTMPose-x → WebSocket~~ ✅ (#25)                    | `feature/perception-server`               |
-| 2.6d | ~~Worker source `server` + fallback MediaPipe + preview ใน overlay~~ ✅                    | `feature/perception-server-client`        |
-| 2.6e | ~~อัด fixtures ใหม่ด้วย RTMPose + replay test ชุดเดิม~~ ✅ (เกณฑ์ cursor แยกตามแหล่ง pose) | `test/rtmpose-fixtures`                   |
-| 2.7  | Gesture: raise, raise-both                                                                 | `feature/gesture-raise`                   |
-| 2.8  | Gesture: throw                                                                             | `feature/gesture-throw`                   |
-| 2.9  | Gesture: slap                                                                              | `feature/gesture-slap`                    |
-| 2.10 | Gesture: draw                                                                              | `feature/gesture-draw`                    |
-| 2.11 | Gesture: swipe, lean, zoom (สำหรับฉากเสริม)                                                | `feature/gesture-extended`                |
-| 2.12 | Gesture playground (หน้าทดสอบทุกท่า + แสดงค่า threshold สด)                                | `feature/debug-gesture-playground`        |
-| 2.13 | จูน threshold ด้วย replay → อัปเดต `config/gestures.ts`                                    | `chore/gesture-tuning`                    |
+| #    | งาน                                                                                         | Branch                                    |
+| ---- | ------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| 2.1  | ~~OneEuroFilter + BodyNormalizer~~ ✅ (#8, #15)                                             | `feature/perception-filtering`            |
+| 2.2  | ~~PlayerLock~~ ✅ (#16, #19)                                                                | `feature/perception-player-lock`          |
+| 2.3  | ~~Pose recorder~~ ✅ (#18)                                                                  | `feature/tools-pose-recorder`             |
+| 2.4  | อัด fixture set ขั้นต่ำ — ✅ ชุดแรก (#19); ⏳ คนอื่น/ระยะอื่น/กล้องจริง                     | `test/pose-fixtures`                      |
+| 2.5  | ~~Intent Bus + types + MouseAdapter~~ ✅ (#20)                                              | `feature/input-intent-bus`                |
+| 2.6  | ~~Gesture: cursor + dwell~~ ✅ + playground เบื้องต้น                                       | `feature/gesture-cursor-dwell`            |
+| 2.6a | ~~Stabilizer: ไม่ให้ skeleton กะพริบ~~ ✅ (#22)                                             | `feature/perception-visibility-stability` |
+| 2.6b | ~~Spike เทียบโมเดล → RTMPose-x~~ ✅ (#23, ADR-0007)                                         | `spike/pose-model-comparison`             |
+| 2.6c | ~~Perception service (Python): กล้อง → RTMPose-x → WebSocket~~ ✅ (#25)                     | `feature/perception-server`               |
+| 2.6d | ~~Worker source `server` + fallback MediaPipe + preview ใน overlay~~ ✅                     | `feature/perception-server-client`        |
+| 2.6e | ~~อัด fixtures ใหม่ด้วย RTMPose + replay test ชุดเดิม~~ ✅ (เกณฑ์ cursor แยกตามแหล่ง pose)  | `test/rtmpose-fixtures`                   |
+| 2.7  | ~~Gesture: raise~~ ✅ (#46, ใช้ใน EPISODE II, IV, V) · raise-both ยังไม่ทำ                  | `feature/gesture-raise`                   |
+| 2.8  | Gesture: throw                                                                              | `feature/gesture-throw`                   |
+| 2.9  | ~~Gesture: slap~~ ✅ (#48, research 019)                                                    | `feature/gesture-slap`                    |
+| 2.10 | ~~Gesture: draw~~ ✅ (#48, research 019)                                                    | `feature/gesture-draw`                    |
+| 2.11 | Gesture: swipe, lean, zoom (สำหรับฉากเสริม)                                                 | `feature/gesture-extended`                |
+| 2.12 | Gesture playground (หน้าทดสอบทุกท่า + แสดงค่า threshold สด)                                 | `feature/debug-gesture-playground`        |
+| 2.13 | ~~จูน cursor ด้วย replay~~ ✅ smoothing (#44, research 015) + precision (#51, research 022) | `chore/gesture-tuning`                    |
 
 **DoD** (ปิด Phase 2 เป็น milestone "ชี้ + ชี้ค้าง" — 2026-10-29)
 
@@ -101,7 +101,7 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 - [~] Mouse mode: cursor, select, draw, zoom, swipe ✅ — ท่าอื่นทำพร้อมท่านั้น
 - [x] Tag `v0.2.0`
 
-**ย้ายไป Phase 4:** 2.7–2.11 (raise, throw, slap, draw, swipe/lean/zoom) — สร้างพร้อมฉากที่ใช้ท่านั้น จะได้จูนกับการใช้งานจริง; 2.13 จูนต่อ (หลุดเป้า 6/29)
+**ย้ายไป Phase 4:** 2.7–2.11 (raise, throw, slap, draw, swipe/lean/zoom) — สร้างพร้อมฉากที่ใช้ท่านั้น จะได้จูนกับการใช้งานจริง; 2.13 จูนต่อ (หลุดเป้า 6/29) — ทำแล้ว: raise, slap, draw, 2.13 (ดูตารางด้านบน) · ยังไม่ทำ: throw, swipe/lean/zoom (ยังไม่มีฉากที่ใช้)
 
 ---
 
@@ -136,16 +136,18 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 
 แต่ละฉากทำตามลำดับเดียวกัน: **data (pipeline) → scene logic → visual → narrative → playtest**
 
-| #   | ฉาก                 | งานหลัก                                                  | Branch                                                       |
-| --- | ------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
-| 4.1 | Attract             | Particle globe/ข้อความเชิญ                               | `feature/scene-attract`                                      |
-| 4.2 | Welcome             | สอนชี้ + ยกมือ, แสดง codename                            | `feature/scene-welcome`                                      |
-| 4.3 | A — น้องคือลูกค้า   | skeleton → particles, live data stream, heatmap          | `feature/scene-a-you-are-data`                               |
-| 4.4 | C — ตั้งราคากาแฟ    | synth demand, live regression, particle customers        | `feature/data-coffee` → `feature/scene-c-coffee-pricing`     |
-| 4.5 | D — แบ่งกลุ่มลูกค้า | synth RFM 10k, K-means ใน browser (animated), personas   | `feature/data-segmentation` → `feature/scene-d-segmentation` |
-| 4.6 | F — จับโกง          | synth 1M transactions, slap game, โมเดลรันจริง + จับเวลา | `feature/data-fraud` → `feature/scene-f-fraud`               |
-| 4.7 | H — ทายยอดขาย 11.11 | synth sales 3 ปี, forecast model, draw vs AI             | `feature/data-forecast` → `feature/scene-h-forecast`         |
-| 4.8 | Z — รายงาน CEO      | summary, style, leaderboard, QR                          | `feature/scene-z-ceo-report`                                 |
+| #   | ฉาก                                                                    | งานหลัก                                                  | Branch                                                       |
+| --- | ---------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
+| 4.1 | Attract — ✅ STAT WARS crawl + วงแสง (#45) · particle globe เดิมถูกแทน | Particle globe/ข้อความเชิญ                               | `feature/scene-attract`                                      |
+| 4.2 | Welcome — ✅ ธีมใหม่ + สอนชี้ค้าง (#45) · สอนยกมือย้ายไปอยู่ในแต่ละบท  | สอนชี้ + ยกมือ, แสดง codename                            | `feature/scene-welcome`                                      |
+| 4.3 | A — น้องคือลูกค้า                                                      | skeleton → particles, live data stream, heatmap          | `feature/scene-a-you-are-data`                               |
+| 4.4 | ~~C — ตั้งราคากาแฟ~~ ✅ EPISODE II (#46, research 017)                 | synth demand, live regression, particle customers        | `feature/data-coffee` → `feature/scene-c-coffee-pricing`     |
+| 4.5 | ~~D — แบ่งกลุ่มลูกค้า~~ ✅ EPISODE III (#47, research 018)             | synth RFM 10k, K-means ใน browser (animated), personas   | `feature/data-segmentation` → `feature/scene-d-segmentation` |
+| 4.6 | ~~F — จับโกง~~ ✅ EPISODE IV (#49, research 020)                       | synth 1M transactions, slap game, โมเดลรันจริง + จับเวลา | `feature/data-fraud` → `feature/scene-f-fraud`               |
+| 4.7 | ~~H — ทายยอดขาย 11.11~~ ✅ EPISODE V (#50, research 021)               | synth sales 3 ปี, forecast model, draw vs AI             | `feature/data-forecast` → `feature/scene-h-forecast`         |
+| 4.8 | Z — รายงาน CEO                                                         | summary, style, leaderboard, QR                          | `feature/scene-z-ceo-report`                                 |
+
+**สถานะ (2026-10-29):** EPISODE II–V เสร็จ ลองสดกับเจ้าของงานแล้วทุกบท · ยังเหลือ 4.3 (A ยังเป็นฉากชั่วคราว) และ 4.8 (รายงาน CEO ยังเป็นของ Phase 3 + ธีมใหม่) · 60 fps วัดแล้วใน IV และ V (research 020, 021) · playtest กับคนอื่น ≥ 3 คนยังไม่ได้ทำ
 
 **DoD ต่อฉาก**
 

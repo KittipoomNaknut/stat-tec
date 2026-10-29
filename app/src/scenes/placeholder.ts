@@ -1,12 +1,5 @@
 import type { BufferGeometry } from 'three';
-import {
-  BoxGeometry,
-  IcosahedronGeometry,
-  OctahedronGeometry,
-  TorusGeometry,
-  TorusKnotGeometry,
-} from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { IcosahedronGeometry, TorusGeometry } from 'three';
 import { DwellButton } from '../hud/dwell-button';
 import type { Beat, CeoStyle } from '../narrative/schema';
 import type { TemplateVars } from '../narrative/template';
@@ -16,7 +9,7 @@ import { palette } from '../config/palette';
 
 /**
  * Stand-in chapters (ROADMAP 3.10) so the whole visit can be played with the body before the
- * real scenes exist (Phase 4). Each shows a hologram and, during play, a few choices; a choice
+ * real scenes exist (Phase 4). Only chapter A is still a stand-in; II–V are real scenes. Each shows a hologram and, during play, a few choices; a choice
  * sets the vars the story needs and the outcome scoring needs.
  */
 interface Choice {
@@ -31,28 +24,11 @@ interface PlaceholderSpec {
   geometry: () => BufferGeometry;
   /** Shown in the play beat; picking one ends play. Empty = play runs its full time. */
   choices: Choice[];
-  /** Shown when the reveal hits this blocking cue. */
-  cueChoices?: { cue: string; choices: Choice[] };
   /** Vars before the player chooses (hints may use them). */
   initial: TemplateVars;
   /** Unscored chapters (A) return score null. */
   scored: boolean;
 }
-
-const bars = () =>
-  mergeGeometries(
-    Array.from({ length: 7 }, (_, i) => {
-      const h = 0.5 + Math.abs(Math.sin(i * 0.9)) * 1.6 + (i === 5 ? 1 : 0);
-      return new BoxGeometry(0.32, h, 0.32).translate((i - 3) * 0.5, h / 2 - 1, 0);
-    }),
-  );
-
-const clusters = () =>
-  mergeGeometries([
-    new IcosahedronGeometry(0.55, 1).translate(-1.2, 0.3, 0),
-    new IcosahedronGeometry(0.45, 1).translate(0.9, 0.7, -0.3),
-    new IcosahedronGeometry(0.4, 1).translate(0.4, -0.7, 0.4),
-  ]);
 
 export const PLACEHOLDERS: Record<string, PlaceholderSpec> = {
   'a-you-are-data': {
@@ -61,101 +37,6 @@ export const PLACEHOLDERS: Record<string, PlaceholderSpec> = {
     choices: [],
     initial: { numbersCollected: 0 },
     scored: false,
-  },
-  'c-coffee-pricing': {
-    color: palette.peach,
-    geometry: () => new TorusKnotGeometry(0.9, 0.28, 140, 18),
-    choices: [
-      {
-        label: '฿45',
-        vars: { price: 45, revenue: 13_500, optimalPrice: 72, close: false },
-        score: 0.55,
-        style: { 'risk-taker': 1 },
-      },
-      {
-        label: '฿75',
-        vars: { price: 75, revenue: 18_400, optimalPrice: 72, close: true },
-        score: 0.95,
-        style: { analyst: 1 },
-      },
-      {
-        label: '฿110',
-        vars: { price: 110, revenue: 11_000, optimalPrice: 72, close: false },
-        score: 0.35,
-        style: { 'risk-taker': 1 },
-      },
-    ],
-    initial: {},
-    scored: true,
-  },
-  'd-segmentation': {
-    color: palette.violet,
-    geometry: clusters,
-    choices: [
-      { label: 'ขว้าง 3 ลูก', vars: { magnetsLeft: 0 }, score: 0, style: { intuitive: 0.5 } },
-    ],
-    cueChoices: {
-      cue: 'choose-segment',
-      choices: [
-        { label: 'สายเปย์', vars: { lift: 18 }, score: 0.9, style: { analyst: 1 } },
-        { label: 'ขาประจำ', vars: { lift: 9 }, score: 0.6, style: { intuitive: 1 } },
-        { label: 'สายโปร', vars: { lift: 4 }, score: 0.35, style: { 'risk-taker': 1 } },
-      ],
-    },
-    initial: { magnetsLeft: 3 },
-    scored: true,
-  },
-  'f-fraud': {
-    color: palette.hot,
-    geometry: () => new OctahedronGeometry(1.2, 0),
-    choices: [
-      {
-        label: 'เข้มงวด',
-        vars: { caught: 14, aiSeconds: 0.4, falsePositives: 3 },
-        score: 0.7,
-        style: { 'risk-taker': 1 },
-      },
-      {
-        label: 'สมดุล',
-        vars: { caught: 11, aiSeconds: 0.4, falsePositives: 3 },
-        score: 0.85,
-        style: { analyst: 1 },
-      },
-      {
-        label: 'ปล่อยผ่าน',
-        vars: { caught: 5, aiSeconds: 0.4, falsePositives: 3 },
-        score: 0.3,
-        style: { intuitive: 1 },
-      },
-    ],
-    initial: {},
-    scored: true,
-  },
-  'h-forecast': {
-    color: palette.positive,
-    geometry: bars,
-    choices: [
-      {
-        label: 'ยอดลดลง',
-        vars: { playerAcc: 41, aiAcc: 92, beatAi: false },
-        score: 0.3,
-        style: { 'risk-taker': 1 },
-      },
-      {
-        label: 'พุ่งช่วง 11.11',
-        vars: { playerAcc: 94, aiAcc: 92, beatAi: true },
-        score: 1,
-        style: { analyst: 1 },
-      },
-      {
-        label: 'เท่าเดิม',
-        vars: { playerAcc: 68, aiAcc: 92, beatAi: false },
-        score: 0.6,
-        style: { intuitive: 1 },
-      },
-    ],
-    initial: {},
-    scored: true,
   },
 };
 
@@ -226,16 +107,6 @@ class PlaceholderScene implements SceneModule {
     } else if (this.#playStartFrames >= 0 && this.id === 'a-you-are-data') {
       this.#playStartFrames = -1; // freeze the count at the end of play
     }
-  }
-
-  onCue(cue: string): boolean {
-    const cueChoices = this.#spec.cueChoices;
-    if (cueChoices?.cue !== cue) return false;
-    this.#showChoices(cue, cueChoices.choices, () => {
-      this.#clearChoices();
-      this.#ctx.signal('continue');
-    });
-    return true;
   }
 
   vars() {
