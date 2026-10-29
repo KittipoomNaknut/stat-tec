@@ -20,6 +20,11 @@ const REST_WRIST: Point = [0.65, 1.5];
 const RAISED_WRIST: Point = [1.5, -0.3];
 const RAISE_MS = 150;
 const GLIDE_MS = 300;
+/**
+ * Hold the raised arm before aiming, like a person does. The cursor needs 100 ms of steady
+ * pointing to activate; 150 ms left too little margin on a loaded CI machine (research 015).
+ */
+const AIM_DELAY_MS = 400;
 
 /**
  * A scripted body for end-to-end tests (`?player=synthetic`): no camera, but the real gesture
@@ -76,7 +81,7 @@ export class SyntheticPlayer {
       ? [{ from: this.#wrist, to: target, start: now, ms: GLIDE_MS }]
       : [
           { from: this.#wrist, to: RAISED_WRIST, start: now, ms: RAISE_MS },
-          { from: RAISED_WRIST, to: target, start: now + RAISE_MS * 2, ms: GLIDE_MS },
+          { from: RAISED_WRIST, to: target, start: now + RAISE_MS + AIM_DELAY_MS, ms: GLIDE_MS },
         ];
   }
 

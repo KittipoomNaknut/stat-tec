@@ -52,6 +52,17 @@ export const gestureConfig = {
      */
     box: { x0: 0.4, x1: 1.7, y0: -1.2, y1: 0.3 },
   },
+  /**
+   * Screen-space cursor smoothing (research 015): speeds in screens per second, deadband in
+   * screen widths. Measured on the playground sessions: frame-to-frame shake 6.0 → 2.2 px at
+   * 1080p, +~20 ms lag on fast sweeps, selections unchanged.
+   */
+  smoothing: {
+    minCutoff: 0.8,
+    beta: 8,
+    dCutoff: 1,
+    deadband: 0.004,
+  },
   dwell: {
     holdMs: 1200,
     /** Leaving the target for less than this keeps the progress. */

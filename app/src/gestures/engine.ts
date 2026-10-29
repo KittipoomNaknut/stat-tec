@@ -5,6 +5,7 @@ import type { TargetRegistry } from '../input/targets';
 import type { LockState } from '../perception/player-lock';
 import type { PerceptionSource } from '../perception/protocol';
 import { CursorTracker } from './cursor';
+import { CursorSmoother } from './cursor-smoother';
 import { DwellDetector } from './dwell';
 
 /** What the engine needs from each perception frame. */
@@ -23,6 +24,7 @@ export class GestureEngine {
   readonly #targets: TargetRegistry;
   readonly #source: IntentSource;
   #cursor = new CursorTracker(cursorConfigFor('server'));
+  readonly #smoother = new CursorSmoother();
   readonly #dwell = new DwellDetector();
   #lock: LockState = 'searching';
   #playerId = 0;
@@ -45,7 +47,10 @@ export class GestureEngine {
     this.#presence(input, meta);
     if (!this.enabled) return;
 
-    const cursor = this.#cursor.update(input.lock === 'locked' ? input.body : null, tMs);
+    const cursor = this.#smoother.update(
+      this.#cursor.update(input.lock === 'locked' ? input.body : null, tMs),
+      tMs,
+    );
     this.#bus.emit({ type: 'cursor', ...cursor, ...meta });
     for (const event of this.#dwell.update(cursor, this.#targets, tMs)) {
       this.#bus.emit({ ...event, ...meta });

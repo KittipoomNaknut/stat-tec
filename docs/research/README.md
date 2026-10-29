@@ -23,6 +23,7 @@
 | [012](012-renderer-frame-budget.md)       | Renderer: frame budget, backdrop blur, 4K           | blur หลัง panel ทำเฟรมหลุด (p95 16.8 → 33.4) → เลิกใช้; 4K ใน headless เชื่อไม่ได้                                                           | PR #34               |
 | [013](013-experience-layout.md)           | ประกอบทั้งรอบ: layout + flow                        | ครบรอบใน 66 s (×4) ไม่มี error; ดูภาพทีละจังหวะเจอ 7 จุดทับ/อ่านยาก → แก้หมด                                                                 | PR #39               |
 | [014](014-e2e-synthetic-player.md)        | E2E ด้วยผู้เล่นสังเคราะห์                           | ทั้งรอบผ่าน CI ไม่ใช้กล้อง; เจอ 3 บั๊กจริง: time-out ตัดการเลือกกลางคัน, id ปุ่มซ้ำ, ปุ่มโผล่ใต้มือแล้วเลือกเอง                              | PR #41               |
+| [015](015-cursor-smoothing.md)            | Cursor สั่น                                         | ข้อมือ 1 px = cursor 6.7 px → กรองที่ cursor (2D One Euro + deadband): สั่น/เฟรม 6.0 → 2.2 px, กดติดเท่าเดิม; วาดลื่น 60 fps                 | PR #44               |
 
 ## แม่แบบ
 
