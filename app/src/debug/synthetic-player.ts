@@ -71,17 +71,20 @@ export class SyntheticPlayer {
     this.#lock = 'searching';
   }
 
-  /** Points the cursor at screen position (x, y) in [0, 1]. */
-  pointAt(x: number, y: number): void {
+  /**
+   * Points the cursor at screen position (x, y) in [0, 1], gliding there in `ms` (a short glide
+   * across the screen is a sweep fast enough to slap).
+   */
+  pointAt(x: number, y: number, ms = GLIDE_MS): void {
     const { box } = gestureConfig.cursor;
     const target: Point = [box.x0 + x * (box.x1 - box.x0), box.y0 + y * (box.y1 - box.y0)];
     const now = performance.now();
     const raised = this.#wrist[1] < HIP_Y - 1; // already pointing: just glide
     this.#path = raised
-      ? [{ from: this.#wrist, to: target, start: now, ms: GLIDE_MS }]
+      ? [{ from: this.#wrist, to: target, start: now, ms }]
       : [
           { from: this.#wrist, to: RAISED_WRIST, start: now, ms: RAISE_MS },
-          { from: RAISED_WRIST, to: target, start: now + RAISE_MS + AIM_DELAY_MS, ms: GLIDE_MS },
+          { from: RAISED_WRIST, to: target, start: now + RAISE_MS + AIM_DELAY_MS, ms },
         ];
   }
 

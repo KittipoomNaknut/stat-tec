@@ -1,0 +1,338 @@
+/* EPISODE IV — fraud patrol and the anomaly map (research 020). Keeps the caption zone free. */
+.fr {
+  position: absolute;
+  inset: 0;
+}
+
+.fr-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Alarm: a red vignette and a banner that blinks in, once */
+.fr-alert {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: start center;
+  padding-top: 12vh;
+  justify-items: center;
+  gap: 0.6vh;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgb(255 40 80 / 32%) 100%);
+}
+
+.fr-alert b {
+  font: 900 7vh var(--font-display);
+  letter-spacing: 0.4em;
+  color: var(--negative);
+  text-shadow: 0 0 3vh rgb(255 84 112 / 80%);
+}
+
+.fr-alert span {
+  font-size: var(--size-label);
+  color: var(--text);
+}
+
+.fr-alert.is-on {
+  animation: fr-alarm 2.6s var(--ease-out) forwards;
+}
+
+@keyframes fr-alarm {
+  0%,
+  20%,
+  40% {
+    opacity: 1;
+  }
+
+  10%,
+  30% {
+    opacity: 0.25;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.fr-plot {
+  position: absolute;
+  left: 4.2vw;
+  top: 21vh;
+  width: 62vw;
+  bottom: 26.5vh;
+  padding: 2.4vh 3.2vh;
+  opacity: 0;
+  transform: scale(0.97);
+  transition:
+    opacity var(--dur-scene) var(--ease-out),
+    transform var(--dur-scene) var(--ease-out);
+}
+
+.fr-plot.is-shown {
+  opacity: 1;
+  transform: none;
+}
+
+.fr-axis {
+  position: absolute;
+  margin: 0;
+  font-size: var(--size-micro);
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.fr-axis-y {
+  left: 3.2vh;
+  top: 5vh;
+}
+
+.fr-axis-x {
+  right: 3.2vh;
+  bottom: 1.4vh;
+}
+
+.fr-area {
+  position: absolute;
+  left: 4vh;
+  right: 3vh;
+  top: 8.5vh;
+  bottom: 5.5vh;
+  border-left: 2px solid rgb(255 170 210 / 35%);
+  border-bottom: 2px solid rgb(255 170 210 / 35%);
+}
+
+.fr-area canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.fr-side {
+  position: absolute;
+  right: 4.2vw;
+  top: 21vh;
+  width: 25.5vw;
+  bottom: 26.5vh;
+  padding: 2.4vh 3vh;
+  display: grid;
+  align-content: start;
+  gap: 1.2vh;
+}
+
+.fr-stat {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.4vh;
+}
+
+.fr-stat p {
+  margin: 0;
+}
+
+.fr-stat .hud-number {
+  font-size: 5.4vh;
+}
+
+.fr-stat i {
+  width: 3vh;
+  height: 3vh;
+}
+
+.fr-stat.is-fraud i {
+  background: var(--negative);
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
+}
+
+.fr-stat.is-good i {
+  border-radius: 50%;
+  background: #3f9be0;
+}
+
+.fr-stat.is-missed i {
+  border-radius: 50%;
+  border: 0.4vh solid var(--negative);
+}
+
+.fr-combo {
+  margin: 0;
+  font: 900 4.4vh var(--font-display);
+  color: var(--accent);
+  text-shadow: var(--glow-accent);
+  animation: fr-pop 300ms var(--ease-out);
+}
+
+@keyframes fr-pop {
+  from {
+    transform: scale(1.5);
+  }
+}
+
+.fr-help,
+.fr-sub {
+  margin: 0;
+  font-size: var(--size-micro);
+  color: var(--text-dim);
+}
+
+.fr-help b {
+  color: var(--negative);
+}
+
+.fr-count {
+  font-size: 6vh;
+}
+
+.fr-time {
+  margin: 0;
+  font-size: var(--size-label);
+  color: var(--text);
+}
+
+.fr-time b {
+  font-family: var(--font-display);
+  color: var(--accent);
+}
+
+.fr-meter p {
+  margin: 0;
+}
+
+.fr-meter .hud-number {
+  font-size: 4.6vh;
+}
+
+.fr-meter small {
+  margin-left: 0.4vh;
+  font-size: 0.6em;
+}
+
+/* Label and value on one row: the ring panel also holds the damage curve */
+.fr-meter.is-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1vh;
+}
+
+.fr-meter.is-row .hud-number {
+  font-size: 3.6vh;
+}
+
+.fr-meter.is-damage .hud-number {
+  color: var(--accent);
+}
+
+.fr-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6vh 2vh;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--size-micro);
+}
+
+.fr-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.8vh;
+}
+
+.fr-legend i {
+  width: 1.8vh;
+  height: 1.8vh;
+  border-radius: 0.4vh;
+}
+
+.fr-legend .is-normal {
+  background: rgb(255 190 220);
+}
+
+.fr-legend .is-blocked {
+  background: #3f9be0;
+}
+
+.fr-legend .is-fraud {
+  background: var(--negative);
+}
+
+/* The player's shots are crosses on the map */
+.fr-legend .is-shot {
+  border-radius: 0;
+  background:
+    linear-gradient(45deg, transparent 42%, var(--text) 42% 58%, transparent 58%),
+    linear-gradient(-45deg, transparent 42%, var(--text) 42% 58%, transparent 58%);
+}
+
+.fr-cost {
+  margin: 0;
+  font-size: var(--size-micro);
+  color: var(--accent);
+}
+
+.fr-curve {
+  width: 100%;
+  height: 13vh;
+  overflow: visible;
+}
+
+.fr-curve-name,
+.fr-curve-best text {
+  font: 600 15px var(--font-ui);
+  fill: var(--text-dim);
+}
+
+.fr-curve-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 4;
+}
+
+.fr-curve-you {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+
+.fr-curve-best circle {
+  fill: none;
+  stroke: var(--positive);
+  stroke-width: 4;
+}
+
+.fr-curve-best text {
+  fill: var(--positive);
+}
+
+.fr-timer {
+  height: 1vh;
+  border-radius: 0.5vh;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.fr-timer i {
+  display: block;
+  height: 100%;
+  background: var(--brand-gradient);
+  transform-origin: left;
+}
