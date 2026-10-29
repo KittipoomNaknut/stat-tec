@@ -150,9 +150,13 @@
   }
 }
 
+.hud-caption-lines {
+  display: grid;
+  gap: var(--space-1);
+}
+
 .hud-caption-text {
   margin: 0;
-  min-height: calc(2 * var(--leading-thai) * 1em);
   font-size: var(--size-caption);
   font-weight: 500;
   line-height: var(--leading-thai);
@@ -272,4 +276,214 @@
 .hud-tile .hud-number {
   font-size: calc(var(--size-label) * 1.5);
   line-height: 1.1;
+}
+
+/* Previous line stays for context, smaller and dimmed */
+.hud-caption-text.is-previous {
+  font-size: calc(var(--size-caption) * 0.72);
+  color: var(--text-dim);
+}
+
+.hud-caption-text.is-previous b {
+  color: color-mix(in srgb, var(--accent) 60%, var(--text-dim));
+}
+
+/* Not typed yet: occupies its space so the line never reflows while typing */
+.hud-caption-text .is-untyped {
+  visibility: hidden;
+}
+
+/* ---------- Top bar ---------- */
+.hud-topbar {
+  position: fixed;
+  top: var(--space-4);
+  left: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+.hud-profit {
+  text-align: right;
+}
+
+.hud-profit.is-gain {
+  animation: hud-gain 1200ms var(--ease-out);
+}
+
+@keyframes hud-gain {
+  0% {
+    box-shadow: 0 0 5vh color-mix(in srgb, var(--accent) 55%, transparent);
+    border-color: var(--accent);
+  }
+}
+
+/* ---------- Header (chapter title / lesson term) ---------- */
+.hud-header {
+  position: fixed;
+  top: 15vh;
+  left: 0;
+  right: 0;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  text-align: center;
+  pointer-events: none;
+}
+
+.hud-header.is-entering {
+  animation: hud-rise var(--dur-ui) var(--ease-out) both;
+}
+
+.hud-header[data-variant='lesson'] .hud-headline {
+  color: var(--accent);
+  text-shadow: var(--glow-accent);
+}
+
+@keyframes hud-rise {
+  from {
+    opacity: 0;
+    transform: translateY(2vh);
+  }
+}
+
+/* ---------- Play countdown ---------- */
+.hud-countdown {
+  position: fixed;
+  top: var(--space-4);
+  left: 50%;
+  width: 12vh;
+  height: 12vh;
+  display: grid;
+  place-items: center;
+  transform: translateX(-50%);
+}
+
+.hud-countdown svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+
+.hud-countdown-track {
+  fill: color-mix(in srgb, var(--bg) 70%, transparent);
+  stroke: var(--line);
+  stroke-width: 3;
+}
+
+.hud-countdown-arc {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 0.8vh var(--primary));
+}
+
+.hud-countdown-value {
+  position: relative;
+  font: 700 var(--size-label) / 1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-countdown.is-ending .hud-countdown-arc {
+  stroke: var(--accent);
+  filter: drop-shadow(0 0 0.8vh var(--accent));
+}
+
+.hud-countdown.is-ending .hud-countdown-value {
+  color: var(--accent);
+}
+
+/* ---------- Choices (dwell buttons in a row, above the caption zone) ---------- */
+.hud-choices {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 55vh;
+  display: flex;
+  justify-content: center;
+  gap: 8vh;
+}
+
+.hud-choices.is-entering > * {
+  animation: hud-rise var(--dur-ui) var(--ease-out) both;
+}
+
+.hud-choices.is-entering > :nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.hud-choices.is-entering > :nth-child(3) {
+  animation-delay: 180ms;
+}
+
+/* Skip: right edge, just above the caption box, never in the middle of the action */
+.hud-skip {
+  position: fixed;
+  right: var(--space-4);
+  bottom: 33vh;
+}
+
+.hud-skip .hud-button {
+  min-width: 22vh;
+  min-height: 13vh;
+}
+
+/* ---------- Mini skeleton ---------- */
+.hud-mini-skeleton {
+  position: fixed;
+  left: var(--space-4);
+  bottom: var(--space-5);
+  width: 14vh;
+  height: 22vh;
+}
+
+/* ---------- Notice (paused / reconnecting) ---------- */
+.hud-notice {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 50%, rgb(2 6 15 / 55%), rgb(2 6 15 / 88%));
+  animation: hud-fade var(--dur-ui) var(--ease-out) both;
+}
+
+.hud-notice-card {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  max-width: 70vw;
+  padding: var(--space-5) var(--space-6);
+  text-align: center;
+}
+
+.hud-notice-text {
+  margin: 0;
+  font-size: var(--size-caption);
+  font-weight: 600;
+}
+
+.hud-notice-bar {
+  width: 40vh;
+  height: 0.8vh;
+  border-radius: 0.4vh;
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  overflow: hidden;
+}
+
+.hud-notice-bar i {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  transform-origin: left;
+}
+
+@keyframes hud-fade {
+  from {
+    opacity: 0;
+  }
 }

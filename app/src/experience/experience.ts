@@ -1,0 +1,359 @@
+import { createActor } from 'xstate';
+import { APP_DELAYS, appMachine, phaseOf, type AppPhase } from '../core/app-machine';
+import { GestureEngine } from '../gestures/engine';
+import { Caption } from '../hud/caption';
+import { ChapterHeader } from '../hud/chapter-header';
+import { Countdown } from '../hud/countdown';
+import { HudCursor } from '../hud/cursor';
+import { DwellButton } from '../hud/dwell-button';
+import { MiniSkeleton } from '../hud/mini-skeleton';
+import { Notice } from '../hud/notice';
+import { TopBar } from '../hud/top-bar';
+import { IntentBus } from '../input/intent-bus';
+import { MouseAdapter } from '../input/mouse-adapter';
+import { TargetRegistry } from '../input/targets';
+import { NarrativeEngine } from '../narrative/engine';
+import type { Beat, Story } from '../narrative/schema';
+import type { PerceptionSource, PoseDetections } from '../perception/protocol';
+import { Renderer } from '../render/renderer';
+import { attractScene } from '../scenes/attract';
+import { SceneManager } from '../scenes/manager';
+import { placeholderScene } from '../scenes/placeholder';
+import { reportScene } from '../scenes/report';
+import type { SceneModule } from '../scenes/types';
+import { welcomeScene } from '../scenes/welcome';
+import { codename } from '../scoring/codename';
+import { chapterProfit, totalProfit, type ChapterOutcome } from '../scoring/profit';
+import { ceoStyle } from '../scoring/style';
+import { Leaderboard } from '../storage/leaderboard';
+import './experience.css';
+
+export interface ExperienceOptions {
+  story: Story;
+  /** Time multiplier for the story, scenes and timers (E2E runs at `?speed=6`). */
+  speed?: number;
+  /** Render scale cap (see config/render.ts). */
+  maxInternalHeight?: number;
+  /** Where the leaderboard lives (localStorage in the kiosk). */
+  storage?: Storage;
+}
+
+/**
+ * The visitor experience: one place that wires the app machine, narrative, scenes, HUD and
+ * input together. Each state of the visit gets a scene and (except attract) a narrative; pausing
+ * freezes both, so resuming continues mid-sentence.
+ */
+export class Experience {
+  readonly bus = new IntentBus();
+  readonly #targets = new TargetRegistry();
+  readonly #story: Story;
+  readonly #speed: number;
+  readonly #renderer: Renderer;
+  readonly #scenes: SceneManager;
+  readonly #gestures: GestureEngine;
+  readonly #mouse: MouseAdapter;
+  readonly #leaderboard: Leaderboard;
+  readonly #actor;
+
+  // HUD
+  readonly #topBar: TopBar;
+  readonly #header: ChapterHeader;
+  readonly #caption: Caption;
+  readonly #countdown: Countdown;
+  readonly #skipRow: HTMLElement;
+  readonly #skeleton: MiniSkeleton;
+  readonly #notice: Notice;
+
+  #phase: AppPhase = 'boot';
+  /** Identifies what is on screen (session + chapter); pausing does not change it. */
+  #activeKey = '';
+  #narrative: NarrativeEngine | null = null;
+  #scene: SceneModule | null = null;
+  #codename = '';
+  #outcomes: ChapterOutcome[] = [];
+  #pausedMs = 0;
+
+  constructor(parent: HTMLElement, options: ExperienceOptions) {
+    this.#story = options.story;
+    this.#speed = options.speed ?? 1;
+    this.#leaderboard = new Leaderboard(options.storage ?? window.localStorage);
+    this.#renderer = new Renderer(parent, {
+      ...(options.maxInternalHeight === undefined
+        ? {}
+        : { maxInternalHeight: options.maxInternalHeight }),
+      onFatal: () => {
+        location.reload();
+      },
+    });
+
+    const hud = document.createElement('div');
+    hud.className = 'hud-root';
+    parent.append(hud);
+    const sceneHud = document.createElement('div');
+    sceneHud.className = 'scene-hud-layer';
+    hud.append(sceneHud);
+
+    this.#topBar = new TopBar(hud, this.#story.chapters.length);
+    this.#header = new ChapterHeader(hud);
+    this.#countdown = new Countdown(hud);
+    this.#skeleton = new MiniSkeleton(hud);
+    this.#caption = new Caption(hud, this.#story.meta.aiName);
+    this.#skipRow = document.createElement('div');
+    this.#skipRow.className = 'hud-skip';
+    this.#skipRow.hidden = true;
+    hud.append(this.#skipRow);
+    new DwellButton(
+      this.#skipRow,
+      this.bus,
+      this.#targets,
+      'skip',
+      this.#story.system.skip,
+      () => {
+        this.#narrative?.skip();
+      },
+      'SKIP',
+    );
+    this.#notice = new Notice(hud);
+
+    const cursor = new HudCursor(hud);
+    this.bus.on('cursor', (c) => {
+      cursor.move(c);
+    });
+    this.bus.on('dwell', (d) => {
+      cursor.setProgress(d.progress);
+    });
+    this.bus.on('select', () => {
+      cursor.setProgress(0);
+    });
+
+    this.#scenes = new SceneManager(
+      this.#renderer.world,
+      sceneHud,
+      { bus: this.bus, targets: this.#targets },
+      (event) => {
+        if (event === 'gesture') this.#narrative?.gestureSucceeded();
+        else if (event === 'finished') this.#narrative?.sceneFinished();
+        else this.#narrative?.continue();
+      },
+      1200 / this.#speed,
+    );
+    this.#gestures = new GestureEngine(this.bus, this.#targets);
+    this.#mouse = new MouseAdapter(window, this.bus, this.#targets);
+
+    const actor = createActor(
+      appMachine.provide({
+        delays: {
+          pauseTimeout: APP_DELAYS.pauseTimeout / this.#speed,
+          reportLinger: APP_DELAYS.reportLinger / this.#speed,
+        },
+      }),
+      { input: { chapterCount: this.#story.chapters.length } },
+    );
+    this.#actor = actor;
+    this.bus.on('presence', (p) => {
+      const type = {
+        enter: 'PRESENCE_ENTER',
+        lost: 'PRESENCE_LOST',
+        return: 'PRESENCE_RETURN',
+        leave: 'PRESENCE_LEAVE',
+      } as const;
+      actor.send({ type: type[p.state] });
+    });
+    actor.subscribe((snapshot) => {
+      this.#onState(
+        phaseOf(snapshot.value),
+        snapshot.context.sessionId,
+        snapshot.context.chapterIndex,
+      );
+    });
+    actor.start();
+    window.addEventListener('keydown', this.#onKey);
+    actor.send({ type: 'READY' });
+  }
+
+  /** Uses thresholds calibrated for the pose source in use. */
+  setPoseSource(source: PerceptionSource): void {
+    this.#gestures.setPoseSource(source);
+  }
+
+  onDetections(d: PoseDetections, nowMs = performance.now()): void {
+    this.#gestures.update(d, nowMs);
+    this.#skeleton.setPose(d.lock === 'locked' ? d.player : null, d.playerShown);
+    if (d.lock === 'locked' && d.player) this.#scenes.countPoseFrame();
+  }
+
+  /** Feeds the gesture engine directly (synthetic players in E2E). */
+  onBody(
+    input: { lock: PoseDetections['lock']; playerId: number; body: Float32Array | null },
+    nowMs: number,
+  ): void {
+    this.#gestures.update(input, nowMs);
+    if (input.lock === 'locked' && input.body) this.#scenes.countPoseFrame();
+  }
+
+  frame(dtMs: number, nowMs: number): void {
+    const dt = dtMs * this.#speed;
+    const paused = this.#phase === 'paused';
+    if (!paused) this.#narrative?.update(dt);
+    this.#scenes.update(dt, (nowMs * this.#speed) / 1000);
+    this.#topBar.update(dt);
+
+    const state = this.#narrative?.state ?? null;
+    this.#caption.update(paused ? null : state);
+    this.#countdown.update(paused ? null : (state?.remainingSec ?? null));
+    this.#skipRow.hidden = paused || !state?.skippable;
+    if (paused) {
+      this.#pausedMs += dt;
+      this.#notice.show(this.#story.system.paused, this.#pausedMs / APP_DELAYS.pauseTimeout);
+    }
+    this.#skeleton.draw();
+    document.body.dataset['beat'] = state?.beat?.type ?? '';
+    this.#renderer.frame(dtMs, nowMs);
+  }
+
+  #onState(phase: AppPhase, sessionId: number, chapterIndex: number): void {
+    const was = this.#phase;
+    this.#phase = phase;
+    document.body.dataset['phase'] = phase;
+    if (phase === 'paused') {
+      if (was !== 'paused') this.#pausedMs = 0;
+      return;
+    }
+    this.#notice.hide();
+    const key = `${phase}:${String(sessionId)}:${String(chapterIndex)}`;
+    if (key === this.#activeKey) return; // resumed where we were
+    this.#activeKey = key;
+
+    switch (phase) {
+      case 'boot':
+        break;
+      case 'attract':
+        this.#enterAttract();
+        break;
+      case 'welcome':
+        this.#enterWelcome();
+        break;
+      case 'chapter':
+        this.#enterChapter(chapterIndex);
+        break;
+      case 'report':
+        this.#enterReport();
+        break;
+    }
+  }
+
+  #enterAttract(): void {
+    this.#narrative = null;
+    this.#scene = this.#scenes.show(attractScene(this.#story));
+    this.#topBar.visible = false;
+    this.#header.hide();
+    this.#skeleton.visible = false;
+    document.body.dataset['chapter'] = '';
+  }
+
+  #enterWelcome(): void {
+    const today = new Set(this.#leaderboard.today().map((e) => e.codename));
+    this.#codename = codename(this.#story.codename, Math.random, today);
+    this.#outcomes = [];
+    this.#topBar.setProfit(0, false);
+    this.#topBar.setChapter(-1, this.#story.chapters.length);
+    this.#topBar.visible = true;
+    this.#skeleton.visible = true;
+    this.#header.hide();
+    this.#scene = this.#scenes.show(welcomeScene(this.#codename));
+    this.#run(this.#story.welcome.beats, () => {
+      this.#actor.send({ type: 'WELCOME_DONE' });
+    });
+  }
+
+  #enterChapter(index: number): void {
+    const chapter = this.#story.chapters[index];
+    if (!chapter) return;
+    document.body.dataset['chapter'] = chapter.id;
+    this.#topBar.setChapter(index, this.#story.chapters.length);
+    this.#header.show(chapter.concept, chapter.title);
+    this.#scene = this.#scenes.show(placeholderScene(chapter.scene, chapter.id));
+    this.#run(
+      chapter.beats,
+      () => {
+        const outcome = this.#scene?.result();
+        if (outcome) {
+          this.#outcomes.push(outcome);
+          this.#topBar.setProfit(this.#profitSoFar());
+        }
+        this.#actor.send({ type: 'CHAPTER_DONE' });
+      },
+      chapter.concept,
+      chapter.title,
+    );
+  }
+
+  #enterReport(): void {
+    document.body.dataset['chapter'] = 'report';
+    this.#topBar.visible = false;
+    this.#header.hide();
+    const total = totalProfit(this.#outcomes);
+    const { rank, total: players } = this.#leaderboard.add(this.#codename, total);
+    const style = this.#story.styles[ceoStyle(this.#outcomes)];
+    this.#scene = this.#scenes.show(
+      reportScene(this.#story, {
+        codename: this.#codename,
+        totalProfit: total,
+        style,
+        rank,
+        totalPlayers: players,
+      }),
+    );
+    this.#run([{ type: 'reveal', lines: this.#story.report.lines }], () => {
+      this.#actor.send({ type: 'REPORT_DONE' });
+    });
+  }
+
+  #profitSoFar(): number {
+    return this.#outcomes.reduce((sum, o) => sum + chapterProfit(o), 0);
+  }
+
+  /** Starts a narrative over the current scene; the lesson beat swaps the header to its term. */
+  #run(beats: readonly Beat[], onDone: () => void, concept?: string, title?: string): void {
+    const scene = this.#scene;
+    this.#narrative = new NarrativeEngine(beats, {
+      vars: () => ({
+        aiName: this.#story.meta.aiName,
+        codename: this.#codename,
+        ...scene?.vars(),
+      }),
+      onBeat: (beat) => {
+        document.body.dataset['beat'] = beat.type;
+        if (concept !== undefined && title !== undefined) {
+          if (beat.type === 'lesson') this.#header.show('Lesson', concept, 'lesson');
+          else this.#header.show(concept, title);
+        }
+        scene?.onBeat?.(beat);
+      },
+      onCue: (cue) => scene?.onCue?.(cue) ?? false,
+      onError: (error) => {
+        console.warn('[narrative]', error.message);
+      },
+      onDone,
+    });
+  }
+
+  readonly #onKey = (e: KeyboardEvent): void => {
+    if (e.key === 'F5') {
+      // Staff reset: back to attract, not a page reload.
+      e.preventDefault();
+      this.#actor.send({ type: 'RESET' });
+    } else if (e.key === 'F2') {
+      e.preventDefault();
+      this.#mouse.enabled = !this.#mouse.enabled;
+      this.#gestures.enabled = !this.#mouse.enabled;
+      // With the mouse there is no body to detect: toggling it acts as arriving / leaving.
+      this.bus.emit({
+        type: 'presence',
+        state: this.#mouse.enabled ? 'enter' : 'leave',
+        t: performance.now(),
+        source: 'mouse',
+      });
+    }
+  };
+}
