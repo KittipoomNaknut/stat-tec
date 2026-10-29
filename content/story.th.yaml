@@ -99,7 +99,7 @@ chapters:
         lines:
           - เส้นนี้เรียกว่า **Demand Curve**
           - '**Regression** = หาเส้นที่พลาดน้อยที่สุด'
-          - แอปเรียกรถและจองโรงแรม ปรับราคาแบบนี้ทุกนาที
+          - แอปเรียกรถ ปรับราคาแบบนี้ทุกนาที
 
   - id: segments
     scene: d-segmentation
@@ -177,7 +177,7 @@ chapters:
           - นี่คือยอดขาย 3 ปีที่ผ่านมาครับ
       - type: tutorial
         gesture: draw
-        lines: [ยกมือเหนือไหล่ แล้วลากเส้นทายยอดขายเดือนหน้า]
+        lines: [ยกมือ แล้วลากเส้นทายยอดขายเดือนหน้า]
       - type: play
         durationSec: 25
         hints:
