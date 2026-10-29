@@ -138,6 +138,30 @@ describe('NarrativeEngine', () => {
     expect(e.state.done).toBe(true);
   });
 
+  it('waits past a time-out while the player is mid-selection', () => {
+    const play: Beat = { type: 'play', durationSec: 2, hints: [] };
+    const e = new NarrativeEngine([play], host().h, config);
+    e.update(1500);
+    e.setEngaged(true);
+    e.update(5000);
+    expect(e.state.done).toBe(false);
+    expect(e.state.remainingSec).toBe(0);
+    e.setEngaged(false);
+    e.update(16);
+    expect(e.state.done).toBe(true);
+
+    const tutorial: Beat = { type: 'tutorial', gesture: 'dwell', lines: ['x'], timeoutSec: 1 };
+    const t = new NarrativeEngine([tutorial], host().h, config);
+    t.update(500);
+    t.setEngaged(true);
+    t.update(5000);
+    expect(t.state.waiting).toBe('gesture');
+    t.gestureSucceeded();
+    t.update(16);
+    t.update(16);
+    expect(t.state.done).toBe(true);
+  });
+
   it('skip jumps to the next checkpoint cue, which blocks until the scene continues', () => {
     const beats: Beat[] = [
       { type: 'reveal', lines: ['หนึ่ง', 'สอง', { cue: 'choose' }, 'ผลลัพธ์'] },

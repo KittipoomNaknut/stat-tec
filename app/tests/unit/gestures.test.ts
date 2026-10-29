@@ -120,9 +120,15 @@ describe('DwellDetector', () => {
   targets.register('ok', () => ({ x: 0.4, y: 0.4, w: 0.2, h: 0.2 }));
   const on = { visible: true, hand: 'right' as const, x: 0.5, y: 0.5 };
   const off = { ...on, x: 0.9 };
+  /** A detector that has already seen the target on screen (cursor elsewhere). */
+  const primed = () => {
+    const d = new DwellDetector();
+    d.update(off, targets, -100);
+    return d;
+  };
 
   it('selects after holding 1.2 s, then rests', () => {
-    const d = new DwellDetector();
+    const d = primed();
     const events = [];
     for (let t = 0; t <= 2000; t += 33) events.push(...d.update(on, targets, t));
     const selects = events.filter((e) => e.type === 'select');
@@ -130,17 +136,33 @@ describe('DwellDetector', () => {
   });
 
   it('forgives a short slip but resets after a long one', () => {
-    const d = new DwellDetector();
+    const d = primed();
     d.update(on, targets, 0);
     d.update(on, targets, 600);
     d.update(off, targets, 700);
     expect(d.update(on, targets, 1250).at(-1)).toMatchObject({ type: 'select' });
 
-    const e = new DwellDetector();
+    const e = primed();
     e.update(on, targets, 0);
     e.update(on, targets, 600);
     expect(e.update(off, targets, 900)).toEqual([{ type: 'dwell', targetId: 'ok', progress: 0 }]);
     expect(e.update(on, targets, 1250).some((x) => x.type === 'select')).toBe(false);
+  });
+
+  it('ignores a target that appears under the cursor until the cursor leaves it', () => {
+    const local = new TargetRegistry();
+    let shown = false;
+    local.register('new', () => (shown ? { x: 0.4, y: 0.4, w: 0.2, h: 0.2 } : null));
+    const d = new DwellDetector();
+    d.update(on, local, 0);
+    shown = true; // pops up right under a hand still raised from the last choice
+    const events = [];
+    for (let t = 33; t <= 2000; t += 33) events.push(...d.update(on, local, t));
+    expect(events).toEqual([]);
+    // leave and come back: now it is a deliberate dwell
+    d.update(off, local, 2100);
+    for (let t = 2133; t <= 3500; t += 33) events.push(...d.update(on, local, t));
+    expect(events.filter((e) => e.type === 'select')).toHaveLength(1);
   });
 
   it('never selects while the cursor is hidden', () => {

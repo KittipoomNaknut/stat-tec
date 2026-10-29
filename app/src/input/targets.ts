@@ -26,6 +26,13 @@ export class TargetRegistry {
     return this.#targets.get(id)?.() ?? null;
   }
 
+  /** Ids of targets that are currently shown. */
+  visibleIds(): string[] {
+    const ids: string[] = [];
+    for (const [id, rect] of this.#targets) if (rect()) ids.push(id);
+    return ids;
+  }
+
   /** Snapshot of every visible target's rect. */
   snapshot(): Record<string, Rect> {
     const out: Record<string, Rect> = {};

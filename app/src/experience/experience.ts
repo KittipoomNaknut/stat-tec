@@ -142,9 +142,14 @@ export class Experience {
     });
     this.bus.on('dwell', (d) => {
       cursor.setProgress(d.progress);
+      // Mid-selection on a scene's button: time-outs wait (skip does not count).
+      this.#narrative?.setEngaged(d.targetId !== 'skip' && d.progress > 0 && d.progress < 1);
     });
-    this.bus.on('select', () => {
+    this.bus.on('select', (s) => {
       cursor.setProgress(0);
+      this.#narrative?.setEngaged(false);
+      // For tests and the debug overlay: what the player last selected.
+      document.body.dataset['lastSelect'] = s.targetId;
     });
 
     this.#scenes = new SceneManager(
