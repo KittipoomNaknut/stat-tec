@@ -24,6 +24,8 @@ async function player(page: Page, action: 'enter' | 'lose' | 'return' | 'leave' 
 
 /** A pose question of the active scene (not one fading out), wherever it sits. */
 const POSE_PROMPT = '.scene-hud:not(.is-leaving) .pose-prompt';
+/** One still waiting for an answer: a chosen card lingers 500 ms and must not count twice. */
+const OPEN_PROMPT = `${POSE_PROMPT}:not(:has(.is-chosen))`;
 
 /** Strike a pose with the body and hold it until the prompt takes it (research 025). */
 async function strike(page: Page, pose: string) {
@@ -64,7 +66,7 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
     const chapter = now['chapter'] ?? '';
     seen.add(chapter);
     const poses = await page
-      .locator(POSE_PROMPT)
+      .locator(OPEN_PROMPT)
       .first()
       .getAttribute('data-poses', { timeout: 200 })
       .catch(() => null);
