@@ -1,4 +1,5 @@
 import { baht } from '../../hud/count-up';
+import { askPose } from '../../hud/pose-prompt';
 import { setDigits } from '../../hud/digits';
 import type { Beat } from '../../narrative/schema';
 import { Animator } from '../../viz/animator';
@@ -19,6 +20,8 @@ import './coffee.css';
 
 /** A visitor counts as "close to the AI" within this many baht. */
 const CLOSE_BAHT = 6;
+/** The warm-up pose question waits this long (story time) for an answer. */
+const QUIZ_MS = 9000;
 /** Moving the hand through this much of its range completes the tutorial. */
 const TUTORIAL_SWEEP = 0.3;
 /** Customers drawn per second at 100 cups/day. */
@@ -70,6 +73,7 @@ class CoffeeScene implements SceneModule {
   readonly #customers: Customer[] = [];
   #spawn = 0;
   #vars: Record<string, string | number | boolean> = {};
+  #quizRight = false;
   readonly #off: (() => void)[] = [];
 
   constructor(ctx: SceneContext, chapterId: string) {
@@ -176,6 +180,24 @@ class CoffeeScene implements SceneModule {
   }
 
   onCue(cue: string): boolean {
+    if (cue === 'quiz') {
+      // Warm-up pose question (research 025): would anyone buy a ฿200 coffee? (Nobody: demand
+      // reaches zero at ฿144.)
+      void askPose(
+        this.#ctx.hud,
+        this.#ctx.bus,
+        [
+          { pose: 'right-up', label: 'มีคนซื้อ' },
+          { pose: 'cross', label: 'ไม่มีใครซื้อ' },
+        ],
+        (ms, step) => this.#anim.tween(ms, step, { ease: (t) => t }),
+        QUIZ_MS,
+      ).then((pose) => {
+        this.#quizRight = pose === 'cross';
+        this.#ctx.signal('continue');
+      });
+      return true;
+    }
     const chart = this.#chart;
     if (!chart) return false;
     const run = (job: Promise<void>) => {
@@ -197,7 +219,7 @@ class CoffeeScene implements SceneModule {
   }
 
   vars() {
-    return this.#vars;
+    return { ...this.#vars, quizRight: this.#quizRight };
   }
 
   result() {

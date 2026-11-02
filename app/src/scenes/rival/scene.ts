@@ -1,5 +1,5 @@
 import { setDigits } from '../../hud/digits';
-import { DwellButton } from '../../hud/dwell-button';
+import { askPose } from '../../hud/pose-prompt';
 import type { Beat } from '../../narrative/schema';
 import type { TemplateVars } from '../../narrative/template';
 import { Animator, ease } from '../../viz/animator';
@@ -77,8 +77,6 @@ class RivalScene implements SceneModule {
   #links = 0;
   #labels: number[] = [];
   #choice: StrategyResult | null = null;
-  readonly #buttons: DwellButton[] = [];
-  #choiceTimer: Promise<void> | null = null;
   readonly #off: (() => void)[] = [];
 
   constructor(ctx: SceneContext, chapterId: string, carry: Readonly<TemplateVars>) {
@@ -148,7 +146,6 @@ class RivalScene implements SceneModule {
   dispose(): void {
     this.#anim.cancel();
     for (const off of this.#off) off();
-    for (const b of this.#buttons) b.dispose();
   }
 
   update(dtMs: number): void {
@@ -291,47 +288,32 @@ class RivalScene implements SceneModule {
 
   // ---------- The choice ----------
 
+  /** The answer is a pose (research 025): left hand, right hand, or arms crossed for "no". */
   #offerChoice(): void {
     this.#side.innerHTML = `
       <p class="hud-eyebrow">ท่านจะสู้ยังไง?</p>
-      <p class="rv-note">ร้านเรา ฿${String(this.#price)} · Empire ฿${String(RIVAL_PRICE)}</p>
-      <div class="rv-options"></div>
-      <div class="rv-timer"><i></i></div>`;
-    const holder = this.#side.querySelector('.rv-options') as HTMLElement;
-    for (const s of STRATEGIES) {
-      const button = new DwellButton(
-        holder,
-        this.#ctx.bus,
-        this.#ctx.targets,
-        `${this.id}-${s.id}`,
-        s.label,
-        () => {
-          this.#choose(s.id);
-        },
-        'HOLD',
-      );
-      this.#buttons.push(button);
-    }
-    const bar = this.#side.querySelector('.rv-timer i') as HTMLElement;
-    const timer = this.#anim.tween(
+      <p class="rv-note">ร้านเรา ฿${String(this.#price)} · Empire ฿${String(RIVAL_PRICE)}</p>`;
+    const label = (id: StrategyId) => STRATEGIES.find((s) => s.id === id)?.label ?? id;
+    void askPose(
+      this.#side,
+      this.#ctx.bus,
+      [
+        { pose: 'left-up', label: label('all') },
+        { pose: 'right-up', label: label('target') },
+        { pose: 'cross', label: label('none') },
+      ],
+      (ms, step) => this.#anim.tween(ms, step, { ease: ease.linear }),
       CHOICE_MS,
-      (t) => {
-        bar.style.transform = `scaleX(${String(1 - t)})`;
-      },
-      { ease: ease.linear },
-    );
-    this.#choiceTimer = timer;
-    void timer.then(() => {
-      if (!this.#choice && this.#choiceTimer === timer) this.#choose('none');
+      'list',
+    ).then((pose) => {
+      // No answer in time: the café keeps its price
+      this.#choose(pose === 'left-up' ? 'all' : pose === 'right-up' ? 'target' : 'none');
     });
   }
 
   #choose(id: StrategyId): void {
     if (this.#choice) return;
     this.#choice = evaluate(id, this.#price);
-    this.#choiceTimer = null;
-    for (const b of this.#buttons) b.dispose();
-    this.#buttons.length = 0;
     this.#ctx.signal('continue');
   }
 

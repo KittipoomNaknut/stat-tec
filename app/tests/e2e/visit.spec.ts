@@ -22,27 +22,19 @@ async function player(page: Page, action: 'enter' | 'lose' | 'return' | 'leave' 
   }, action);
 }
 
-/** Point at a target's center with the body and hold until the app reports it selected. */
-async function dwellOn(page: Page, id: string) {
-  const target = page.locator(`[data-target="${id}"]`).first();
-  await expect(target).toBeVisible();
-  // Let the entrance animation (500 ms story time) settle so the box stays put.
-  await page.waitForTimeout(200);
-  const box = await target.boundingBox({ timeout: 2000 });
-  if (!box) throw new Error(`no box for ${id}`);
-  await page.evaluate(
-    ({ x, y }) => {
-      window.statTecSynthetic.pointAt(x, y);
-    },
-    { x: (box.x + box.width / 2) / 1920, y: (box.y + box.height / 2) / 1080 },
-  );
-  await expect
-    .poll(() => page.locator('body').getAttribute('data-last-select'), { timeout: 6000 })
-    .toBe(id);
-}
+/** A pose question of the active scene (not one fading out), wherever it sits. */
+const POSE_PROMPT = '.scene-hud:not(.is-leaving) .pose-prompt';
 
-/** Any selectable button of the active scene (not one fading out), wherever it sits. */
-const CHOICE = '.scene-hud:not(.is-leaving) .hud-button[data-target]';
+/** Strike a pose with the body and hold it until the prompt takes it (research 025). */
+async function strike(page: Page, pose: string) {
+  await page.evaluate((p) => {
+    window.statTecSynthetic.pose(p as Parameters<Window['statTecSynthetic']['pose']>[0]);
+  }, pose);
+  await expect(page.locator(`${POSE_PROMPT} [data-pose="${pose}"].is-chosen`)).toBeVisible({
+    timeout: 6000,
+  });
+  await player(page, 'rest');
+}
 
 test('a visitor plays a whole visit with their body', async ({ page }) => {
   const errors: string[] = [];
@@ -55,9 +47,9 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
   await expect.poll(() => phase(page)).toBe('welcome');
   await expect(page.locator('.hud-caption')).toBeVisible();
 
-  // Tutorial: point at "พร้อมแล้ว" and hold, then lower the arm like a person does.
-  await dwellOn(page, 'welcome-ready');
-  await player(page, 'rest');
+  // Tutorial: both hands up to start.
+  await expect(page.locator(`${POSE_PROMPT}[data-poses="both-up"]`)).toBeVisible();
+  await strike(page, 'both-up');
   await expect.poll(() => phase(page)).toBe('chapter');
 
   const chapters = ['coffee', 'rival', 'slash'];
@@ -71,24 +63,23 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
     if (now['phase'] !== 'chapter') break;
     const chapter = now['chapter'] ?? '';
     seen.add(chapter);
-    const id = await page
-      .locator(CHOICE)
+    const poses = await page
+      .locator(POSE_PROMPT)
       .first()
-      .getAttribute('data-target', { timeout: 200 })
+      .getAttribute('data-poses', { timeout: 200 })
       .catch(() => null);
-    if (id !== null) {
+    const pose = poses?.split(',')[0];
+    if (pose) {
       const t0 = Date.now();
-      await dwellOn(page, id);
-      console.log(`${chapter}: selected ${id} in ${String(Date.now() - t0)} ms`);
+      await strike(page, pose);
+      console.log(`${chapter}: posed ${pose} in ${String(Date.now() - t0)} ms`);
       selected++;
-      await player(page, 'rest');
     }
     await page.waitForTimeout(200);
   }
   expect([...seen]).toEqual(chapters);
-  // Only the rival's strategy is a button — coffee is played by raising a hand, the 11.11 tags by
-  // slashing (slash.spec.ts)
-  expect(selected).toBe(1);
+  // Pose questions: the coffee quiz, the rival's strategy and the T-pose before the AI's day
+  expect(selected).toBe(3);
 
   // Report: a real profit total and rank, then back to attract on its own.
   await expect.poll(() => phase(page)).toBe('report');
@@ -108,7 +99,7 @@ test('stepping out pauses the visit; coming back resumes the same chapter', asyn
   await page.goto(URL);
   await expect.poll(() => phase(page)).toBe('attract');
   await player(page, 'enter');
-  await dwellOn(page, 'welcome-ready');
+  await strike(page, 'both-up');
   await expect.poll(() => phase(page)).toBe('chapter');
   const chapter = await page.locator('body').getAttribute('data-chapter');
 
