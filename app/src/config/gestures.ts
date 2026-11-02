@@ -119,6 +119,28 @@ export const gestureConfig = {
     /** Screen width / height of the kiosk TV, so a sideways sweep counts like a vertical one. */
     aspect: 16 / 9,
   },
+  /**
+   * Static poses (research 025), body space: SW units, +y down, shoulders at y = 0, nose ≈ −0.6,
+   * hips ≈ 1.5. Poses only count where a scene asks for them (PosePrompt).
+   */
+  pose: {
+    /** Hand up: wrist this far above the shoulders, and no further out than `upMaxOut`. */
+    upAbove: 0.75,
+    upMaxOut: 1.3,
+    /** The other hand counts as down below this (one-hand poses). */
+    downBelow: 0.3,
+    /** T: wrists within this of shoulder height and at least this far out. */
+    tMaxHeight: 0.45,
+    tMinOut: 1.2,
+    /** Cross: wrists past the center line by this, between these heights. */
+    crossPast: 0.05,
+    crossTop: -0.3,
+    crossBottom: 1.2,
+    /** Seen this long before it counts, then held this long to select. */
+    enterMs: 150,
+    holdMs: 700,
+    minVisibility: 0.5,
+  },
   dwell: {
     holdMs: 1200,
     /** Leaving the target for less than this keeps the progress. */

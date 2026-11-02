@@ -1,3 +1,4 @@
+import type { PoseName } from '../gestures/pose';
 /**
  * What the player means, independent of how it was produced (body, mouse or a recording).
  * Scenes only ever see these — see docs/adr/0003-intent-bus.md. Screen positions are in [0, 1].
@@ -32,6 +33,8 @@ export type Intent = Base &
     | { type: 'zoom'; scale: number }
     | { type: 'throw'; x: number; y: number; vx: number; vy: number }
     | { type: 'slap'; x: number; y: number; speed: number }
+    /** The pose held now (null when none) and how far the hold is; `held` on the select frame. */
+    | { type: 'pose'; pose: PoseName | null; progress: number; held: boolean }
     | { type: 'draw'; phase: 'start' | 'move' | 'end'; x: number; y: number }
   );
 

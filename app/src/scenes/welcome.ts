@@ -1,13 +1,13 @@
 import { TorusGeometry } from 'three';
-import { DwellButton } from '../hud/dwell-button';
+import { PosePrompt } from '../hud/pose-prompt';
 import type { Beat } from '../narrative/schema';
 import { HologramObject } from './hologram-object';
 import type { SceneContext, SceneModule } from './types';
 import { palette } from '../config/palette';
 
 /**
- * "New CEO detected": scan rings sweep up as the AI greets the player, then the first lesson —
- * point at a button and hold — with a real button that completes the tutorial.
+ * "New CEO detected": scan rings sweep up as the AI greets the player, then the first pose —
+ * both hands up to start (research 025).
  */
 export function welcomeScene(codename: string) {
   return (ctx: SceneContext): SceneModule => new WelcomeScene(ctx, codename);
@@ -25,7 +25,7 @@ class WelcomeScene implements SceneModule {
         90,
       ),
   );
-  #button: DwellButton | null = null;
+  #prompt: PosePrompt | null = null;
   #scanT = -1;
 
   constructor(ctx: SceneContext, codename: string) {
@@ -55,19 +55,18 @@ class WelcomeScene implements SceneModule {
 
   onBeat(beat: Beat): void {
     if (beat.type === 'tutorial') {
-      const row = document.createElement('div');
-      row.className = 'hud-choices is-entering';
-      this.#ctx.hud.append(row);
-      this.#button = new DwellButton(
-        row,
+      const stage = document.createElement('div');
+      stage.className = 'pose-stage is-entering';
+      this.#ctx.hud.append(stage);
+      this.#prompt = new PosePrompt(
+        stage,
         this.#ctx.bus,
-        this.#ctx.targets,
-        'welcome-ready',
-        'พร้อมแล้ว',
+        [{ pose: 'both-up', label: 'ชูสองมือ เพื่อเริ่ม!' }],
         () => {
-          this.#button?.dispose();
-          this.#button = null;
           this.#ctx.signal('gesture');
+          setTimeout(() => {
+            stage.remove();
+          }, 600);
         },
       );
     }
@@ -87,7 +86,7 @@ class WelcomeScene implements SceneModule {
   }
 
   dispose(): void {
-    this.#button?.dispose();
+    this.#prompt?.dispose();
     for (const ring of this.#rings) {
       ring.root.removeFromParent();
       ring.dispose();

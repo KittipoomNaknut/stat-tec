@@ -31,127 +31,110 @@ welcome:
       lines:
         - { text: ตรวจพบ CEO คนใหม่…, cue: scan }
         - ยินดีต้อนรับครับ **CEO {codename}**
-        - ผมคือ {aiName} ผู้ช่วย AI ของดาต้าคาเฟ่
-        - วันนี้เราจะสู้ศึกราคา… ด้วย **ข้อมูล**
     - type: tutorial
-      gesture: dwell
-      lines: [ยกแขนออกด้านข้าง แล้วชี้ไปที่ปุ่มนี้ค้างไว้ครับ]
-      success: เยี่ยมครับ! ไปเปิดร้านกัน
+      gesture: pose
+      lines: [ชูสองมือขึ้นเหนือหัว เพื่อเริ่มศึกราคา!]
+      success: ลุยกันเลย!
 
-# STAT WARS: Price Wars (docs/STORY.md) — 3 ศึก ราคาเดียว → ราคาตามกลุ่ม → ราคาตามเวลา, ≤ 5 นาที
+# STAT WARS: Price Wars (docs/STORY.md) — 3 ศึก ≤ 5 นาที · พูดน้อย ใช้ท่าเยอะ (research 025)
 chapters:
   - id: coffee
     scene: c-coffee-pricing
     title: ราคาเดียว
     concept: Regression
-    vars: [price, revenue, optimalPrice, close]
+    vars: [price, revenue, optimalPrice, close, quizRight]
     beats:
       - type: mission
         lines:
-          - วันแรกของ **ดาต้าคาเฟ่** ขายแก้วละเท่าไหร่ดี?
-          - ถูกไป กำไรน้อย… แพงไป ลูกค้าหนี
+          - เปิดร้าน **ดาต้าคาเฟ่** วันแรก!
+          - { text: "ขายแก้วละ ฿200 จะมีคนซื้อไหม?", cue: quiz }
+          - { text: ถูกต้อง! แพงไป ลูกค้าหนีหมด, when: quizRight }
+          - {
+              text: ไม่มีใครซื้อเลยครับ! แพงไป ลูกค้าหนีหมด,
+              when: "!quizRight",
+            }
       - type: tutorial
         gesture: raise
-        lines: [ยกมือขึ้น = ขึ้นราคา · ลดมือลง = ลดราคา]
-        success: ใช่เลยครับ! ลองหาราคาที่ดีที่สุดดู
+        lines: [ยกมือขึ้น = ขึ้นราคา · ลดมือ = ลดราคา]
+        success: หาราคาที่ได้เงินมากที่สุด!
       - type: play
         durationSec: 20
         hints:
-          - { afterSec: 5, text: ดูลูกค้าที่เดินเข้าร้านสิครับ }
-          - { afterSec: 12, text: เจอจุดสูงสุดหรือยังครับ? }
+          - { afterSec: 7, text: ดูลูกค้าเดินเข้าร้านสิครับ }
+          - { afterSec: 13, text: ราคาไหนเส้นรายได้สูงสุด? }
       - type: reveal
         lines:
-          - ท่านตั้งราคา **฿{price}** — รายได้ **฿{revenue}** / วัน
-          - {
-              text: "ทุกวันคือ 1 จุด: ราคา (X) กับแก้วที่ขายได้ (Y)",
-              cue: data-points,
-            }
-          - { text: ทีนี้… ให้ AI ลากเส้นทำนายครับ, cue: fit-line }
-          - { text: "รายได้ = ราคา × จำนวนแก้ว", cue: revenue-curve }
-          - โมเดลแนะนำ **฿{optimalPrice}**
-          - { text: ท่านเกือบเท่า AI เลยครับ!, when: close }
-          - { text: ข้อมูลเห็นสิ่งที่สัญชาตญาณมองไม่เห็นครับ, when: "!close" }
+          - ท่านได้ **฿{revenue}** / วัน ที่ราคา ฿{price}
+          - { text: AI ดูข้อมูล 13 วัน แล้วลากเส้น…, cue: data-points }
+          - { cue: fit-line }
+          - { cue: revenue-curve }
+          - AI แนะนำ **฿{optimalPrice}**
+          - { text: เกือบเท่า AI เลยครับ!, when: close }
       - type: lesson
         lines:
-          - เส้นนี้เรียกว่า **Demand Curve**
-          - "**Regression** = หาเส้นที่พลาดน้อยที่สุด"
+          - "**Regression** = หาจุดทำเงินสูงสุดจากข้อมูล"
 
   - id: rival
     scene: r-rival
     title: คู่แข่งบุก
     concept: Clustering
-    vars: [gap, kept, chosenBest]
+    vars: [kept, chosenBest]
     beats:
       - type: mission
         lines:
-          - {
-              text: ด่วนครับ! **Empire Coffee** มาเปิดตรงข้ามร้านเรา,
-              cue: rival,
-            }
-          - เขาขายแก้วละ **฿49** ถูกกว่าเรา ฿{gap}
-          - { text: ลูกค้าเราเริ่มเดินข้ามถนนไปแล้ว…, cue: drift }
+          - { text: ด่วน! **Empire Coffee** มาเปิดตรงข้าม ขาย ฿49!, cue: rival }
+          - { text: ลูกค้าเราเริ่มเดินข้ามถนน…, cue: drift }
       - type: reveal
         lines:
-          - { text: ให้ผมดูข้อมูลลูกค้า 600 คนก่อนครับ, cue: kmeans-run }
-          - { text: AI แบ่งลูกค้าได้ 3 กลุ่มครับ, cue: clusters }
-          - สายพรีเมียม · ขาประจำ · และ **สายประหยัด**
-          - { text: ท่านจะสู้ยังไงครับ? ชี้ค้างไว้, cue: choose-strategy }
+          - { text: AI แบ่งลูกค้าให้ดูครับ, cue: kmeans-run }
+          - { text: 3 กลุ่ม! **สายประหยัด** คือกลุ่มที่จะหนี, cue: clusters }
+          - { text: ทำท่าเลือกเลย! ท่านจะสู้ยังไง?, cue: choose-strategy }
           - { cue: outcome }
-          - "ผลลัพธ์: เก็บกำไรไว้ได้ **{kept}%** ของเดิม"
-          - { text: ถูกต้องครับ! ลดเฉพาะคนที่จะหนี, when: chosenBest }
-          - {
-              text: ทางที่ดีที่สุดคือ ลดเฉพาะสายประหยัดครับ,
-              when: "!chosenBest",
-            }
+          - เก็บกำไรไว้ได้ **{kept}%**
+          - { text: ถูกต้อง! ลดเฉพาะคนที่จะหนี, when: chosenBest }
+          - { text: ดีที่สุดคือ ลดเฉพาะสายประหยัดครับ, when: "!chosenBest" }
       - type: lesson
         lines:
-          - AI จัดกลุ่มเองด้วย **Clustering**
-          - แล้วตั้งราคาให้แต่ละกลุ่มไม่เท่ากัน
+          - "**Clustering** = ให้ AI จัดกลุ่มลูกค้าเอง"
 
   - id: slash
     scene: p-price-slash
     title: ศึก 11.11
     concept: Dynamic Pricing
-    vars: [hits, profit, aiProfit, flatProfit, gain]
+    vars: [hits, profit, gain]
     beats:
       - type: mission
         lines:
-          - วัน **11.11** มาแล้ว! ลูกค้าแห่เข้าร้าน
-          - ทุกวินาทีต้องเลือกราคาใหม่ ป้ายจะลอยมาเรื่อย ๆ
-          - ป้ายเทา = ขาดทุน · ป้ายแดง = แพงจนไม่มีใครซื้อ
+          - วัน **11.11**! ป้ายราคาจะลอยมาเต็มจอ
       - type: tutorial
         gesture: slap
-        lines: [ปัดมือเร็ว ๆ ผ่านป้าย **สีทอง** = ขายราคานี้]
-        success: ฉับ! ขายได้แล้ว… มาอีกเยอะเลยครับ
+        lines: [ปัดมือฟันป้าย **สีทอง** · เทากับแดงอย่าฟัน!]
+        success: ฉับ! มาอีกเยอะเลย
       - type: play
         durationSec: 20
         hints:
-          - { afterSec: 5, text: เร็วอีก! }
-          - { afterSec: 9, text: คนแน่นร้าน ราคาทองก็สูงขึ้นครับ! }
-          - { afterSec: 15, text: ระวังป้ายเทากับป้ายแดงนะครับ! }
+          - { afterSec: 6, text: เร็วอีก! }
+          - { afterSec: 10, text: คนแน่นร้าน ราคาทองก็สูงขึ้น! }
       - type: reveal
         lines:
-          - ท่านฟันได้ **{hits}** ป้าย · กำไร **฿{profit}**
-          - { text: ทีนี้… ให้ AI ขายทั้งวันบ้างครับ, cue: ai-day }
-          - AI ปรับราคาทุกชั่วโมง ตามจำนวนลูกค้า
-          - AI กำไร **฿{aiProfit}** · ราคาเดียวได้ ฿{flatProfit}
-          - มากกว่าเดิม **{gain}%** แค่เปลี่ยนราคาตามเวลา
+          - ฟันได้ **{hits}** ป้าย · กำไร **฿{profit}**
+          - { text: ให้ AI ขายทั้งวันบ้าง… กางแขนเลย!, cue: t-pose }
+          - { text: AI เปลี่ยนราคาทุกชั่วโมง ตามคนในร้าน, cue: ai-day }
+          - AI ได้มากกว่าราคาเดียว **{gain}%**!
       - type: lesson
         lines:
-          - นี่คือ **Dynamic Pricing**
-          - แอปเรียกรถ สายการบิน โรงแรม ใช้แบบนี้ทุกนาที
+          - "**Dynamic Pricing** · แอปเรียกรถก็ใช้แบบนี้"
 
 report:
   title: ภารกิจสำเร็จ
   lines:
     - รายงานผลงาน **CEO {codename}**
-    - { text: "กำไรรวม 3 ศึก **฿{totalProfit}**", cue: profit-count }
+    - { text: "กำไรรวม **฿{totalProfit}**", cue: profit-count }
     - "สไตล์ของท่าน: **{ceoStyle}**"
     - อันดับ **{rank}** จาก {totalPlayers} คนวันนี้
-    - ทุกอย่างที่ท่านทำวันนี้…
-    - คืองานจริงของ **Data Scientist**
-    - { text: อยากทำแบบนี้ได้จริงไหมครับ? สแกนเลย, cue: qr }
-    - ขอบคุณครับ ท่าน CEO — ไว้พบกันใหม่
+    - นี่คืองานจริงของ **Data Scientist**!
+    - { text: อยากเรียนต่อ? สแกนเลย, cue: qr }
+    - ขอบคุณครับ ท่าน CEO!
 
 styles:
   analyst:

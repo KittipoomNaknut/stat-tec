@@ -8,6 +8,7 @@ import { z } from 'zod';
 /** Gestures a tutorial can teach; matches the gesture catalogue (ARCHITECTURE §7). */
 export const GESTURES = [
   'dwell',
+  'pose',
   'raise',
   'throw',
   'slap',

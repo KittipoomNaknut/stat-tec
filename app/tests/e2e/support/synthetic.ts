@@ -6,6 +6,8 @@ export interface Synthetic {
   leave(): void;
   pointAt(x: number, y: number, ms?: number): void;
   rest(): void;
+  /** Strike and hold a pose (research 025). */
+  pose(name: 'both-up' | 'left-up' | 'right-up' | 'cross' | 't-pose'): void;
 }
 
 declare global {

@@ -1,4 +1,5 @@
 import { setDigits } from '../../hud/digits';
+import { askPose } from '../../hud/pose-prompt';
 import { gestureConfig } from '../../config/gestures';
 import type { IntentOf } from '../../input/intents';
 import type { Beat } from '../../narrative/schema';
@@ -38,6 +39,8 @@ const GRAVITY = 0.62;
 const PLAY_SEC = 20;
 /** Busy factor above which the 11.11 rush banner shows. */
 const RUSH = 1.12;
+/** How long the T-pose prompt waits (story time) before the AI goes anyway. */
+const T_POSE_MS = 8000;
 
 export function slashScene(chapterId: string) {
   return (ctx: SceneContext): SceneModule => new SlashScene(ctx, chapterId);
@@ -219,6 +222,20 @@ class SlashScene implements SceneModule {
   }
 
   onCue(cue: string): boolean {
+    if (cue === 't-pose') {
+      // The player hands over to the AI with a T-pose (research 025); it goes on by itself after
+      // a while so nobody gets stuck
+      void askPose(
+        this.#ctx.hud,
+        this.#ctx.bus,
+        [{ pose: 't-pose', label: 'กางแขน ปล่อยพลัง AI!' }],
+        (ms, step) => this.#anim.tween(ms, step, { ease: ease.linear }),
+        T_POSE_MS,
+      ).then(() => {
+        this.#ctx.signal('continue');
+      });
+      return true;
+    }
     if (cue !== 'ai-day') return false;
     void this.#runDay().then(() => {
       this.#ctx.signal('continue');

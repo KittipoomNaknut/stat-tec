@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { gestureConfig } from '../../src/config/gestures';
 import { CursorTracker } from '../../src/gestures/cursor';
 import { DwellDetector } from '../../src/gestures/dwell';
+import { classify, PoseDetector } from '../../src/gestures/pose';
 import { GestureEngine } from '../../src/gestures/engine';
 import { RaiseDetector } from '../../src/gestures/raise';
 import { IntentBus } from '../../src/input/intent-bus';
@@ -243,5 +244,40 @@ describe('GestureEngine presence', () => {
       engine.update({ lock, playerId, body: null }, t);
     });
     expect(seen).toEqual(['enter', 'lost', 'return', 'lost', 'leave', 'enter']);
+  });
+});
+
+describe('PoseDetector', () => {
+  const pose = (r: Point, l: Point) => {
+    const b = body(r);
+    b.set([l[0], l[1], 0, 1], Landmark.LEFT_WRIST * LANDMARK_STRIDE);
+    return b;
+  };
+  const UP_R: Point = [0.6, -1.2];
+  const UP_L: Point = [-0.6, -1.2];
+  const DOWN_R: Point = [0.6, 1.4];
+  const DOWN_L: Point = [-0.6, 1.4];
+
+  it('names the five poses from the player side', () => {
+    expect(classify(pose(UP_R, UP_L))).toBe('both-up');
+    expect(classify(pose(DOWN_R, UP_L))).toBe('left-up');
+    expect(classify(pose(UP_R, DOWN_L))).toBe('right-up');
+    expect(classify(pose([1.6, 0], [-1.6, 0.1]))).toBe('t-pose');
+    expect(classify(pose([-0.3, 0.5], [0.3, 0.5]))).toBe('cross');
+    expect(classify(pose(DOWN_R, DOWN_L))).toBeNull();
+  });
+
+  it('selects once after the hold, not while moving through', () => {
+    const d = new PoseDetector();
+    const b = pose(UP_R, UP_L);
+    const events = [];
+    for (let t = 0; t <= 1500; t += 33) events.push(d.update(b, t));
+    expect(events.filter((e) => e.held)).toHaveLength(1);
+    expect(events.at(-1)).toMatchObject({ pose: 'both-up', progress: 1, held: false });
+    // A brief pass through a pose never selects
+    const e = new PoseDetector();
+    e.update(pose(DOWN_R, UP_L), 0);
+    expect(e.update(pose(DOWN_R, UP_L), 100).pose).toBeNull();
+    expect(e.update(pose(DOWN_R, DOWN_L), 300).held).toBe(false);
   });
 });
