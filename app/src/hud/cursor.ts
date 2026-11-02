@@ -53,6 +53,8 @@ export class HudCursor {
     const appearing = cursor.visible && !this.#visible;
     this.#visible = cursor.visible;
     this.#root.hidden = this.#suppressed || !cursor.visible;
+    // A lowered hand: still shows where the cursor is, dimmed, selecting nothing.
+    this.#root.classList.toggle('is-inert', !cursor.active);
     if (!cursor.visible) return;
     this.#target = { x: cursor.x, y: cursor.y };
     // Appear where the hand is, not sliding in from the last place it was seen.

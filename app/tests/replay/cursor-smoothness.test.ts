@@ -39,7 +39,7 @@ async function replay(file: string, smooth: boolean): Promise<Run> {
   const targets = new TargetRegistry();
   for (const [id, rect] of Object.entries(log.targets)) targets.register(id, () => rect);
   const dwell = new DwellDetector();
-  dwell.update({ visible: false, hand: 'right', x: 0, y: 0 }, targets, -1);
+  dwell.update({ visible: false, active: false, hand: 'right', x: 0, y: 0 }, targets, -1);
 
   let selects = 0;
   let sum = 0;

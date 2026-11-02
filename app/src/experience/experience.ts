@@ -7,7 +7,7 @@ import { ChapterHeader } from '../hud/chapter-header';
 import { Countdown } from '../hud/countdown';
 import { HudCursor } from '../hud/cursor';
 import { DwellButton } from '../hud/dwell-button';
-import { MiniSkeleton } from '../hud/mini-skeleton';
+import { PlayerCam } from '../hud/player-cam';
 import { Notice } from '../hud/notice';
 import { TopBar } from '../hud/top-bar';
 import { IntentBus } from '../input/intent-bus';
@@ -72,7 +72,7 @@ export class Experience {
   readonly #caption: Caption;
   readonly #countdown: Countdown;
   readonly #skipRow: HTMLElement;
-  readonly #skeleton: MiniSkeleton;
+  readonly #skeleton: PlayerCam;
   readonly #notice: Notice;
   readonly #cursor: HudCursor;
   readonly #watchdog: Watchdog;
@@ -112,7 +112,7 @@ export class Experience {
     this.#topBar = new TopBar(hud, this.#story.chapters.length);
     this.#header = new ChapterHeader(hud);
     this.#countdown = new Countdown(hud);
-    this.#skeleton = new MiniSkeleton(hud);
+    this.#skeleton = new PlayerCam(hud);
     this.#caption = new Caption(hud, this.#story.meta.aiName);
     this.#skipRow = document.createElement('div');
     this.#skipRow.className = 'hud-skip';
@@ -217,6 +217,11 @@ export class Experience {
   /** Uses thresholds calibrated for the pose source in use. */
   setPoseSource(source: PerceptionSource): void {
     this.#gestures.setPoseSource(source);
+  }
+
+  /** Camera preview from the perception service, for the player-cam frame. */
+  onPreview(jpeg: ArrayBuffer): void {
+    this.#skeleton.setFrame(jpeg);
   }
 
   onDetections(d: PoseDetections, nowMs = performance.now()): void {

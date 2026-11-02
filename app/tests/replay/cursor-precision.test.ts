@@ -28,11 +28,12 @@ describe.each(SESSIONS)('cursor precision on $pose', (session) => {
     const before = await measure(session, smoothed);
     const after = await measure(session, precise);
     expect(after.shake).toBeLessThan(before.shake * 0.7);
-    expect(after.steady).toBeLessThan(before.steady * 0.75);
+    // Research 024 traded some steadiness (≥ 25% → ≥ 20%) for a cursor that stays on the hand
+    expect(after.steady).toBeLessThan(before.steady * 0.8);
     expect(after.selects).toBeGreaterThanOrEqual(before.selects);
     expect(Math.abs(selectDelay(after, before))).toBeLessThan(50);
     expect(after.edge).toBeGreaterThanOrEqual(0.99);
     // The cursor may stray from the hand a little while it holds, never far
-    expect(after.offset).toBeLessThan(45);
+    expect(after.offset).toBeLessThan(30);
   });
 });

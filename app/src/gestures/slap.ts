@@ -1,5 +1,5 @@
 import { gestureConfig } from '../config/gestures';
-import type { CursorState } from './cursor';
+import { liveCursor, type CursorState } from './cursor';
 
 export type SlapConfig = typeof gestureConfig.slap;
 
@@ -27,7 +27,8 @@ export class SlapDetector {
     this.#c = config;
   }
 
-  update(cursor: CursorState, tMs: number): SlapEvent | null {
+  update(shown: CursorState, tMs: number): SlapEvent | null {
+    const cursor = liveCursor(shown);
     const h = this.#hist;
     if (!cursor.visible || (h.length > 0 && h[h.length - 1]?.hand !== cursor.hand)) {
       h.length = 0;

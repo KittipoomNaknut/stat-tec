@@ -70,6 +70,7 @@ export class GestureEngine {
       tMs,
     );
     this.#bus.emit({ type: 'cursor', ...cursor, ...meta });
+    // An inert cursor (hand not pointing) is shown but dwell, slap and draw ignore it.
     for (const event of this.#dwell.update(cursor, this.#targets, tMs)) {
       this.#bus.emit({ ...event, ...meta });
     }

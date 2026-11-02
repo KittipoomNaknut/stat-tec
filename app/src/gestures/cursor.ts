@@ -4,7 +4,10 @@ import { Landmark } from '../perception/landmarks';
 import { LANDMARK_STRIDE } from '../perception/protocol';
 
 export interface CursorState {
+  /** The player is tracked and the hand is seen: the cursor is drawn. */
   visible: boolean;
+  /** The hand points: dwell, slap and draw respond. Otherwise the cursor is shown but inert. */
+  active: boolean;
   hand: Hand;
   /** Screen position in [0, 1]. */
   x: number;
@@ -24,17 +27,30 @@ const HANDS = {
   },
 } as const;
 
+/** What dwell, slap and draw act on: an inert cursor (hand not pointing) counts as absent. */
+export function liveCursor(cursor: CursorState): CursorState {
+  return cursor.active || !cursor.visible ? cursor : { ...cursor, visible: false };
+}
+
+const otherOf = (h: Hand): Hand => (h === 'right' ? 'left' : 'right');
+
 /**
- * Maps the pointing hand to a screen position. A hand counts as pointing only while raised
- * above the waist with the arm extended, so touching the face or scratching the head does not
- * move the cursor. Stays on the current hand while it keeps pointing (no flicker between hands).
+ * Maps a hand to a screen position. The cursor is always on while the player is tracked
+ * (research 024): it follows the pointing hand, or without one the higher hand, and is
+ * *active* only while that hand points — raised above the waist with the arm extended — so
+ * touching the face or scratching the head never selects, slaps or draws. Pointing must hold
+ * `activateAfterMs` first; the followed hand changes only when the other one points, or is
+ * clearly higher for a moment (no ping-pong between two hands at the same height).
  */
 export class CursorTracker {
   readonly #config: CursorConfig;
-  #hand: Hand | null = null;
+  #hand: Hand = 'right';
+  #active = false;
   /** Hand that started pointing but has not held long enough yet, and since when. */
   #pending: { hand: Hand; since: number } | null = null;
-  #state: CursorState = { visible: false, hand: 'right', x: 0.5, y: 0.5 };
+  /** When the other hand became clearly higher (no hand pointing), or −1. */
+  #higherSince = -1;
+  #state: CursorState = { visible: false, active: false, hand: 'right', x: 0.5, y: 0.5 };
 
   constructor(config: CursorConfig = gestureConfig.cursor) {
     this.#config = config;
@@ -42,14 +58,16 @@ export class CursorTracker {
 
   /** `body` is the player in body space, or `null` when no player is visible. */
   update(body: Float32Array | null, tMs: number): CursorState {
+    const c = this.#config;
     if (!body) {
-      this.#hand = null;
+      this.#active = false;
       this.#pending = null;
+      this.#higherSince = -1;
       return this.#hide();
     }
 
-    if (this.#hand && !this.#pointing(body, this.#hand, false)) this.#hand = null;
-    if (!this.#hand) {
+    if (this.#active && !this.#pointing(body, this.#hand, false)) this.#active = false;
+    if (!this.#active) {
       const candidates = (['right', 'left'] as const).filter((h) => this.#pointing(body, h, true));
       // Prefer the higher hand when both point.
       candidates.sort((a, b) => y(body, HANDS[a].wrist) - y(body, HANDS[b].wrist));
@@ -58,21 +76,59 @@ export class CursorTracker {
         this.#pending = null;
       } else if (this.#pending?.hand !== hand) {
         this.#pending = { hand, since: tMs };
-      } else if (tMs - this.#pending.since >= this.#config.activateAfterMs) {
+      } else if (tMs - this.#pending.since >= c.activateAfterMs) {
         this.#hand = hand;
+        this.#active = true;
         this.#pending = null;
+        this.#higherSince = -1;
       }
     }
-    if (!this.#hand) return this.#hide();
+    if (!this.#active) this.#followHigher(body, tMs);
 
-    const { box } = this.#config;
-    const mirror = this.#hand === 'left' ? -1 : 1;
-    const wx = x(body, HANDS[this.#hand].wrist) * mirror;
-    let sx = (wx - box.x0) / (box.x1 - box.x0);
+    const hand = this.#hand;
+    if (!this.#seen(body, hand)) {
+      // A wrist the model briefly cannot see (hanging hands often): the cursor stays where it was,
+      // inert, rather than blinking out — the player is still tracked.
+      this.#active = false;
+      this.#state = { ...this.#state, visible: this.#state.visible, active: false };
+      return this.#state;
+    }
+    const { box } = c;
+    const mirror = hand === 'left' ? -1 : 1;
+    let sx = (x(body, HANDS[hand].wrist) * mirror - box.x0) / (box.x1 - box.x0);
     if (mirror < 0) sx = 1 - sx;
-    const sy = (y(body, HANDS[this.#hand].wrist) - box.y0) / (box.y1 - box.y0);
-    this.#state = { visible: true, hand: this.#hand, x: clamp01(sx), y: clamp01(sy) };
+    const sy = (y(body, HANDS[hand].wrist) - box.y0) / (box.y1 - box.y0);
+    this.#state = { visible: true, active: this.#active, hand, x: clamp01(sx), y: clamp01(sy) };
     return this.#state;
+  }
+
+  /** No hand points: stay on the current hand unless the other is clearly higher for a moment. */
+  #followHigher(body: Float32Array, tMs: number): void {
+    const c = this.#config;
+    const other = otherOf(this.#hand);
+    if (!this.#seen(body, other)) {
+      this.#higherSince = -1;
+      return;
+    }
+    if (!this.#seen(body, this.#hand)) {
+      this.#hand = other;
+      this.#higherSince = -1;
+      return;
+    }
+    // Higher = smaller y (body space, +y down)
+    const lead = y(body, HANDS[this.#hand].wrist) - y(body, HANDS[other].wrist);
+    if (lead < c.switchMargin) {
+      this.#higherSince = -1;
+    } else if (this.#higherSince < 0) {
+      this.#higherSince = tMs;
+    } else if (tMs - this.#higherSince >= c.switchAfterMs) {
+      this.#hand = other;
+      this.#higherSince = -1;
+    }
+  }
+
+  #seen(body: Float32Array, hand: Hand): boolean {
+    return vis(body, HANDS[hand].wrist) >= this.#config.minVisibility;
   }
 
   #pointing(body: Float32Array, hand: Hand, activating: boolean): boolean {
@@ -104,7 +160,7 @@ export class CursorTracker {
   }
 
   #hide(): CursorState {
-    this.#state = { ...this.#state, visible: false };
+    this.#state = { ...this.#state, visible: false, active: false };
     return this.#state;
   }
 }

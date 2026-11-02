@@ -5,7 +5,7 @@ import { IntentBus } from '../../src/input/intent-bus';
 import { TargetRegistry } from '../../src/input/targets';
 
 const FRAME = 33;
-const ON = { visible: true, hand: 'right' as const, x: 0.5, y: 0.5 };
+const ON = { visible: true, active: true, hand: 'right' as const, x: 0.5, y: 0.5 };
 
 /** Runs the real DwellDetector over a cursor script and feeds the log through the bus. */
 function run(script: { cursor: typeof ON; frames: number }[]) {
@@ -15,7 +15,7 @@ function run(script: { cursor: typeof ON; frames: number }[]) {
   const log = new DwellAttemptLog(bus, targets);
   const dwell = new DwellDetector();
   // The button is already on screen before the script starts (not popping up under the cursor).
-  dwell.update({ ...ON, visible: false }, targets, -FRAME);
+  dwell.update({ ...ON, visible: false, active: false }, targets, -FRAME);
   let t = 0;
   for (const step of script) {
     for (let i = 0; i < step.frames; i++, t += FRAME) {
@@ -46,7 +46,7 @@ describe('DwellAttemptLog', () => {
   it('classifies the cursor disappearing mid-hold', () => {
     const log = run([
       { cursor: ON, frames: 20 },
-      { cursor: { ...ON, visible: false }, frames: 10 },
+      { cursor: { ...ON, visible: false, active: false }, frames: 10 },
     ]);
     expect(log.attempts[0]).toMatchObject({ outcome: 'cursor-hidden' });
   });

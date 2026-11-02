@@ -1,4 +1,4 @@
-import type { CursorState } from './cursor';
+import { liveCursor, type CursorState } from './cursor';
 
 export interface DrawEvent {
   type: 'draw';
@@ -19,7 +19,8 @@ export class DrawDetector {
   #x = 0;
   #y = 0;
 
-  update(cursor: CursorState): DrawEvent[] {
+  update(shown: CursorState): DrawEvent[] {
+    const cursor = liveCursor(shown);
     const events: DrawEvent[] = [];
     if (this.#down && (!cursor.visible || cursor.hand !== this.#hand)) {
       events.push({ type: 'draw', phase: 'end', x: this.#x, y: this.#y });

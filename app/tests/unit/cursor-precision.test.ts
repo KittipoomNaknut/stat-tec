@@ -8,6 +8,7 @@ const at = (x: number, y = 0.5, visible = true, hand: 'left' | 'right' = 'right'
   x,
   y,
   visible,
+  active: visible,
   hand,
 });
 
