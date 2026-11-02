@@ -60,7 +60,7 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
   await player(page, 'rest');
   await expect.poll(() => phase(page)).toBe('chapter');
 
-  const chapters = ['data', 'coffee', 'segments', 'fraud', 'forecast'];
+  const chapters = ['coffee', 'rival', 'slash'];
   const seen = new Set<string>();
   let selected = 0;
   for (;;) {
@@ -86,10 +86,8 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
     await page.waitForTimeout(200);
   }
   expect([...seen]).toEqual(chapters);
-  // Only segments' ad choice is a button — coffee is played by raising a hand, segments' play by
-  // holding still in the crowd (magnets drop by themselves when time runs out), fraud by slapping
-  // and the hand's height (fraud.spec.ts), forecast by drawing and the hand's height
-  // (forecast.spec.ts)
+  // Only the rival's strategy is a button — coffee is played by raising a hand, the 11.11 tags by
+  // slashing (slash.spec.ts)
   expect(selected).toBe(1);
 
   // Report: a real profit total and rank, then back to attract on its own.

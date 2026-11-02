@@ -1,0 +1,252 @@
+/* EP III — price slash and the AI's day of prices. Keeps the bottom-left caption zone free. */
+.ps {
+  position: absolute;
+  inset: 0;
+}
+
+.ps-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* The 11.11 rush: a gold banner while the shop is packed */
+.ps-rush {
+  position: absolute;
+  left: 4.2vw;
+  width: 62vw;
+  top: 13vh;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 2vh;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-ui) var(--ease-out);
+}
+
+.ps-rush b {
+  font: 900 6vh var(--font-display);
+  letter-spacing: 0.2em;
+  color: #ffc94d;
+  text-shadow: 0 0 3vh rgb(255 201 77 / 70%);
+}
+
+.ps-rush span {
+  font-size: var(--size-label);
+  color: var(--text);
+}
+
+.ps-rush.is-on {
+  opacity: 1;
+  animation: ps-pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes ps-pulse {
+  to {
+    transform: scale(1.04);
+  }
+}
+
+.ps-side {
+  position: absolute;
+  right: 4.2vw;
+  top: 21vh;
+  width: 25.5vw;
+  bottom: 26.5vh;
+  padding: 2.4vh 3vh;
+  display: grid;
+  align-content: start;
+  gap: 0.6vh;
+}
+
+.ps-side p {
+  margin: 0;
+}
+
+.ps-profit,
+.ps-flat-sum,
+.ps-ai-sum {
+  font-size: 5vh;
+}
+
+.ps-ai-sum {
+  color: #ffc94d;
+}
+
+.ps-stat {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.4vh;
+}
+
+.ps-stat .hud-number {
+  font-size: 3.6vh;
+}
+
+.ps-stat i,
+.ps-legend i {
+  width: 2.4vh;
+  height: 2.4vh;
+  border-radius: 0.5vh;
+}
+
+.is-gold {
+  background: #ffc94d;
+}
+
+.is-wrong {
+  background: linear-gradient(90deg, #9a94a6 50%, var(--negative) 50%);
+}
+
+.is-loss {
+  background: #9a94a6;
+}
+
+.is-pricey {
+  background: var(--negative);
+}
+
+.ps-combo {
+  font: 900 4vh var(--font-display);
+  color: #ffc94d;
+  text-shadow: 0 0 2vh rgb(255 201 77 / 60%);
+  animation: ps-pop 300ms var(--ease-out);
+}
+
+@keyframes ps-pop {
+  from {
+    transform: scale(1.5);
+  }
+}
+
+.ps-busy > div {
+  height: 1.2vh;
+  margin-top: 0.6vh;
+  border-radius: 0.6vh;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.ps-busy i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #ffc94d);
+  transform-origin: left;
+  transform: scaleX(0.2);
+  transition: transform 200ms linear;
+}
+
+.ps-help {
+  font-size: var(--size-micro);
+  color: var(--text-dim);
+}
+
+.ps-help b {
+  font-family: var(--font-display);
+  color: #ffc94d;
+}
+
+.ps-legend {
+  display: grid;
+  gap: 0.3vh;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--size-micro);
+  color: var(--text);
+}
+
+.ps-legend li {
+  display: flex;
+  align-items: center;
+  gap: 1vh;
+}
+
+.ps-gain {
+  font: 800 3.4vh var(--font-display);
+  color: var(--positive);
+}
+
+/* The AI's day */
+.ps-plot {
+  position: absolute;
+  left: 4.2vw;
+  top: 21vh;
+  width: 62vw;
+  bottom: 26.5vh;
+  padding: 2.4vh 3.2vh;
+  opacity: 0;
+  transform: scale(0.97);
+  transition:
+    opacity var(--dur-scene) var(--ease-out),
+    transform var(--dur-scene) var(--ease-out);
+}
+
+.ps-plot.is-shown {
+  opacity: 1;
+  transform: none;
+}
+
+.ps-day {
+  width: 100%;
+  height: calc(100% - 4vh);
+  overflow: visible;
+}
+
+.ps-day text {
+  font-family: var(--font-ui);
+  fill: var(--text-dim);
+}
+
+.ps-axis {
+  stroke: rgb(255 170 210 / 40%);
+  stroke-width: 2;
+}
+
+.ps-bar {
+  fill: rgb(246 98 158 / 30%);
+}
+
+.ps-day .ps-tick {
+  font: 700 26px var(--font-display);
+}
+
+.ps-flat {
+  stroke: var(--text-dim);
+  stroke-width: 3;
+  stroke-dasharray: 14 10;
+}
+
+.ps-day .ps-flat-label {
+  font-size: 28px;
+  font-weight: 600;
+  fill: var(--text);
+}
+
+.ps-ai {
+  fill: none;
+  stroke: #ffc94d;
+  stroke-width: 6;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 8px rgb(255 201 77 / 70%));
+}
+
+.ps-ai-dot circle {
+  fill: #ffc94d;
+  stroke: #fff;
+  stroke-width: 3;
+}
+
+.ps-day .ps-ai-dot text {
+  font: 700 24px var(--font-display);
+  fill: #ffe39a;
+}
+
+.ps-day .ps-legend-bars {
+  font-size: 26px;
+  font-weight: 600;
+}

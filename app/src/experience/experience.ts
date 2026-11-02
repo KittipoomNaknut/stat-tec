@@ -22,10 +22,13 @@ import { SceneManager } from '../scenes/manager';
 import { coffeeScene } from '../scenes/coffee/scene';
 import { forecastScene } from '../scenes/forecast/scene';
 import { fraudScene } from '../scenes/fraud/scene';
+import { rivalScene } from '../scenes/rival/scene';
 import { segmentsScene } from '../scenes/segments/scene';
+import { slashScene } from '../scenes/slash/scene';
 import { placeholderScene } from '../scenes/placeholder';
 import { reportScene } from '../scenes/report';
 import type { SceneFactory, SceneModule } from '../scenes/types';
+import type { TemplateVars } from '../narrative/template';
 import { welcomeScene } from '../scenes/welcome';
 import { codename } from '../scoring/codename';
 import { chapterProfit, totalProfit, type ChapterOutcome } from '../scoring/profit';
@@ -81,6 +84,8 @@ export class Experience {
   #scene: SceneModule | null = null;
   #codename = '';
   #outcomes: ChapterOutcome[] = [];
+  /** Vars of the chapters played so far this visit (EP II starts from EP I's price). */
+  #carry: TemplateVars = {};
   #pausedMs = 0;
 
   constructor(parent: HTMLElement, options: ExperienceOptions) {
@@ -320,6 +325,7 @@ export class Experience {
     const today = new Set(this.#leaderboard.today().map((e) => e.codename));
     this.#codename = codename(this.#story.codename, Math.random, today);
     this.#outcomes = [];
+    this.#carry = {};
     this.#topBar.setProfit(0, false);
     this.#topBar.setChapter(-1, this.#story.chapters.length);
     this.#topBar.visible = true;
@@ -338,19 +344,24 @@ export class Experience {
     this.#topBar.setChapter(index, this.#story.chapters.length, chapter.concept, chapter.title);
     this.#header.hide();
     // Real scenes replace placeholders one by one (Phase 4).
-    const real: Record<string, (id: string) => SceneFactory> = {
+    // Scenes off the main path (segments, fraud, forecast) stay playable with ?chapter= only if
+    // the story lists them; the Price Wars story (2026-11) uses coffee, rival and slash.
+    const real: Record<string, (id: string, carry: TemplateVars) => SceneFactory> = {
       'c-coffee-pricing': coffeeScene,
       'd-segmentation': segmentsScene,
       'f-fraud': fraudScene,
       'h-forecast': forecastScene,
+      'r-rival': rivalScene,
+      'p-price-slash': slashScene,
     };
     const factory =
-      real[chapter.scene]?.(chapter.id) ?? placeholderScene(chapter.scene, chapter.id);
+      real[chapter.scene]?.(chapter.id, this.#carry) ?? placeholderScene(chapter.scene, chapter.id);
     this.#scene = this.#scenes.show(factory);
     this.#run(
       chapter.beats,
       () => {
         const outcome = this.#scene?.result();
+        this.#carry = { ...this.#carry, ...this.#scene?.vars() };
         if (outcome) {
           this.#outcomes.push(outcome);
           this.#topBar.setProfit(this.#profitSoFar());
