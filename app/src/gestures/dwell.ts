@@ -1,6 +1,6 @@
 import { gestureConfig } from '../config/gestures';
 import type { TargetRegistry } from '../input/targets';
-import type { CursorState } from './cursor';
+import { liveCursor, type CursorState } from './cursor';
 
 /** Re-aiming this far (screen units) inside a button that appeared under the cursor arms it. */
 const REARM_DISTANCE = 0.05;
@@ -34,7 +34,8 @@ export class DwellDetector {
     this.#config = config;
   }
 
-  update(cursor: CursorState, targets: TargetRegistry, tMs: number): DwellEvent[] {
+  update(shown: CursorState, targets: TargetRegistry, tMs: number): DwellEvent[] {
+    const cursor = liveCursor(shown);
     const c = this.#config;
     this.#arm(cursor, targets);
     const raw = cursor.visible ? targets.hitTest(cursor.x, cursor.y, c.padding) : null;

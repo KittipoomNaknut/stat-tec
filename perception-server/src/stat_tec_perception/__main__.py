@@ -22,7 +22,9 @@ def main() -> None:
         "--det-every", type=int, default=7, help="run the person detector every N frames"
     )
     parser.add_argument("--max-people", type=int, default=3)
-    parser.add_argument("--preview-fps", type=float, default=10)
+    parser.add_argument(
+        "--preview-fps", type=float, default=24, help="camera previews for the HUD player-cam"
+    )
     parser.add_argument("--trt-cache", type=Path, default=DEFAULT_TRT_CACHE)
     args = parser.parse_args()
 

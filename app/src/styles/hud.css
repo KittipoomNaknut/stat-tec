@@ -467,12 +467,40 @@
 }
 
 /* ---------- Mini skeleton: beside the credits ---------- */
-.hud-mini-skeleton {
+.hud-player-cam {
+  /* Top bar, between the countdown and the profit counter: the visitor sees themselves */
   position: fixed;
-  right: 4.2vw;
-  top: 17vh;
-  width: 10vh;
-  height: 15vh;
+  top: 3vh;
+  right: 22vw;
+  height: 17vh;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  overflow: hidden;
+  border-color: rgb(255 61 143 / 35%);
+}
+
+.hud-player-cam canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hud-player-cam-label {
+  position: absolute;
+  left: 1vh;
+  top: 0.8vh;
+  font: 700 1.3vh var(--font-display);
+  letter-spacing: 0.3em;
+  color: var(--text-dim);
+}
+
+.hud-player-cam.is-tracking {
+  border-color: var(--primary);
+  box-shadow: 0 0 2.4vh rgb(255 61 143 / 40%);
+}
+
+.hud-player-cam.is-tracking .hud-player-cam-label {
+  color: var(--primary);
 }
 
 /* ---------- Notice (paused / reconnecting) ---------- */

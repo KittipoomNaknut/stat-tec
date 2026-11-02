@@ -81,7 +81,7 @@ export async function measure(
   const baseline = new CursorTracker(cursorConfigFor('server'));
   const cursorOf = variant();
   const dwell = new DwellDetector();
-  dwell.update({ visible: false, hand: 'right', x: 0, y: 0 }, targets, -1);
+  dwell.update({ visible: false, active: false, hand: 'right', x: 0, y: 0 }, targets, -1);
 
   let frames = 0;
   let visible = 0;

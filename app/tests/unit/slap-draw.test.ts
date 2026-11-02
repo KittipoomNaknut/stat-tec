@@ -6,7 +6,7 @@ import { SlapDetector } from '../../src/gestures/slap';
 const FRAME = 1000 / 30;
 
 function at(x: number, y = 0.5, visible = true, hand: 'left' | 'right' = 'right'): CursorState {
-  return { x, y, visible, hand };
+  return { x, y, visible, active: visible, hand };
 }
 
 /** Feeds a cursor moving sideways at `widthsPerSec`; returns how many frames slapped. */

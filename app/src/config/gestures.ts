@@ -7,7 +7,15 @@ import type { PerceptionSource } from '../perception/protocol';
 export const gestureConfig = {
   cursor: {
     /**
-     * A hand drives the cursor when it is raised above the waist and the arm is extended.
+     * Always-on cursor (research 024): the cursor is drawn and follows a hand whenever the player
+     * is tracked, but it is *active* (dwell, slap and draw respond) only while that hand points by
+     * the rules below. Without a pointing hand it follows the higher hand, dimmed and inert, moving
+     * to the other one when that wrist is higher by `switchMargin` (SW) for `switchAfterMs`.
+     */
+    switchMargin: 0.35,
+    switchAfterMs: 200,
+    /**
+     * A hand is active (points) when it is raised above the waist and the arm is extended.
      * Pointing measured 0.9–1.7 SW wrist-to-shoulder; scratching head / touching face 0.3–0.7.
      */
     activateExtension: 0.9,
@@ -39,7 +47,7 @@ export const gestureConfig = {
      * with no cursor during fidgeting or standing. Starting still needs the strict rules above.
      */
     keepWhileAboveHips: 1.0 as number | null,
-    /** Pointing must hold this long before the cursor appears — hides brief fidget flickers. */
+    /** Pointing must hold this long before the cursor turns active — hides brief fidget flickers. */
     activateAfterMs: 100,
     minVisibility: 0.5,
     /**
@@ -58,8 +66,9 @@ export const gestureConfig = {
    * 1080p, +~20 ms lag on fast sweeps, selections unchanged.
    */
   smoothing: {
-    minCutoff: 0.8,
-    beta: 8,
+    // Research 024: 0.8 / 8 → 0.5 / 15 with the precision below, so the cursor stays on the hand
+    minCutoff: 0.5,
+    beta: 15,
     dCutoff: 1,
     deadband: 0.004,
   },
@@ -74,8 +83,10 @@ export const gestureConfig = {
    */
   precision: {
     windowMs: 100,
-    maxGap: 60 / 1080,
-    minGain: 0.3,
+    // Research 024: 60 px / 0.3 left the cursor 33–37 px off the hand on average ("it does not
+    // follow"); 35 px / 0.45 cuts that by a quarter and lag by 27% for +0.5 px shake, same selects.
+    maxGap: 35 / 1080,
+    minGain: 0.45,
     slowSpeed: 150 / 1080,
     fastSpeed: 800 / 1080,
     recoverFastMs: 60,
@@ -119,15 +130,15 @@ export const gestureConfig = {
   },
 } as const;
 
+type Widen<T> = { readonly [K in keyof T]: T[K] extends number ? number : Widen<T[K]> };
+/** Cursor thresholds with plain number types (the literals above are only the defaults). */
+export type CursorConfig = Widen<typeof gestureConfig.cursor>;
+
 /**
  * Per pose source: each model's errors differ, so thresholds are calibrated on recordings of each
  * (tests/replay). RTMPose reports crossed arms with straightness up to ~0.76, so it needs 0.8;
  * MediaPipe's elbows are rougher (left-hand pointing 0.46-0.78), which 0.8 would cut in half.
  */
-type Widen<T> = { readonly [K in keyof T]: T[K] extends number ? number : Widen<T[K]> };
-/** Cursor thresholds with plain number types (the literals above are only the defaults). */
-export type CursorConfig = Widen<typeof gestureConfig.cursor>;
-
 const CURSOR_BY_SOURCE: Record<PerceptionSource, Partial<CursorConfig>> = {
   server: {},
   mediapipe: { activateStraightness: 0.7 },

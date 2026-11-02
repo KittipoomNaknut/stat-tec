@@ -46,27 +46,41 @@ function point(c: CursorTracker, b: Float32Array, t0 = 0) {
 }
 
 describe('CursorTracker', () => {
-  it('stays hidden with hands down', () => {
-    expect(point(new CursorTracker(), body(null)).visible).toBe(false);
+  it('shows an inert cursor with hands down (always on, research 024)', () => {
+    expect(point(new CursorTracker(), body(null))).toMatchObject({ visible: true, active: false });
+  });
+
+  it('hides the cursor only when nobody is tracked', () => {
+    expect(new CursorTracker().update(null, 0)).toMatchObject({ visible: false, active: false });
+  });
+
+  it('follows the clearly higher hand when neither points, without ping-pong', () => {
+    const c = new CursorTracker();
+    // Left wrist 0.6 SW higher, bent (not pointing): moves over after 200 ms, not before
+    expect(c.update(body([0.6, 0.6], [-0.6, 0.0]), 0).hand).toBe('right');
+    expect(c.update(body([0.6, 0.6], [-0.6, 0.0]), 100).hand).toBe('right');
+    expect(c.update(body([0.6, 0.6], [-0.6, 0.0]), 260).hand).toBe('left');
+    // Back to about level: stays on the left
+    expect(c.update(body([0.6, 0.6], [-0.6, 0.5]), 600).hand).toBe('left');
   });
 
   it('ignores a raised but bent arm (touching the face)', () => {
     // Elbow out to the side and low: the forearm folds back up to the face.
     const face = body([0.3, -0.5], null, { right: [1.1, 0.6] });
-    expect(point(new CursorTracker(), face).visible).toBe(false);
+    expect(point(new CursorTracker(), face).active).toBe(false);
   });
 
   it('ignores crossed arms even when the wrist is far from its shoulder', () => {
     // Right wrist across the chest near the left side: 1.1 SW from its shoulder, elbow bent.
     const crossed = body([-0.6, -0.2], null, { right: [0.2, 0.7] });
-    expect(point(new CursorTracker(), crossed).visible).toBe(false);
+    expect(point(new CursorTracker(), crossed).active).toBe(false);
   });
 
   it('keeps pointing with a foreshortened but straight arm (pointing at the camera)', () => {
     const c = new CursorTracker();
-    expect(point(c, body([1.4, -1.0])).visible).toBe(true);
+    expect(point(c, body([1.4, -1.0])).active).toBe(true);
     // Arm now looks 0.35 SW long but is still a straight line.
-    expect(c.update(body([0.75, -0.25]), 300).visible).toBe(true);
+    expect(c.update(body([0.75, -0.25]), 300).active).toBe(true);
   });
 
   it('maps the interaction zone beside the shoulder onto the screen', () => {
@@ -74,7 +88,7 @@ describe('CursorTracker', () => {
     const c = new CursorTracker();
     // Outer top corner of the right hand's zone = screen top-right.
     const corner = point(c, body([box.x1, box.y0]));
-    expect(corner).toMatchObject({ visible: true, hand: 'right' });
+    expect(corner).toMatchObject({ visible: true, active: true, hand: 'right' });
     expect(corner.x).toBeCloseTo(1, 5);
     expect(corner.y).toBeCloseTo(0, 5);
     // Middle of the zone = middle of the screen; the arm reaches out, not toward the camera.
@@ -102,11 +116,11 @@ describe('CursorTracker', () => {
     expect(corner.y).toBeCloseTo(0, 5);
   });
 
-  it('waits 100 ms of pointing before showing the cursor', () => {
+  it('waits 100 ms of pointing before the cursor turns active', () => {
     const c = new CursorTracker();
-    expect(c.update(body([1.4, -1.0]), 0).visible).toBe(false);
-    expect(c.update(body([1.4, -1.0]), 50).visible).toBe(false);
-    expect(c.update(body([1.4, -1.0]), 120).visible).toBe(true);
+    expect(c.update(body([1.4, -1.0]), 0).active).toBe(false);
+    expect(c.update(body([1.4, -1.0]), 50).active).toBe(false);
+    expect(c.update(body([1.4, -1.0]), 120).active).toBe(true);
   });
 
   it('keeps the current hand while it still points', () => {
@@ -119,7 +133,7 @@ describe('CursorTracker', () => {
 describe('DwellDetector', () => {
   const targets = new TargetRegistry();
   targets.register('ok', () => ({ x: 0.4, y: 0.4, w: 0.2, h: 0.2 }));
-  const on = { visible: true, hand: 'right' as const, x: 0.5, y: 0.5 };
+  const on = { visible: true, active: true, hand: 'right' as const, x: 0.5, y: 0.5 };
   const off = { ...on, x: 0.9 };
   /** A detector that has already seen the target on screen (cursor elsewhere). */
   const primed = () => {
