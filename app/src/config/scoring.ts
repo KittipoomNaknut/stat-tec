@@ -5,11 +5,9 @@
 export const scoringConfig = {
   floor: 0.4,
   baseByChapter: {
-    data: 120_000,
-    coffee: 280_000,
-    segments: 320_000,
-    fraud: 300_000,
-    forecast: 380_000,
+    coffee: 420_000,
+    rival: 450_000,
+    slash: 530_000,
   } as Readonly<Record<string, number>>,
   /** Leaderboard entries kept per day. */
   leaderboardSize: 500,

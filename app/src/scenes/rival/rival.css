@@ -1,0 +1,244 @@
+/* EP II — rival: the customer map, Empire Coffee and the choice. Keeps the bottom-left caption zone free. */
+.rv {
+  position: absolute;
+  inset: 0;
+}
+
+.rv-plot {
+  position: absolute;
+  left: 4.2vw;
+  top: 21vh;
+  width: 62vw;
+  bottom: 26.5vh;
+  padding: 2.4vh 3.2vh;
+}
+
+.rv-axis {
+  position: absolute;
+  margin: 0;
+  font-size: var(--size-micro);
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.rv-axis-y {
+  left: 3.2vh;
+  top: 5vh;
+}
+
+.rv-axis-x {
+  right: 3.2vh;
+  bottom: 1.4vh;
+}
+
+.rv-area {
+  position: absolute;
+  left: 4vh;
+  right: 3vh;
+  top: 8.5vh;
+  bottom: 5.5vh;
+  border-left: 2px solid rgb(255 170 210 / 35%);
+  border-bottom: 2px solid rgb(255 170 210 / 35%);
+}
+
+.rv-area canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.rv-tags {
+  position: absolute;
+  inset: 0;
+}
+
+/* Group name tags, pinned above each group's center */
+.rv-tag {
+  position: absolute;
+  display: grid;
+  gap: 0.2vh;
+  padding: 1vh 1.8vh;
+  border-radius: 1vh;
+  border: 1px solid var(--c);
+  background: rgb(18 7 20 / 88%);
+  box-shadow: 0 0 2.4vh color-mix(in srgb, var(--c) 45%, transparent);
+  transform: translate(-50%, -135%);
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.rv-tag.is-side {
+  transform: translate(4vh, -50%);
+}
+
+.rv-tag b {
+  font-size: var(--size-label);
+  color: var(--c);
+}
+
+.rv-tag span {
+  font-size: var(--size-micro);
+  color: var(--text);
+}
+
+/* The groups themselves become the buttons: point at the group you want */
+.rv-side {
+  position: absolute;
+  right: 4.2vw;
+  top: 21vh;
+  width: 25.5vw;
+  bottom: 26.5vh;
+  padding: 2.4vh 3vh;
+  display: grid;
+  align-content: start;
+  gap: 1.2vh;
+}
+
+.rv-side p {
+  margin: 0;
+}
+
+.rv-price .hud-number,
+.rv-kept {
+  font-size: 6vh;
+}
+
+.rv-note {
+  font-size: var(--size-micro);
+  color: var(--text-dim);
+}
+
+.rv-round {
+  min-height: 3.2vh;
+  font-size: 2.6vh;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* The rival, across the street: a red storefront at the map's right edge */
+.rv-empire {
+  position: absolute;
+  /* Top-right corner of the map, where no customer group sits */
+  left: calc(4.2vw + 62vw - 3vh);
+  top: 27vh;
+  transform: translate(-100%, 0) scale(0.6);
+  display: grid;
+  justify-items: center;
+  gap: 0.4vh;
+  padding: 1.4vh 2.2vh;
+  border: 2px solid #ff3b4e;
+  border-radius: 1vh;
+  background: rgb(40 4 10 / 92%);
+  box-shadow: 0 0 4vh rgb(255 59 78 / 55%);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-ui) var(--ease-out),
+    transform 600ms var(--ease-out);
+  z-index: 2;
+}
+
+.rv-empire.is-on {
+  opacity: 1;
+  transform: translate(-100%, 0);
+  animation: rv-flash 0.5s 3 alternate;
+}
+
+@keyframes rv-flash {
+  to {
+    box-shadow: 0 0 7vh rgb(255 59 78 / 90%);
+  }
+}
+
+.rv-empire b {
+  font: 900 2.2vh var(--font-display);
+  letter-spacing: 0.12em;
+  color: #ff3b4e;
+}
+
+.rv-empire span {
+  font: 900 5vh var(--font-display);
+  color: #fff;
+}
+
+.rv-options {
+  display: grid;
+  gap: 1.1vh;
+}
+
+.rv-options .hud-button {
+  min-height: 0;
+  padding: 1.8vh 2.4vh 3.8vh;
+  font-size: 2.5vh;
+  white-space: nowrap;
+}
+
+.rv-timer {
+  height: 0.8vh;
+  border-radius: 0.4vh;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.rv-timer i {
+  display: block;
+  height: 100%;
+  background: var(--brand-gradient);
+  transform-origin: left;
+}
+
+/* Every option's result, the chosen one outlined and the best one in green */
+.rv-compare {
+  display: grid;
+  gap: 1.2vh;
+  margin: 1vh 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--size-micro);
+}
+
+.rv-compare li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.4vh 1.2vh;
+  padding: 0.8vh 1.2vh;
+  border-radius: 0.8vh;
+  border: 1px solid transparent;
+}
+
+.rv-compare li > div {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height: 1.2vh;
+  border-radius: 0.6vh;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.rv-compare li i {
+  display: block;
+  height: 100%;
+  width: calc(var(--w) * 100%);
+  background: var(--text-dim);
+}
+
+.rv-compare b {
+  font-family: var(--font-display);
+}
+
+.rv-compare .is-chosen {
+  border-color: var(--accent);
+}
+
+.rv-compare .is-best i {
+  background: var(--positive);
+}
+
+.rv-compare .is-best b {
+  color: var(--positive);
+}
+
+.rv-options .hud-button > .hud-beam {
+  bottom: 1.6vh;
+}

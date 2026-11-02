@@ -203,11 +203,12 @@ export class CoffeeChart {
 
   /**
    * Every day becomes a point: its X flies to the price axis, its Y to the cups axis, guides meet
-   * and a star lights up. The first few go slowly so the idea lands; the rest speed up.
+   * and a star lights up. The first goes slowly so the idea lands; the rest speed up (one
+   * visit ≤ 5 min, Price Wars).
    */
-  async plotDays(slow = 3): Promise<void> {
+  async plotDays(slow = 1): Promise<void> {
     for (const [i, d] of this.#days.entries()) {
-      const pace = i < slow ? 1 : 0.32;
+      const pace = i < slow ? 1 : 0.24;
       await this.#plotDay(i, d, pace);
     }
     await this.#anim.tween(500, (t) => {
@@ -327,13 +328,13 @@ export class CoffeeChart {
       this.#note.textContent =
         n === attempts.length - 1 ? 'เส้นที่ดีที่สุด' : `ลองครั้งที่ ${String(n + 1)}`;
       if (n === 0) {
-        await this.#anim.wait(1100);
+        await this.#anim.wait(700);
         continue;
       }
       const from = current;
       const fromSse = currentSse;
       await this.#anim.tween(
-        1000,
+        650,
         (t) => {
           this.#setLine({
             intercept: from.intercept + (attempt.line.intercept - from.intercept) * t,
@@ -348,7 +349,7 @@ export class CoffeeChart {
       );
       current = attempt.line;
       currentSse = attempt.sse;
-      await this.#anim.wait(n === attempts.length - 1 ? 200 : 450);
+      await this.#anim.wait(n === attempts.length - 1 ? 200 : 250);
     }
     // Lock: a flash along the laser, residuals fade
     this.root.classList.add('is-locked');

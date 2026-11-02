@@ -1,4 +1,4 @@
-# บทพูดทั้งหมดของ STAT_TEC — "CEO 5 นาที" (ต้นฉบับอ่านง่าย: docs/STORY.md)
+# บทพูดทั้งหมดของ STAT_TEC — "STAT WARS: Price Wars" (ต้นฉบับอ่านง่าย: docs/STORY.md)
 # ตรวจด้วย app/src/narrative/schema.ts — ผิดรูปแบบ / ตัวแปรที่ไม่มีใครส่งให้ = test fail
 #
 # บรรทัด (line) เขียนได้ 3 แบบ
@@ -15,13 +15,13 @@ meta:
 attract:
   kicker: กาลครั้งหนึ่ง ในภาควิชาอันไกลโพ้น…
   title: STAT WARS
-  subtitle: DATA AWAKENS
+  subtitle: PRICE WARS
   # ข้อความเลื่อนหายไปในอวกาศ วนทุก crawlSec วินาที
   crawl:
-    - บริษัทกำลังจะล่มสลาย เพราะตัดสินใจด้วยความรู้สึก
-    - ข้อมูลนับล้านกำลังรอคอย
-    - CEO คนใหม่ ผู้อ่านมันออก…
-    - ใช้ร่างกายของท่าน บริหารบริษัทใน 5 นาที
+    - ร้านกาแฟเล็ก ๆ กำลังจะแพ้สงครามราคา
+    - คู่แข่งตัดราคา ลูกค้าเริ่มหนี
+    - CEO คนใหม่ ผู้อ่านข้อมูลออก…
+    - ใช้ร่างกายของท่าน ตั้งราคาให้ชนะใน 5 นาที
   crawlSec: 26
   prompt: ก้าวเข้ามาในวงแสง เพื่อเริ่มภารกิจ
 
@@ -31,63 +31,34 @@ welcome:
       lines:
         - { text: ตรวจพบ CEO คนใหม่…, cue: scan }
         - ยินดีต้อนรับครับ **CEO {codename}**
-        - ผมคือ {aiName} ผู้ช่วย AI ประจำบริษัท
-        - วันนี้ท่านต้องตัดสินใจเรื่องใหญ่ 4 เรื่อง
-        - ด้วยอาวุธเดียว… **ข้อมูล**
+        - ผมคือ {aiName} ผู้ช่วย AI ของดาต้าคาเฟ่
+        - วันนี้เราจะสู้ศึกราคา… ด้วย **ข้อมูล**
     - type: tutorial
       gesture: dwell
       lines: [ยกแขนออกด้านข้าง แล้วชี้ไปที่ปุ่มนี้ค้างไว้ครับ]
-      success: เยี่ยมครับ! ท่านพร้อมแล้ว
+      success: เยี่ยมครับ! ไปเปิดร้านกัน
 
+# STAT WARS: Price Wars (docs/STORY.md) — 3 ศึก ราคาเดียว → ราคาตามกลุ่ม → ราคาตามเวลา, ≤ 5 นาที
 chapters:
-  - id: data
-    scene: a-you-are-data
-    title: กำเนิดข้อมูล
-    concept: Data Collection
-    vars: [numbersCollected]
-    beats:
-      - type: mission
-        lines:
-          - ก่อนเริ่มงาน ขอผมสแกนท่านหน่อยนะครับ
-          - ลองขยับแขน ขยับตัวไปมาดูครับ
-      - type: play
-        durationSec: 15
-        hints:
-          - { afterSec: 4, text: "ทุกจุดบนตัวท่าน คือตัวเลข x, y, z" }
-          - {
-              afterSec: 9,
-              text: "ท่านกำลังส่งข้อมูลเกือบ 3,000 ตัวเลขต่อวินาที",
-            }
-      - type: reveal
-        lines:
-          - 15 วินาที ท่านสร้างข้อมูลไป **{numbersCollected}** ตัวเลข
-      - type: lesson
-        lines:
-          - แอปที่ท่านใช้ทุกวัน ก็เก็บข้อมูลแบบนี้
-          - ใครอ่านข้อมูลเป็น… คนนั้นได้เปรียบ
-
   - id: coffee
     scene: c-coffee-pricing
-    title: ศึกราคากาแฟ
+    title: ราคาเดียว
     concept: Regression
     vars: [price, revenue, optimalPrice, close]
     beats:
       - type: mission
         lines:
-          - บริษัทเรามีร้านกาแฟชื่อ **'ดาต้าคาเฟ่'**
-          - ตอนนี้ขายแก้วละ 60 บาท
+          - วันแรกของ **ดาต้าคาเฟ่** ขายแก้วละเท่าไหร่ดี?
           - ถูกไป กำไรน้อย… แพงไป ลูกค้าหนี
-          - ราคาไหนทำเงินได้มากที่สุด?
       - type: tutorial
         gesture: raise
         lines: [ยกมือขึ้น = ขึ้นราคา · ลดมือลง = ลดราคา]
         success: ใช่เลยครับ! ลองหาราคาที่ดีที่สุดดู
       - type: play
-        durationSec: 30
+        durationSec: 20
         hints:
-          - { afterSec: 6, text: ดูลูกค้าที่เดินเข้าร้านสิครับ }
-          - { afterSec: 14, text: เส้นสีพีชคือรายได้ที่แต่ละราคาที่ท่านลอง }
-          - { afterSec: 22, text: เจอจุดสูงสุดหรือยังครับ? }
+          - { afterSec: 5, text: ดูลูกค้าที่เดินเข้าร้านสิครับ }
+          - { afterSec: 12, text: เจอจุดสูงสุดหรือยังครับ? }
       - type: reveal
         lines:
           - ท่านตั้งราคา **฿{price}** — รายได้ **฿{revenue}** / วัน
@@ -96,7 +67,6 @@ chapters:
               cue: data-points,
             }
           - { text: ทีนี้… ให้ AI ลากเส้นทำนายครับ, cue: fit-line }
-          - ทุกครั้งที่ลองใหม่ ความผิดพลาดรวม **(SSE)** ลดลง
           - { text: "รายได้ = ราคา × จำนวนแก้ว", cue: revenue-curve }
           - โมเดลแนะนำ **฿{optimalPrice}**
           - { text: ท่านเกือบเท่า AI เลยครับ!, when: close }
@@ -105,147 +75,77 @@ chapters:
         lines:
           - เส้นนี้เรียกว่า **Demand Curve**
           - "**Regression** = หาเส้นที่พลาดน้อยที่สุด"
-          - แอปเรียกรถ ปรับราคาแบบนี้ทุกนาที
 
-  - id: segments
-    scene: d-segmentation
-    title: สามกลุ่มแห่งลูกค้า
-    concept: K-means
-    vars: [magnetsLeft, lift]
+  - id: rival
+    scene: r-rival
+    title: คู่แข่งบุก
+    concept: Clustering
+    vars: [gap, kept, chosenBest]
     beats:
       - type: mission
         lines:
-          - ร้านเราดังแล้วครับ! มีลูกค้าประจำ **600 คน**
-          - "ทุกจุดคือลูกค้า 1 คน: มาบ่อยแค่ไหน กับจ่ายเท่าไร"
-          - แต่งบโฆษณามีจำกัด
-          - เราต้องรู้ว่าลูกค้าแต่ละกลุ่มเป็นใคร
-      - type: tutorial
-        gesture: dwell
-        lines: [ชี้ไปกลางฝูงลูกค้า แล้วค้างไว้ = วางแม่เหล็ก]
-        success: แม่เหล็กดึงลูกค้าที่ใกล้ที่สุดเข้ามาแล้ว!
-      - type: play
-        durationSec: 25
-        hints:
-          - { afterSec: 3, text: "อีก {magnetsLeft} ลูก!" }
-          - { afterSec: 12, text: ลองวางแม่เหล็กไว้กลางแต่ละฝูงดูครับ }
+          - {
+              text: ด่วนครับ! **Empire Coffee** มาเปิดตรงข้ามร้านเรา,
+              cue: rival,
+            }
+          - เขาขายแก้วละ **฿49** ถูกกว่าเรา ฿{gap}
+          - { text: ลูกค้าเราเริ่มเดินข้ามถนนไปแล้ว…, cue: drift }
       - type: reveal
         lines:
-          - { text: ทีนี้ให้ AI ลองบ้าง… เริ่มจากเดาสุ่ม, cue: kmeans-run }
-          - "ทุกรอบ: ย้ายแม่เหล็กไปกลางกลุ่ม แล้วจัดกลุ่มใหม่"
-          - { text: แต่… ควรแบ่งกี่กลุ่มดี?, cue: elbow }
-          - 3 กลุ่ม ตรง **"ข้อศอก"** พอดี — มากกว่านั้นได้ไม่คุ้ม
+          - { text: ให้ผมดูข้อมูลลูกค้า 600 คนก่อนครับ, cue: kmeans-run }
           - { text: AI แบ่งลูกค้าได้ 3 กลุ่มครับ, cue: clusters }
-          - ท่านจะยิงโฆษณาไปที่กลุ่มไหน? ชี้ค้างไว้ครับ
-          - { cue: choose-segment }
-          - "ผลลัพธ์: ยอดขายเพิ่ม **{lift}%**!"
+          - สายพรีเมียม · ขาประจำ · และ **สายประหยัด**
+          - { text: ท่านจะสู้ยังไงครับ? ชี้ค้างไว้, cue: choose-strategy }
+          - { cue: outcome }
+          - "ผลลัพธ์: เก็บกำไรไว้ได้ **{kept}%** ของเดิม"
+          - { text: ถูกต้องครับ! ลดเฉพาะคนที่จะหนี, when: chosenBest }
+          - {
+              text: ทางที่ดีที่สุดคือ ลดเฉพาะสายประหยัดครับ,
+              when: "!chosenBest",
+            }
       - type: lesson
         lines:
-          - นี่คือ **K-means Clustering**
-          - เครื่องจัดกลุ่มเอง โดยไม่มีใครบอกคำตอบ
-          - แอปดูหนัง ฟังเพลง ใช้วิธีนี้แนะนำของให้เรา
+          - AI จัดกลุ่มเองด้วย **Clustering**
+          - แล้วตั้งราคาให้แต่ละกลุ่มไม่เท่ากัน
 
-  - id: fraud
-    scene: f-fraud
-    title: จับโกงข้ามกาแล็กซี
-    concept: Anomaly Detection
-    vars: [caught, wrong, aiSeconds, aiRecall, recall, blocked, nearBest]
+  - id: slash
+    scene: p-price-slash
+    title: ศึก 11.11
+    concept: Dynamic Pricing
+    vars: [hits, profit, aiProfit, flatProfit, gain]
     beats:
       - type: mission
         lines:
-          - ทุกวินาที มีคนรูดบัตรกับเราเป็นพันครั้ง
-          - { text: ด่วนครับ ท่าน CEO! มีคนแอบใช้บัตรลูกค้า!, cue: alert }
-          - รายการโกงจะเป็น **ดาวแหลมสีแดง**
+          - วัน **11.11** มาแล้ว! ลูกค้าแห่เข้าร้าน
+          - ทุกวินาทีต้องเลือกราคาใหม่ ป้ายจะลอยมาเรื่อย ๆ
+          - ป้ายเทา = ขาดทุน · ป้ายแดง = แพงจนไม่มีใครซื้อ
       - type: tutorial
         gesture: slap
-        lines: [ปัดมือเร็ว ๆ ผ่านดาวสีแดง = ยิงเลเซอร์]
-        success: โดนเต็ม ๆ! ระวัง… มาอีกเยอะ
+        lines: [ปัดมือเร็ว ๆ ผ่านป้าย **สีทอง** = ขายราคานี้]
+        success: ฉับ! ขายได้แล้ว… มาอีกเยอะเลยครับ
       - type: play
         durationSec: 20
         hints:
-          - { afterSec: 6, text: เร็วอีก! }
-          - { afterSec: 10, text: ระวัง อย่ายิงโดนลูกค้าดีสีฟ้านะครับ! }
-          - { afterSec: 15, text: มันมาเร็วเกินคนแล้ว! }
+          - { afterSec: 5, text: เร็วอีก! }
+          - { afterSec: 9, text: คนแน่นร้าน ราคาทองก็สูงขึ้นครับ! }
+          - { afterSec: 15, text: ระวังป้ายเทากับป้ายแดงนะครับ! }
       - type: reveal
         lines:
-          - ยิงโกงได้ **{caught}** · ยิงพลาด {wrong} ราย
-          - { text: ทีนี้… ให้ AI ลองบ้างครับ, cue: ai-storm }
-          - AI ตรวจ **1,000,000** รายการ ใน **{aiSeconds}** วินาที
-          - "ทุกจุดคือ 1 รายการ: ไกลบ้านแค่ไหน กับจ่ายเท่าไร"
-          - { text: AI วัดว่าแต่ละจุด ห่างจาก "ปกติ" แค่ไหน, cue: ai-ring }
-          - นอกวงคือน่าสงสัย — AI จับโกงได้ **{aiRecall}%**
-          - วงเล็กไป ลูกค้าดีโดนบล็อก… วงใหญ่ไป โกงหลุด
-          - { text: ท่านเลือกขนาดวงเองครับ ยกมือขยาย ลดมือหด, cue: set-ring }
-          - จับโกงได้ **{recall}%** · บล็อกคนดี **{blocked}** คน
-          - { text: ความเสียหายใกล้ต่ำสุดแล้ว เก่งมากครับ!, when: nearBest }
-          - { text: วงสีเขียวคือจุดที่เสียหายน้อยที่สุดครับ, when: "!nearBest" }
+          - ท่านฟันได้ **{hits}** ป้าย · กำไร **฿{profit}**
+          - { text: ทีนี้… ให้ AI ขายทั้งวันบ้างครับ, cue: ai-day }
+          - AI ปรับราคาทุกชั่วโมง ตามจำนวนลูกค้า
+          - AI กำไร **฿{aiProfit}** · ราคาเดียวได้ ฿{flatProfit}
+          - มากกว่าเดิม **{gain}%** แค่เปลี่ยนราคาตามเวลา
       - type: lesson
         lines:
-          - นี่คือ **Anomaly Detection**
-          - ธนาคารใช้ AI จับโกงแบบนี้ ตลอด 24 ชั่วโมง
-          - Data Scientist คือคนเลือกว่าวงควรใหญ่แค่ไหน
-
-  - id: forecast
-    scene: h-forecast
-    title: พยากรณ์ 11.11
-    concept: Forecasting
-    vars:
-      [
-        playerAcc,
-        aiAcc,
-        beatAi,
-        sold,
-        short,
-        leftover,
-        stockout,
-        overstock,
-        justRight,
-      ]
-    beats:
-      - type: mission
-        lines:
-          - เทศกาล **11.11** กำลังจะมาถึงครับ
-          - เราต้องสั่งของเข้าโกดังเท่าไหร่ดี?
-          - สั่งน้อยไป ของขาด… สั่งเยอะไป เงินจม
-          - { text: นี่คือยอดขาย 3 ปีที่ผ่านมาครับ, cue: history }
-      - type: tutorial
-        gesture: draw
-        lines: [ยกแขนชี้ แล้วลากเส้นในช่อง "อนาคต"]
-        success: สวยครับ! ลากต่อให้ครบ 12 เดือน
-      - type: play
-        durationSec: 25
-        hints:
-          - { afterSec: 8, text: สังเกตทุกปีช่วงเดือน 11 สิครับ… }
-          - { afterSec: 16, text: ลากทับใหม่ได้เลยครับ }
-      - type: reveal
-        lines:
-          - { text: ท่านทายแบบนี้…, cue: player-line }
-          - { text: AI เริ่มจากเส้นแนวโน้ม — เหมือนบทกาแฟ, cue: ai-trend }
-          - { text: แล้วพับ 3 ปีมาซ้อนกัน…, cue: ai-fold }
-          - เดือน 11 พุ่งทุกปี! นี่คือ **ฤดูกาล**
-          - { text: "แนวโน้ม × ฤดูกาล = คำทายของ AI", cue: ai-line }
-          - { text: และยอดขายจริงคือ…, cue: actual-line }
-          - ท่านแม่นยำ **{playerAcc}%** · AI แม่นยำ **{aiAcc}%**
-          - { text: ว้าว! ท่านชนะ AI ครับ!, when: beatAi }
-          - { text: AI เห็นรูปแบบซ้ำในข้อมูล 3 ปีครับ, when: "!beatAi" }
-          - { text: สั่งของรับ 11.11 ครับ ยกมือ = สั่งเพิ่ม, cue: order }
-          - { text: วันที่ 11.11 มาถึงแล้ว!, cue: sale-day }
-          - {
-              text: "ของหมด! ขาดไป **{short}** ชิ้น ลูกค้าเดินหนี",
-              when: stockout,
-            }
-          - { text: "ของค้าง **{leftover}** ชิ้น เงินจมครับ", when: overstock }
-          - { text: "พอดีเป๊ะ! ขายได้ **{sold}** ชิ้น", when: justRight }
-      - type: lesson
-        lines:
-          - นี่คือ **Time-Series Forecasting**
-          - แนวโน้ม + ฤดูกาล + ความไม่แน่นอน
-          - บริษัทใช้มันวางแผนสต็อก คน และเงินทุน
+          - นี่คือ **Dynamic Pricing**
+          - แอปเรียกรถ สายการบิน โรงแรม ใช้แบบนี้ทุกนาที
 
 report:
   title: ภารกิจสำเร็จ
   lines:
     - รายงานผลงาน **CEO {codename}**
-    - { text: "กำไรรวม **฿{totalProfit}**", cue: profit-count }
+    - { text: "กำไรรวม 3 ศึก **฿{totalProfit}**", cue: profit-count }
     - "สไตล์ของท่าน: **{ceoStyle}**"
     - อันดับ **{rank}** จาก {totalPlayers} คนวันนี้
     - ทุกอย่างที่ท่านทำวันนี้…
