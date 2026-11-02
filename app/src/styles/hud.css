@@ -329,6 +329,11 @@
   text-align: right;
 }
 
+/* While the player-cam is up the profit counter moves left of it (the top bar is inset 4.2vw) */
+body:has(.hud-player-cam:not([hidden])) .hud-profit {
+  margin-right: calc(var(--player-cam-h) * 16 / 9 + var(--player-cam-inset) + 2.4vh - 4.2vw);
+}
+
 .hud-profit .hud-number {
   font-size: 5.2vh;
   line-height: 1.2;
@@ -466,13 +471,18 @@
   width: 27.5vw;
 }
 
-/* ---------- Mini skeleton: beside the credits ---------- */
+/* ---------- Player-cam: the top-right corner ---------- */
+:root {
+  --player-cam-h: 17vh;
+  --player-cam-inset: 1.6vh;
+}
+
 .hud-player-cam {
-  /* Top bar, between the countdown and the profit counter: the visitor sees themselves */
+  /* Flush in the corner, above the scenes' side panels (they start at 24vh) */
   position: fixed;
-  top: 3vh;
-  right: 22vw;
-  height: 17vh;
+  top: var(--player-cam-inset);
+  right: var(--player-cam-inset);
+  height: var(--player-cam-h);
   aspect-ratio: 16 / 9;
   padding: 0;
   overflow: hidden;
@@ -487,7 +497,7 @@
 
 .hud-player-cam-label {
   position: absolute;
-  left: 1vh;
+  left: 2.6vh;
   top: 0.8vh;
   font: 700 1.3vh var(--font-display);
   letter-spacing: 0.3em;
