@@ -132,7 +132,7 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 
 ---
 
-## Phase 4 — Scenes
+## Phase 4 — Scenes · v0.4.0 = Price Wars
 
 แต่ละฉากทำตามลำดับเดียวกัน: **data (pipeline) → scene logic → visual → narrative → playtest**
 
@@ -151,6 +151,16 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 
 **เปลี่ยนเรื่อง (2026-11-02):** เจ้าของงานให้ตัดเหลือ 1 รอบ ≤ 5 นาที เรื่องราคาล้วน → **Price Wars** 3 ศึก: ราคาเดียว (กาแฟเดิม) → คู่แข่งบุก (clustering) → ศึก 11.11 ฟันป้ายราคา (dynamic pricing) · วัดได้ ≈ 3.8 นาที ([research 023](research/023-price-wars-story.md)) · A, จับโกง, forecast ออกจากเรื่อง
 
+**v0.4.0 (2026-11-03):**
+
+- **เรื่อง:** Price Wars เล่นได้ครบ 3 บท (#53)
+- **ตอบด้วยท่า:** 5 ท่า แทนการชี้ปุ่ม (#55)
+- **cursor:** ติดมือตลอด (#54)
+- **กรอบกล้อง:** มุมขวาบน ทั้งในเกมและหน้าแรก (#54, #56, #58)
+- **ความยาว:** 1 รอบ ≈ 3.2 นาที ([research 025](research/025-pose-story.md))
+- **ทดสอบ:** เจ้าของงานลองสดแล้ว ส่วน playtest กับคนอื่น ≥ 3 คนยังไม่ได้ทำ
+- **จะจูนต่อจากอะไร:** ไฟล์ log ของวันงานจริงจาก `demo.sh` (research 026)
+
 **DoD ต่อฉาก**
 
 - [ ] 60 fps ตลอดฉาก
@@ -163,28 +173,28 @@ Phase 6  Hardening & Field     ── soak test, playtest, ซ้อมหน้
 
 ## Phase 5 — Polish
 
-| #   | งาน                                                 | Branch                          |
-| --- | --------------------------------------------------- | ------------------------------- |
-| 5.1 | ใส่เสียงจริง (จากที่คุณหามา) + license              | `feature/audio-integration`     |
-| 5.2 | ปรับ transition ระหว่างฉาก, micro-interactions      | `feature/polish-transitions`    |
-| 5.3 | Leaderboard ประจำวัน + reset อัตโนมัติ              | `feature/storage-leaderboard`   |
-| 5.4 | Session stats + export (F9)                         | `feature/storage-session-stats` |
-| 5.5 | Final copy pass บทพูดทั้งหมด (หลังคุณแก้) + ชื่อ AI | `content/story-final`           |
-| 5.6 | (ถ้ามีเวลา) ฉากเสริม B / E / G / I                  | `feature/scene-*`               |
+| #   | งาน                                                                                                 | Branch                          |
+| --- | --------------------------------------------------------------------------------------------------- | ------------------------------- |
+| 5.1 | ใส่เสียงจริง (จากที่คุณหามา) + license                                                              | `feature/audio-integration`     |
+| 5.2 | ปรับ transition ระหว่างฉาก, micro-interactions                                                      | `feature/polish-transitions`    |
+| 5.3 | Leaderboard ประจำวัน + reset อัตโนมัติ                                                              | `feature/storage-leaderboard`   |
+| 5.4 | Session stats + export (F9) — _บางส่วน: log เหตุการณ์ต่อวันเป็น jsonl + สรุปใน `demo.sh log` (#57)_ | `feature/storage-session-stats` |
+| 5.5 | Final copy pass บทพูดทั้งหมด (หลังคุณแก้) + ชื่อ AI                                                 | `content/story-final`           |
+| 5.6 | (ถ้ามีเวลา) ฉากเสริม B / E / G / I                                                                  | `feature/scene-*`               |
 
 ---
 
 ## Phase 6 — Hardening & Field
 
-| #   | งาน                                                          |
-| --- | ------------------------------------------------------------ |
-| 6.1 | Soak test 8 ชม. (replay วนอัตโนมัติ)                         |
-| 6.2 | Playtest ใหญ่ ≥ 10 คน หลากหลายอายุ/ส่วนสูง → แก้ตาม feedback |
-| 6.3 | Kiosk script + systemd + ปิด sleep/update                    |
-| 6.4 | สำรวจสถานที่จริง: แสง, ระยะ, ตำแหน่งกล้อง, จอ                |
-| 6.5 | ซ้อมติดตั้ง (dress rehearsal) บนเครื่อง/จอจริง               |
-| 6.6 | คู่มือ staff 1 หน้า (`docs/STAFF_GUIDE.md`) + ป้าย privacy   |
-| 6.7 | Release `v1.0.0`                                             |
+| #   | งาน                                                                                                                                     |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 6.1 | Soak test 8 ชม. (replay วนอัตโนมัติ)                                                                                                    |
+| 6.2 | Playtest ใหญ่ ≥ 10 คน หลากหลายอายุ/ส่วนสูง → แก้ตาม feedback                                                                            |
+| 6.3 | Kiosk script + systemd + ปิด sleep/update — _บางส่วน: `scripts/demo.sh` + log สดที่บอกปัญหา (#57) · ยังเหลือ systemd, ปิด sleep/update_ |
+| 6.4 | สำรวจสถานที่จริง: แสง, ระยะ, ตำแหน่งกล้อง, จอ                                                                                           |
+| 6.5 | ซ้อมติดตั้ง (dress rehearsal) บนเครื่อง/จอจริง                                                                                          |
+| 6.6 | คู่มือ staff 1 หน้า (`docs/STAFF_GUIDE.md`) + ป้าย privacy                                                                              |
+| 6.7 | Release `v1.0.0`                                                                                                                        |
 
 ### ท้ายโปรเจค (ตามที่เจ้าของงานกำหนด)
 
