@@ -29,6 +29,9 @@ let frameId = 0;
 let tracker = new PoseTracker(null);
 let socket: WebSocket | null = null;
 let previewWanted = false;
+/** Booth events waiting for the service (it may be restarting); the oldest go first. */
+let boothQueue: string[] = [];
+const MAX_BOOTH_QUEUE = 100;
 
 self.onmessage = (event: MessageEvent<ToWorker>) => {
   const message = event.data;
@@ -42,6 +45,13 @@ self.onmessage = (event: MessageEvent<ToWorker>) => {
     case 'preview':
       previewWanted = message.enabled;
       sendPreviewWish();
+      break;
+    case 'event':
+      boothQueue = [
+        ...boothQueue.slice(-(MAX_BOOTH_QUEUE - 1)),
+        JSON.stringify({ type: 'event', ...message.event }),
+      ];
+      flushBooth();
       break;
   }
 };
@@ -92,6 +102,7 @@ function connectServer(url: string): Promise<string> {
           clearTimeout(timeout);
           socket = ws;
           sendPreviewWish();
+          flushBooth();
           post({ type: 'camera', camera: text.camera });
           post({ type: 'server', connected: true, fps: 0, inferenceMs: 0 });
           resolve(text.model);
@@ -127,6 +138,12 @@ function reconnectLater(url: string): void {
       reconnectLater(url);
     });
   }, SERVER_RECONNECT_MS);
+}
+
+function flushBooth(): void {
+  if (socket?.readyState !== WebSocket.OPEN) return;
+  for (const event of boothQueue) socket.send(event);
+  boothQueue = [];
 }
 
 function sendPreviewWish(): void {

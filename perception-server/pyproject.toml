@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 stat-tec-perception = "stat_tec_perception.__main__:main"
+stat-tec-log = "stat_tec_perception.viewer:main"
 
 [project.optional-dependencies]
 gpu = [

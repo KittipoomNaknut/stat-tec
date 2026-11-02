@@ -1,4 +1,5 @@
 /** Messages between the main thread and the perception worker. */
+import type { BoothEvent } from '../core/booth-log';
 import type { OneEuroParams } from './one-euro';
 import type { LockState } from './player-lock';
 
@@ -67,7 +68,9 @@ export type ToWorker =
   | { type: 'init'; options: PerceptionOptions }
   | { type: 'frames'; stream: ReadableStream<VideoFrame> }
   /** Ask the perception service for JPEG previews (debug overlay only). */
-  | { type: 'preview'; enabled: boolean };
+  | { type: 'preview'; enabled: boolean }
+  /** A booth event for the service's live log (research 026). */
+  | { type: 'event'; event: BoothEvent };
 
 export type FromWorker =
   /** `options.source` is the source actually in use; `model` describes it. */

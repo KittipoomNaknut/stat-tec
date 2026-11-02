@@ -16,6 +16,7 @@ import { IntentBus } from './input/intent-bus';
 import { MouseAdapter } from './input/mouse-adapter';
 import { TargetRegistry } from './input/targets';
 import { Camera, type CameraSettings } from './perception/camera';
+import { recentBoothEvents, setBoothSink } from './core/booth-log';
 import { isPerceptionSupported, PerceptionClient } from './perception/client';
 import type { PerceptionOptions, PoseDetections } from './perception/protocol';
 
@@ -69,7 +70,7 @@ function startExperience(parent: HTMLElement): void {
     const player = new SyntheticPlayer((frame, now) => {
       experience.onBody(frame, now);
     });
-    Object.assign(window, { statTecSynthetic: player });
+    Object.assign(window, { statTecSynthetic: player, statTecBooth: recentBoothEvents });
     return;
   }
   startOverlay(parent, {
@@ -162,8 +163,13 @@ function startOverlay(parent: HTMLElement, listeners: OverlayListeners = {}): De
       overlay.setPerception(options, model);
       listeners.onReady?.(options, model);
       // The service owns the camera; the browser opens it only for the MediaPipe fallback.
-      if (options.source === 'server') client.setPreview(wantPreview(overlay.visible));
-      else startBrowserCamera(client, overlay, listeners);
+      if (options.source === 'server') {
+        client.setPreview(wantPreview(overlay.visible));
+        // Booth events go to the service's live log (research 026)
+        setBoothSink((event) => {
+          client.sendBoothEvent(event);
+        });
+      } else startBrowserCamera(client, overlay, listeners);
     },
     onCamera: (camera) => {
       overlay.setCameraInfo(camera);

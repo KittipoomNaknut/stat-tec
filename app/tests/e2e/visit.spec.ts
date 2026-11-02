@@ -93,6 +93,28 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
     },
   );
   await page.screenshot({ path: 'test-results/report.png' });
+
+  // The booth log saw the whole visit, in order (research 026)
+  const booth = await page.evaluate(() =>
+    window
+      .statTecBooth()
+      .filter((e) => e.name !== 'app-health')
+      .map((e) => (e.name === 'pose' ? `pose:${String(e.fields['pose'])}` : e.name)),
+  );
+  expect(booth).toEqual([
+    'visit-start',
+    'pose:both-up',
+    'chapter',
+    'pose:right-up',
+    'chapter-done',
+    'chapter',
+    'pose:left-up',
+    'chapter-done',
+    'chapter',
+    'pose:t-pose',
+    'chapter-done',
+    'visit-end',
+  ]);
   await expect.poll(() => phase(page), { timeout: 60_000 }).toBe('attract');
   expect(errors).toEqual([]);
 });

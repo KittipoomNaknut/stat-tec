@@ -1,4 +1,5 @@
 import { gestureConfig } from '../config/gestures';
+import { boothLog } from '../core/booth-log';
 import type { PoseName } from '../gestures/pose';
 import type { IntentBus } from '../input/intent-bus';
 import './pose-prompt.css';
@@ -48,6 +49,7 @@ export class PosePrompt {
   readonly #off: () => void;
   #done = false;
   #holding: { pose: PoseName; since: number } | null = null;
+  readonly #askedAt = performance.now();
 
   constructor(
     parent: HTMLElement,
@@ -86,6 +88,12 @@ export class PosePrompt {
       if (offered && progress >= 1) {
         this.#done = true;
         this.#cards.get(offered)?.classList.add('is-chosen');
+        // The booth log: which pose, and how long the player took
+        boothLog('pose', {
+          prompt: this.element.dataset['poses'] ?? '',
+          pose: offered,
+          waitMs: Math.round(performance.now() - this.#askedAt),
+        });
         onSelect(offered);
       }
     });
@@ -113,11 +121,20 @@ export function askPose(
   // stage: centered cards over the scene · list: compact rows inside a side panel
   stage.className = layout === 'stage' ? 'pose-stage is-entering' : 'pose-list';
   parent.append(stage);
+  const askedAt = performance.now();
   return new Promise((resolve) => {
     let settled = false;
     const finish = (pose: PoseName | null) => {
       if (settled) return;
       settled = true;
+      // The booth log: nobody answered (an answer is logged by the prompt itself)
+      if (!pose) {
+        boothLog('pose', {
+          prompt: options.map((o) => o.pose).join(','),
+          pose: null,
+          waitMs: Math.round(performance.now() - askedAt),
+        });
+      }
       // Leave the chosen card on screen a moment so the player sees it took
       setTimeout(
         () => {
