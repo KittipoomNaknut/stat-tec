@@ -36,6 +36,10 @@
 
 ## Quick start
 
+At the booth (research 026): `./scripts/demo.sh start` opens everything in a Chrome kiosk and
+closing Chrome stops it all; `./scripts/demo.sh log` in a second terminal shows the live log with
+problems in red. Also `stop` and `status`.
+
 ```bash
 # 1. Pose service on the host GPU (owns the camera) — see perception-server/README.md
 cd perception-server && uv sync --extra gpu && uv run --extra gpu stat-tec-perception
@@ -44,7 +48,7 @@ cd perception-server && uv sync --extra gpu && uv run --extra gpu stat-tec-perce
 docker compose --profile dev up dev            # dev server → http://127.0.0.1:5173
 docker compose --profile data run --rm pipeline # build scene data → app/public/data
 docker compose up -d web                       # production → http://127.0.0.1:8080
-./scripts/kiosk.sh                             # Chromium kiosk (Phase 6)
+./scripts/demo.sh start                        # booth: service + game + Chrome kiosk
 ```
 
 Without the service the app falls back to MediaPipe in the browser automatically

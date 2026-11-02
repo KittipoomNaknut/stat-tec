@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 from .camera import Camera
+from .monitor import DEFAULT_LOG_DIR, EventLog
 from .server import PerceptionServer
 
 DEFAULT_TRT_CACHE = Path.home() / ".cache" / "stat-tec" / "trt"
@@ -26,6 +27,10 @@ def main() -> None:
         "--preview-fps", type=float, default=24, help="camera previews for the HUD player-cam"
     )
     parser.add_argument("--trt-cache", type=Path, default=DEFAULT_TRT_CACHE)
+    parser.add_argument(
+        "--log-dir", type=Path, default=DEFAULT_LOG_DIR, help="live event log (stat-tec-log)"
+    )
+    parser.add_argument("--no-log", action="store_true", help="keep no event log")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -37,7 +42,10 @@ def main() -> None:
         args.trt_cache, det_every=args.det_every, max_people=args.max_people
     )
     camera = Camera(args.camera, args.width, args.height, args.fps)
-    server = PerceptionServer(camera, estimator, args.host, args.port, args.preview_fps)
+    events = EventLog(None if args.no_log else args.log_dir)
+    server = PerceptionServer(
+        camera, estimator, args.host, args.port, args.preview_fps, events=events
+    )
     with contextlib.suppress(KeyboardInterrupt):
         asyncio.run(server.serve_forever())
 

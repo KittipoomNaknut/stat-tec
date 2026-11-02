@@ -1,5 +1,6 @@
 import { createActor } from 'xstate';
 import { APP_DELAYS, appMachine, phaseOf, type AppPhase } from '../core/app-machine';
+import { boothLog, setBoothContext } from '../core/booth-log';
 import { Watchdog } from '../core/watchdog';
 import { GestureEngine } from '../gestures/engine';
 import { Caption } from '../hud/caption';
@@ -87,6 +88,9 @@ export class Experience {
   /** Vars of the chapters played so far this visit (EP II starts from EP I's price). */
   #carry: TemplateVars = {};
   #pausedMs = 0;
+  /** The visit in progress for the booth log: when it started; null between visits. */
+  #visitStartedAt: number | null = null;
+  #health = { since: 0, frames: 0, longFrames: 0 };
 
   constructor(parent: HTMLElement, options: ExperienceOptions) {
     this.#story = options.story;
@@ -136,17 +140,25 @@ export class Experience {
       },
       reload: (reason) => {
         console.error('[watchdog] reload:', reason);
+        boothLog('page-reload', { reason }, 'error');
         location.reload();
       },
-      onStall: () => undefined, // shown by frame() from `stalled`
+      // Shown by frame() from `stalled`; logged so the booth sees it
+      onStall: (stalled) => {
+        if (stalled) boothLog('pose-stalled', {}, 'error');
+        else boothLog('pose-back');
+      },
       log: (message) => {
         console.warn('[watchdog]', message);
+        boothLog('watchdog', { message }, 'warn');
       },
     });
     window.addEventListener('error', (e) => {
+      boothLog('error', { message: e.message, at: `${e.filename}:${String(e.lineno)}` }, 'error');
       this.#watchdog.error(e.message, performance.now());
     });
     window.addEventListener('unhandledrejection', (e) => {
+      boothLog('error', { message: String(e.reason) }, 'error');
       this.#watchdog.error(String(e.reason), performance.now());
     });
 
@@ -266,6 +278,7 @@ export class Experience {
       this.#notice.hide();
     }
     this.#skeleton.draw();
+    this.#reportHealth(dtMs, nowMs);
     this.#cursor.suppressed = this.#scene?.showCursor?.() === false;
     this.#gestures.precise = this.#scene?.cursorPrecise?.() !== false;
     this.#cursor.frame(dtMs);
@@ -273,17 +286,54 @@ export class Experience {
     this.#renderer.frame(dtMs, nowMs);
   }
 
+  /** Render fps for the booth log every few seconds (a hot machine slows the game first). */
+  #reportHealth(dtMs: number, nowMs: number): void {
+    const h = this.#health;
+    h.frames++;
+    if (dtMs > 50) h.longFrames++;
+    if (h.since === 0) h.since = nowMs;
+    const span = nowMs - h.since;
+    if (span < HEALTH_EVERY_MS) return;
+    const memory = (performance as { memory?: { usedJSHeapSize: number } }).memory;
+    boothLog('app-health', {
+      fps: Math.round((h.frames * 1000) / span),
+      longFrames: h.longFrames,
+      heapMb: memory ? Math.round(memory.usedJSHeapSize / 1e6) : null,
+    });
+    this.#health = { since: nowMs, frames: 0, longFrames: 0 };
+  }
+
   #onState(phase: AppPhase, sessionId: number, chapterIndex: number): void {
     const was = this.#phase;
     this.#phase = phase;
     document.body.dataset['phase'] = phase;
     if (phase === 'paused') {
-      if (was !== 'paused') this.#pausedMs = 0;
+      if (was !== 'paused') {
+        this.#pausedMs = 0;
+        boothLog('visit-paused');
+      }
       return;
     }
     const key = `${phase}:${String(sessionId)}:${String(chapterIndex)}`;
-    if (key === this.#activeKey) return; // resumed where we were
+    if (key === this.#activeKey) {
+      // resumed where we were
+      if (was === 'paused') boothLog('visit-resumed', { pausedS: secs(this.#pausedMs) });
+      return;
+    }
     this.#activeKey = key;
+    if (phase === 'attract' && this.#visitStartedAt !== null) {
+      boothLog(
+        'visit-abandoned',
+        { durationS: secs(performance.now() - this.#visitStartedAt) },
+        'warn',
+      );
+      this.#visitStartedAt = null;
+    }
+    if (phase === 'attract') setBoothContext({});
+    if (phase === 'welcome') {
+      setBoothContext({ visit: sessionId });
+      this.#visitStartedAt = performance.now();
+    }
 
     switch (phase) {
       case 'boot':
@@ -337,6 +387,7 @@ export class Experience {
     this.#skeleton.visible = true;
     this.#header.hide();
     this.#scene = this.#scenes.show(welcomeScene(this.#codename));
+    boothLog('visit-start', { codename: this.#codename });
     this.#run(this.#story.welcome.beats, () => {
       this.#actor.send({ type: 'WELCOME_DONE' });
     });
@@ -346,6 +397,8 @@ export class Experience {
     const chapter = this.#story.chapters[index];
     if (!chapter) return;
     document.body.dataset['chapter'] = chapter.id;
+    setBoothContext({ visit: this.#actor.getSnapshot().context.sessionId, chapter: chapter.id });
+    boothLog('chapter');
     this.#topBar.setChapter(index, this.#story.chapters.length, chapter.concept, chapter.title);
     this.#header.hide();
     // Real scenes replace placeholders one by one (Phase 4).
@@ -371,6 +424,10 @@ export class Experience {
           this.#outcomes.push(outcome);
           this.#topBar.setProfit(this.#profitSoFar());
         }
+        boothLog('chapter-done', {
+          score: outcome?.score === null || !outcome ? null : Math.round(outcome.score * 100) / 100,
+          profit: outcome ? chapterProfit(outcome) : null,
+        });
         this.#actor.send({ type: 'CHAPTER_DONE' });
       },
       chapter.concept,
@@ -385,6 +442,14 @@ export class Experience {
     this.#header.hide();
     const total = totalProfit(this.#outcomes);
     const { rank, total: players } = this.#leaderboard.add(this.#codename, total);
+    setBoothContext({ visit: this.#actor.getSnapshot().context.sessionId });
+    boothLog('visit-end', {
+      durationS: secs(performance.now() - (this.#visitStartedAt ?? performance.now())),
+      profit: total,
+      rank,
+      players,
+    });
+    this.#visitStartedAt = null;
     const style = this.#story.styles[ceoStyle(this.#outcomes)];
     this.#scene = this.#scenes.show(
       reportScene(this.#story, {
@@ -426,6 +491,7 @@ export class Experience {
       onCue: (cue) => scene?.onCue?.(cue) ?? false,
       onError: (error) => {
         console.warn('[narrative]', error.message);
+        boothLog('story-error', { message: error.message }, 'warn');
       },
       onDone,
     });
@@ -435,6 +501,7 @@ export class Experience {
     if (e.key === 'F5') {
       // Staff reset: back to attract, not a page reload.
       e.preventDefault();
+      boothLog('reset');
       this.#actor.send({ type: 'RESET' });
     } else if (e.key === 'F2') {
       e.preventDefault();
@@ -449,4 +516,11 @@ export class Experience {
       });
     }
   };
+}
+
+/** How often the game reports its render fps to the booth log. */
+const HEALTH_EVERY_MS = 5000;
+
+function secs(ms: number): number {
+  return Math.round(ms / 100) / 10;
 }

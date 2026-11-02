@@ -1,3 +1,4 @@
+import type { BoothEvent } from '../core/booth-log';
 import type {
   CameraInfo,
   FromWorker,
@@ -72,6 +73,11 @@ export class PerceptionClient {
   /** Ask the perception service for JPEG previews (debug overlay only). */
   setPreview(enabled: boolean): void {
     this.#send({ type: 'preview', enabled });
+  }
+
+  /** Sends a booth event to the perception service's live log (queued while it is away). */
+  sendBoothEvent(event: BoothEvent): void {
+    this.#send({ type: 'event', event });
   }
 
   /** Stops the worker and frees its GPU resources. */

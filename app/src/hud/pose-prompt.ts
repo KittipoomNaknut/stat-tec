@@ -1,4 +1,5 @@
 import { gestureConfig } from '../config/gestures';
+import { boothLog } from '../core/booth-log';
 import type { PoseName } from '../gestures/pose';
 import type { IntentBus } from '../input/intent-bus';
 import './pose-prompt.css';
@@ -113,11 +114,18 @@ export function askPose(
   // stage: centered cards over the scene · list: compact rows inside a side panel
   stage.className = layout === 'stage' ? 'pose-stage is-entering' : 'pose-list';
   parent.append(stage);
+  const askedAt = performance.now();
   return new Promise((resolve) => {
     let settled = false;
     const finish = (pose: PoseName | null) => {
       if (settled) return;
       settled = true;
+      // The booth log: which pose, and how long the player took (or that nobody answered)
+      boothLog('pose', {
+        prompt: options.map((o) => o.pose).join(','),
+        pose,
+        waitMs: Math.round(performance.now() - askedAt),
+      });
       // Leave the chosen card on screen a moment so the player sees it took
       setTimeout(
         () => {

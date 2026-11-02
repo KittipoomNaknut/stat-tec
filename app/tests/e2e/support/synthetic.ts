@@ -13,5 +13,7 @@ export interface Synthetic {
 declare global {
   interface Window {
     statTecSynthetic: Synthetic;
+    /** Booth-log events so far (src/core/booth-log.ts), names and fields only. */
+    statTecBooth: () => readonly { name: string; level: string; fields: Record<string, unknown> }[];
   }
 }
