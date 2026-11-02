@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import contextlib
 import logging
+import signal
 from pathlib import Path
 
 from .camera import Camera
@@ -47,7 +48,17 @@ def main() -> None:
         camera, estimator, args.host, args.port, args.preview_fps, events=events
     )
     with contextlib.suppress(KeyboardInterrupt):
-        asyncio.run(server.serve_forever())
+        asyncio.run(_serve_until_terminated(server))
+
+
+async def _serve_until_terminated(server: PerceptionServer) -> None:
+    """`demo.sh stop` sends SIGTERM (twice: to the group and forwarded by uv). Cancelling the
+    task, rather than raising mid-code, lets the server shut down cleanly and log service-stop."""
+    task = asyncio.current_task()
+    assert task is not None
+    asyncio.get_running_loop().add_signal_handler(signal.SIGTERM, task.cancel)
+    with contextlib.suppress(asyncio.CancelledError):
+        await server.serve_forever()
 
 
 if __name__ == "__main__":

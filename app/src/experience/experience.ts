@@ -371,7 +371,8 @@ export class Experience {
     this.#scene = this.#scenes.show(attractScene(this.#story));
     this.#topBar.visible = false;
     this.#header.hide();
-    this.#skeleton.visible = false;
+    // Passers-by see themselves in the corner: the system already sees them
+    this.#skeleton.visible = true;
     document.body.dataset['chapter'] = '';
   }
 

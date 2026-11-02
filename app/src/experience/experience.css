@@ -33,6 +33,16 @@
   right: 4.2vw;
 }
 
+/* The player-cam has the corner on attract too, a little smaller to clear the title's last
+   letter; the label moves left of it */
+body[data-phase='attract'] {
+  --player-cam-h: 14vh;
+}
+
+body:has(.hud-player-cam:not([hidden])) .attract-corner.is-right {
+  right: calc(var(--player-cam-h) * 16 / 9 + var(--player-cam-inset) + 2.4vh);
+}
+
 .attract-kicker {
   position: absolute;
   top: 10vh;
