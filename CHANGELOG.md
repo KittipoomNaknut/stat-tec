@@ -5,23 +5,64 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
-Phase 4 (Scenes), first part: the STAT WARS theme and EPISODE II–V as real, played scenes, plus a steadier cursor.
+## [0.4.0] — 2026-11-03
+
+Phase 4 (Scenes), first release: **Price Wars**. One visit is three pricing battles told in about 3.2 minutes. The player answers with poses and sees themselves on screen. The booth now starts with one command, and a live log shows problems as they happen.
 
 ### Added
 
-- STAT WARS theme in the department's pink: layered starfield and nebula, crawl attract, INCOMING TRANSMISSION captions, laser-fill buttons, Bai Jamjuree + Orbitron with fixed-width digits (#45) — research 016
-- EPISODE II ศึกราคากาแฟ (Regression): set the price with a raised hand, the AI's line retries until SSE falls, revenue curve (#46) — research 017
-- EPISODE III สามกลุ่มแห่งลูกค้า (K-means): drop magnets by holding still, the AI's blind start and rounds, Elbow (Kneedle) k = 3, choose the ad group on the map (#47) — research 018
-- Gestures: slap (a fast cursor sweep) and draw (pen = cursor), both also with the mouse (#48) — research 019
-- EPISODE IV จับโกงข้ามกาแล็กซี (Anomaly Detection): slash fraud with a laser, a 1,000,000-transaction storm scored for real in the browser, set the outlier ring with your hand against a U-shaped damage curve (#49) — research 020
-- EPISODE V พยากรณ์ 11.11 (Forecasting): draw the next 12 months, the AI builds trend → folded seasons → trend × season with a band, the real year draws in, then order 11.11 stock and run the sale day (#50) — research 021
-- Cursor precision for held hands (PRISM-style gain, gap ≤ 60 px, off while drawing) and a replay "cursor lab" for measuring cursor changes (#51) — research 022
+- **Price Wars story** (#53, research 023): three chapters about pricing, one visit ≤ 5 minutes.
+  - EP I ราคาเดียว (Regression): set the coffee price with a raised hand.
+  - EP II คู่แข่งบุก (Clustering): Empire Coffee opens at ฿49. K-means finds 3 customer groups, and you choose to cut prices for everyone, for one group, or for no one.
+  - EP III ศึก 11.11 (Dynamic pricing): slash gold price tags (profitable and selling at that moment) while demand rushes. Then watch the AI's price through the day beat a flat price by 18%.
+  - Each visit carries the chosen price from EP I into EP II.
+- **Pose answers** (#55, research 025): five held poses answer the questions instead of pointing.
+  - The poses are both hands up, left up, right up, T-pose and crossed arms.
+  - Stick-figure cards fill up while the pose is held, and a hold of 0.7 s selects.
+  - Every question times out on its own.
+  - The script went from 52 lines to 33.
+- **Player-cam** (#54, #56, #58): a mirrored camera picture with the tracked skeleton.
+  - It sits in the top-right corner during the game and on the title screen, so passers-by see themselves.
+  - Previews run at 24 fps and are never stored.
+- **`scripts/demo.sh start | stop | status | log`** (#57, research 026).
+  - `start` builds the game only when code changed, then starts the pose service, serves the build and opens a Chrome kiosk. Closing Chrome stops everything.
+- **Live booth log** (#57, research 026).
+  - The pose service watches its health: camera, fps, inference time, GPU and CPU temperature, charger, and the game's fps.
+  - Problems are debounced: one line when one opens and one when it resolves.
+  - The game reports visits, chapters, pose answers or timeouts, walk-offs and errors.
+  - `stat-tec-log` shows open problems in a red box with what to do.
+  - Logs hold names and numbers only.
+- STAT WARS theme in the department's pink: layered starfield and nebula, crawl attract, INCOMING TRANSMISSION captions, laser-fill buttons, Bai Jamjuree + Orbitron with fixed-width digits (#45, research 016).
+- Gestures: slap (a fast cursor sweep) and draw (pen = cursor), both also with the mouse (#48, research 019).
+- Scenes built before Price Wars (#46, #47, #49, #50, research 017, 018, 020, 021): coffee pricing, K-means customer groups, fraud slashing and 11.11 forecasting. Coffee became EP I, and K-means lives on in EP II. Fraud and forecast stay in the code but are not part of the story.
+- Cursor precision for held hands and a replay "cursor lab" for measuring cursor changes (#51, research 022).
 
 ### Changed
 
-- Cursor: screen-space 2D One Euro + deadband, drawn at 60 fps (#44) — research 015 · with precision: shake 6.3 → 1.05 px, held-still spread 13.6 → 9.4 px, same selects
-- Full-visit E2E: only EPISODE III's ad choice is still a dwell button; the other chapters are played with raise / slap / draw (fraud.spec, forecast.spec)
-- Only chapter A remains a placeholder scene
+- **The cursor is always on while the player is tracked** (#54, research 024).
+  - It follows the pointing hand, or the higher hand when none points. It is drawn faint and cannot select until the hand points.
+  - When the wrist is briefly unseen, it holds its last position.
+  - Compared with v0.3.0's cursor on recorded sessions:
+    - The cursor is on screen 95% and 75% of tracked time (was 75% and 57%).
+    - It sits 28 and 25 px from the hand (was 37 and 33 px).
+    - Lag is 27% lower and selects are unchanged. Shake rose to 1.5–1.7 px.
+- Cursor: screen-space 2D One Euro filter + deadband, drawn at 60 fps (#44, research 015).
+- The visit is coffee → rival → slash (was five chapters A → V). Profit bases are ฿420k, ฿450k and ฿530k.
+- E2E: the full visit is played with poses, and slash.spec plays EP III. The fraud and forecast specs were removed with those chapters (#53, #55).
+
+### Fixed
+
+- A pose held before its prompt appears still selects (#55).
+- The pose service now stops cleanly on SIGTERM and logs `service-stop` (#58).
+- E2E: a chosen pose card that is still fading out is no longer counted twice (#56).
+
+### Known limitations
+
+- Played live by the project owner only; the playtest with ≥ 3 other people (Phase 4 DoD) is still to do. The 0.7 s hold, pose detection for short children and the slash difficulty are not yet tuned on real visitors (step 4: tune from the booth log).
+- Chapter A and the CEO report (4.3, 4.8) are unchanged from v0.3.0 apart from the theme; the QR still needs the course URL.
+- The old scene code (A, segments, fraud, forecast) is kept but unused.
+- `demo.sh` is not yet started by systemd at boot (6.3).
+- Camera: the laptop's 720p30 webcam; a dark room drops it to ~17 fps.
 
 ## [0.3.0] — 2026-10-29
 
@@ -113,5 +154,8 @@ Phase 0 (Foundation) and Phase 1 (Perception spike). The camera sees a person, s
 - One person very close to the camera can be detected twice (fixed by PlayerLock in Phase 2)
 - Worker crash recovery is not implemented yet (Phase 3 watchdog)
 
+[Unreleased]: https://github.com/KittipoomNaknut/stat-tec/compare/v0.4.0...develop
+[0.4.0]: https://github.com/KittipoomNaknut/stat-tec/releases/tag/v0.4.0
+[0.3.0]: https://github.com/KittipoomNaknut/stat-tec/releases/tag/v0.3.0
 [0.2.0]: https://github.com/KittipoomNaknut/stat-tec/releases/tag/v0.2.0
 [0.1.0]: https://github.com/KittipoomNaknut/stat-tec/releases/tag/v0.1.0
