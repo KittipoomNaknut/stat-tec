@@ -41,14 +41,8 @@ function allLines(): { where: string; line: Line; vars: readonly string[] }[] {
 }
 
 describe('content/story.th.yaml', () => {
-  it('has the five chapters in story order', () => {
-    expect(story.chapters.map((c) => c.id)).toEqual([
-      'data',
-      'coffee',
-      'segments',
-      'fraud',
-      'forecast',
-    ]);
+  it('has the three Price Wars chapters in story order', () => {
+    expect(story.chapters.map((c) => c.id)).toEqual(['coffee', 'rival', 'slash']);
   });
 
   it('uses only vars that someone provides', () => {
@@ -90,10 +84,10 @@ describe('content/story.th.yaml', () => {
     expect(() => parseStory('meta: { aiName: x, locale: en }')).toThrow(/meta\.locale/);
     const broken = `
 meta: { aiName: A, locale: th }
-attract: { title: t, prompt: p, rotateSec: 6, taglines: [x] }
+attract: { kicker: k, title: t, subtitle: s, crawl: [x], crawlSec: 20, prompt: p }
 welcome: { beats: [{ type: mission, lines: [{ when: close }] }] }
 chapters: [{ id: a, scene: a, title: t, concept: c, beats: [{ type: play }] }]
-report: { lines: [x] }
+report: { title: r, lines: [x] }
 styles: { analyst: { label: a, description: d }, risk-taker: { label: a, description: d }, intuitive: { label: a, description: d } }
 system: { paused: a, tooFar: a, otherPerson: a, idle: a, reconnecting: a, skip: a }
 codename: { animals: [a, b, c, d], titles: [a, b, c, d] }

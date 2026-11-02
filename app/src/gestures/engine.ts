@@ -5,7 +5,13 @@ import type { TargetRegistry } from '../input/targets';
 import type { LockState } from '../perception/player-lock';
 import type { PerceptionSource } from '../perception/protocol';
 import { CursorTracker } from './cursor';
+import { CursorPrecision } from './cursor-precision';
+import { CursorSmoother } from './cursor-smoother';
+import { DrawDetector } from './draw';
 import { DwellDetector } from './dwell';
+import { PoseDetector } from './pose';
+import { RaiseDetector } from './raise';
+import { SlapDetector } from './slap';
 
 /** What the engine needs from each perception frame. */
 export interface GestureInput {
@@ -15,15 +21,24 @@ export interface GestureInput {
 }
 
 /**
- * Turns tracked poses into intents: presence changes, cursor, dwell progress and selects.
- * Detectors for other gestures (raise, throw, slap, draw…) join here in later PRs.
+ * Turns tracked poses into intents: presence changes, cursor, dwell progress and selects, raise,
+ * slap and draw. The cursor is mapped (CursorTracker), smoothed (CursorSmoother) and steadied
+ * (CursorPrecision); slap and draw are read off that cursor, so they land where the player sees
+ * their hand.
  */
 export class GestureEngine {
   readonly #bus: IntentBus;
   readonly #targets: TargetRegistry;
   readonly #source: IntentSource;
   #cursor = new CursorTracker(cursorConfigFor('server'));
+  readonly #smoother = new CursorSmoother();
+  readonly #precision = new CursorPrecision();
   readonly #dwell = new DwellDetector();
+  readonly #raise = new RaiseDetector();
+  readonly #slap = new SlapDetector();
+  readonly #draw = new DrawDetector();
+  readonly #pose = new PoseDetector();
+  #lastPose: string | null = null;
   #lock: LockState = 'searching';
   #playerId = 0;
   /** Lets the mouse take over without the body fighting it. */
@@ -33,6 +48,11 @@ export class GestureEngine {
     this.#bus = bus;
     this.#targets = targets;
     this.#source = source;
+  }
+
+  /** Precision for held hands (default); off while the player draws, so the pen is on the hand. */
+  set precise(value: boolean) {
+    this.#precision.enabled = value;
   }
 
   /** Use thresholds calibrated for the pose source actually in use. */
@@ -45,11 +65,29 @@ export class GestureEngine {
     this.#presence(input, meta);
     if (!this.enabled) return;
 
-    const cursor = this.#cursor.update(input.lock === 'locked' ? input.body : null, tMs);
+    const cursor = this.#precision.update(
+      this.#smoother.update(
+        this.#cursor.update(input.lock === 'locked' ? input.body : null, tMs),
+        tMs,
+      ),
+      tMs,
+    );
     this.#bus.emit({ type: 'cursor', ...cursor, ...meta });
+    // An inert cursor (hand not pointing) is shown but dwell, slap and draw ignore it.
     for (const event of this.#dwell.update(cursor, this.#targets, tMs)) {
       this.#bus.emit({ ...event, ...meta });
     }
+    const slap = this.#slap.update(cursor, tMs);
+    if (slap) this.#bus.emit({ ...slap, ...meta });
+    for (const event of this.#draw.update(cursor)) this.#bus.emit({ ...event, ...meta });
+    const raise = this.#raise.update(input.lock === 'locked' ? input.body : null, tMs);
+    if (raise) this.#bus.emit({ type: 'raise', ...raise, ...meta });
+    // Poses: every frame while one is seen (progress), once more when it ends
+    const pose = this.#pose.update(input.lock === 'locked' ? input.body : null, tMs);
+    if (pose.pose !== null || this.#lastPose !== null) {
+      this.#bus.emit({ type: 'pose', ...pose, ...meta });
+    }
+    this.#lastPose = pose.pose;
   }
 
   #presence(input: GestureInput, meta: { t: number; source: IntentSource }): void {

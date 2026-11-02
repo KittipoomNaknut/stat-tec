@@ -2,6 +2,7 @@ import { gestureConfig } from '../config/gestures';
 import type { LockState } from '../perception/player-lock';
 import { LANDMARK_COUNT, LANDMARK_STRIDE } from '../perception/protocol';
 import { Landmark } from '../perception/landmarks';
+import type { PoseName } from '../gestures/pose';
 
 /** What a synthetic player sends each tick (the same shape the gesture engine takes). */
 export interface SyntheticFrame {
@@ -13,6 +14,29 @@ export interface SyntheticFrame {
 type Point = readonly [number, number];
 
 const RATE_HZ = 30;
+/** Wrists for each pose, right then left (body space, the player's right is +x). */
+const POSE_WRISTS: Record<PoseName, readonly [Point, Point]> = {
+  'both-up': [
+    [0.6, -1.3],
+    [-0.6, -1.3],
+  ],
+  'left-up': [
+    [0.65, 1.5],
+    [-0.6, -1.3],
+  ],
+  'right-up': [
+    [0.6, -1.3],
+    [-0.65, 1.5],
+  ],
+  't-pose': [
+    [1.9, 0],
+    [-1.9, 0],
+  ],
+  cross: [
+    [-0.35, 0.6],
+    [0.35, 0.6],
+  ],
+};
 const SHOULDER: Point = [0.5, 0];
 const HIP_Y = 1.55; // torso ≈ shoulder width / 0.65 (TORSO_TO_SHOULDER_WIDTH)
 const REST_WRIST: Point = [0.65, 1.5];
@@ -20,6 +44,11 @@ const REST_WRIST: Point = [0.65, 1.5];
 const RAISED_WRIST: Point = [1.5, -0.3];
 const RAISE_MS = 150;
 const GLIDE_MS = 300;
+/**
+ * Hold the raised arm before aiming, like a person does. The cursor needs 100 ms of steady
+ * pointing to activate; 150 ms left too little margin on a loaded CI machine (research 015).
+ */
+const AIM_DELAY_MS = 400;
 
 /**
  * A scripted body for end-to-end tests (`?player=synthetic`): no camera, but the real gesture
@@ -33,6 +62,8 @@ export class SyntheticPlayer {
   #lock: LockState = 'searching';
   #playerId = 0;
   #wrist: Point = REST_WRIST;
+  /** A held pose overrides both arms until `rest()` or `pointAt()`. */
+  #pose: PoseName | null = null;
   #path: { from: Point; to: Point; start: number; ms: number }[] = [];
   readonly #body = new Float32Array(LANDMARK_COUNT * LANDMARK_STRIDE);
 
@@ -66,22 +97,32 @@ export class SyntheticPlayer {
     this.#lock = 'searching';
   }
 
-  /** Points the cursor at screen position (x, y) in [0, 1]. */
-  pointAt(x: number, y: number): void {
+  /**
+   * Points the cursor at screen position (x, y) in [0, 1], gliding there in `ms` (a short glide
+   * across the screen is a sweep fast enough to slap).
+   */
+  /** Strikes and holds a pose with both arms (research 025). */
+  pose(name: PoseName): void {
+    this.#pose = name;
+  }
+
+  pointAt(x: number, y: number, ms = GLIDE_MS): void {
+    this.#pose = null;
     const { box } = gestureConfig.cursor;
     const target: Point = [box.x0 + x * (box.x1 - box.x0), box.y0 + y * (box.y1 - box.y0)];
     const now = performance.now();
     const raised = this.#wrist[1] < HIP_Y - 1; // already pointing: just glide
     this.#path = raised
-      ? [{ from: this.#wrist, to: target, start: now, ms: GLIDE_MS }]
+      ? [{ from: this.#wrist, to: target, start: now, ms }]
       : [
           { from: this.#wrist, to: RAISED_WRIST, start: now, ms: RAISE_MS },
-          { from: RAISED_WRIST, to: target, start: now + RAISE_MS * 2, ms: GLIDE_MS },
+          { from: RAISED_WRIST, to: target, start: now + RAISE_MS + AIM_DELAY_MS, ms },
         ];
   }
 
   /** Lowers the arm (no cursor). */
   rest(): void {
+    this.#pose = null;
     this.#path = [{ from: this.#wrist, to: REST_WRIST, start: performance.now(), ms: RAISE_MS }];
   }
 
@@ -99,15 +140,21 @@ export class SyntheticPlayer {
       b[i * LANDMARK_STRIDE + 3] = 1;
     };
     const mirror = ([x, y]: Point): Point => [-x, y];
-    const [wx, wy] = this.#wrist;
+    const posed = this.#pose ? POSE_WRISTS[this.#pose] : null;
+    const rightWrist = posed ? posed[0] : this.#wrist;
+    const leftWrist = posed ? posed[1] : mirror(REST_WRIST);
+    const [wx, wy] = rightWrist;
     set(Landmark.NOSE, [0, -0.6]);
     set(Landmark.RIGHT_SHOULDER, SHOULDER);
     set(Landmark.LEFT_SHOULDER, mirror(SHOULDER));
     // A straight arm: the elbow halfway between shoulder and wrist.
     set(Landmark.RIGHT_ELBOW, [(SHOULDER[0] + wx) / 2, (SHOULDER[1] + wy) / 2]);
-    set(Landmark.RIGHT_WRIST, this.#wrist);
-    set(Landmark.LEFT_ELBOW, mirror([0.6, 0.8]));
-    set(Landmark.LEFT_WRIST, mirror(REST_WRIST));
+    set(Landmark.RIGHT_WRIST, rightWrist);
+    set(
+      Landmark.LEFT_ELBOW,
+      posed ? [(-SHOULDER[0] + leftWrist[0]) / 2, leftWrist[1] / 2] : mirror([0.6, 0.8]),
+    );
+    set(Landmark.LEFT_WRIST, leftWrist);
     set(Landmark.RIGHT_HIP, [0.35, HIP_Y]);
     set(Landmark.LEFT_HIP, [-0.35, HIP_Y]);
     return { lock: 'locked', playerId: this.#playerId, body: b };

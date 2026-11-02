@@ -1,10 +1,10 @@
 import type { Story } from '../narrative/schema';
-import { DataGlobe } from './globe';
 import type { SceneContext, SceneModule } from './types';
 
 /**
- * Nobody playing: a slowly turning data globe, the promise ("CEO in 5 minutes") and where to
- * stand. Taglines rotate every few seconds to catch people walking past.
+ * Nobody playing: the STAT WARS title over a rising planet, an opening crawl drifting into
+ * space, and a ring of light on the floor that says where to stand (research 016). The 3D is
+ * the shared stage (stars, nebula, planet); this scene is the HUD layer on top.
  */
 export function attractScene(story: Story) {
   return (ctx: SceneContext): SceneModule => new AttractScene(ctx, story);
@@ -13,51 +13,43 @@ export function attractScene(story: Story) {
 class AttractScene implements SceneModule {
   readonly id = 'attract';
   readonly #ctx: SceneContext;
-  readonly #globe = new DataGlobe();
-  readonly #tagline: HTMLElement;
-  readonly #taglines: readonly string[];
-  readonly #rotateMs: number;
-  #elapsed = 0;
-  #index = 0;
 
   constructor(ctx: SceneContext, story: Story) {
     this.#ctx = ctx;
-    this.#taglines = story.attract.taglines;
-    this.#rotateMs = story.attract.rotateSec * 1000;
-    this.#globe.root.position.set(0, 0.45, 0);
-    this.#globe.root.scale.setScalar(0.85);
-    ctx.world.add(this.#globe.root);
+    const a = story.attract;
     ctx.hud.innerHTML = `
       <section class="attract">
-        <p class="hud-label hud-label-accent">STAT_TEC · Data Science Experience</p>
-        <h1 class="hud-display attract-title"></h1>
-        <p class="attract-tagline"></p>
+        <p class="hud-eyebrow attract-corner is-left">Applied Statistics · KMUTNB</p>
+        <p class="hud-eyebrow attract-corner is-right">Open House</p>
+        <p class="attract-kicker"></p>
+        <h1 class="attract-title"></h1>
+        <div class="attract-subtitle"><i></i><span></span><i></i></div>
+        <div class="attract-crawl"><div class="attract-crawl-text"></div></div>
         <div class="attract-prompt">
-          <p class="attract-prompt-text"></p>
-          <div class="attract-marker" aria-hidden="true"><i></i><i></i><i></i></div>
+          <p></p>
+          <div class="attract-pad" aria-hidden="true"><i></i><i></i><i></i></div>
         </div>
       </section>`;
     const q = (sel: string) => ctx.hud.querySelector(sel) as HTMLElement;
-    q('.attract-title').textContent = story.attract.title;
-    q('.attract-prompt-text').textContent = story.attract.prompt;
-    this.#tagline = q('.attract-tagline');
-    this.#showTagline();
+    q('.attract-kicker').textContent = a.kicker;
+    q('.attract-title').textContent = a.title;
+    q('.attract-subtitle span').textContent = a.subtitle;
+    q('.attract-prompt p').textContent = a.prompt;
+    const crawl = q('.attract-crawl-text');
+    crawl.style.animationDuration = `${String(a.crawlSec)}s`;
+    for (const line of a.crawl) {
+      const p = document.createElement('p');
+      p.textContent = line;
+      crawl.append(p);
+    }
   }
 
   setFade(value: number): void {
-    this.#globe.opacity = value;
     this.#ctx.hud.style.opacity = String(value);
   }
 
-  update(dtMs: number, timeSec: number): void {
-    this.#globe.update(timeSec);
-    this.#globe.resolution = window.innerHeight / 1080;
-    this.#elapsed += dtMs;
-    if (this.#elapsed >= this.#rotateMs) {
-      this.#elapsed = 0;
-      this.#index = (this.#index + 1) % this.#taglines.length;
-      this.#showTagline();
-    }
+  update(): void {
+    // All motion is CSS (crawl, pad) and the shared stage (stars, planet).
   }
 
   vars() {
@@ -69,14 +61,6 @@ class AttractScene implements SceneModule {
   }
 
   dispose(): void {
-    this.#globe.root.removeFromParent();
-    this.#globe.dispose();
-  }
-
-  #showTagline(): void {
-    this.#tagline.textContent = this.#taglines[this.#index] ?? '';
-    this.#tagline.classList.remove('is-entering');
-    this.#tagline.getBoundingClientRect();
-    this.#tagline.classList.add('is-entering');
+    // Nothing outside the HUD layer, which the scene manager removes.
   }
 }

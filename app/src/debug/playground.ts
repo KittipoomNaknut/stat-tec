@@ -1,6 +1,7 @@
 import './playground.css';
 import type { IntentBus } from '../input/intent-bus';
 import { elementRect, type TargetRegistry } from '../input/targets';
+import { startLoop } from '../core/loop';
 import { HudCursor } from '../hud/cursor';
 import { DwellAttemptLog } from './dwell-log';
 import { encodeSession } from './pose-recording';
@@ -52,16 +53,21 @@ export class Playground {
     parent.append(grid, this.#status);
 
     const cursor = new HudCursor(parent);
+    startLoop((dt) => {
+      cursor.frame(dt);
+    });
     bus.on('cursor', (c) => {
       cursor.move(c);
     });
     bus.on('dwell', (d) => {
       cursor.setProgress(d.progress);
+      cursor.setMagnet(d.progress > 0 ? targets.rectOf(d.targetId) : null, d.progress);
       for (const [id, el] of buttons)
         el.classList.toggle('hover', id === d.targetId && d.progress > 0);
     });
     bus.on('select', (s) => {
       cursor.setProgress(0);
+      cursor.setMagnet(null);
       const el = buttons.get(s.targetId);
       // Remove then re-add on the next frame to restart the flash animation.
       el?.classList.remove('selected');

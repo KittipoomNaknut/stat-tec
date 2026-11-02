@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { IntentBus } from '../../src/input/intent-bus';
 import type { Intent } from '../../src/input/intents';
 import { MouseAdapter } from '../../src/input/mouse-adapter';
@@ -98,6 +98,27 @@ describe('MouseAdapter', () => {
     const draws = seen.flatMap((i) => (i.type === 'draw' ? [i.phase] : []));
     expect(draws).toEqual(['start', 'move', 'end']);
     expect(seen.some((i) => i.type === 'select')).toBe(false);
+  });
+
+  it('slaps on a fast flick, not on a normal move', () => {
+    vi.useFakeTimers({ toFake: ['performance'] });
+    try {
+      const { adapter, seen, fire } = setup();
+      adapter.enabled = true;
+      const move = (widthsPerSec: number) => {
+        for (let i = 0; i < 6; i++) {
+          fire('mousemove', { clientX: 100 + widthsPerSec * 1000 * i * 0.033, clientY: 250 });
+          vi.advanceTimersByTime(33);
+        }
+      };
+      move(0.5);
+      expect(seen.some((i) => i.type === 'slap')).toBe(false);
+      vi.advanceTimersByTime(500);
+      move(3);
+      expect(seen.filter((i) => i.type === 'slap').length).toBeGreaterThan(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('maps the wheel to zoom and arrows to swipe, and hides the cursor when disabled', () => {

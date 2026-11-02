@@ -35,11 +35,11 @@ export class Caption {
     this.#root.className = 'hud-panel hud-caption';
     this.#root.innerHTML = `
       <div class="hud-caption-speaker">
-        <span class="hud-voice"><i></i><i></i><i></i></span>
-        <p class="hud-label hud-label-accent"></p>
+        <span class="hud-voice"></span>
+        <p class="hud-eyebrow"></p>
       </div>`;
     const label = this.#root.querySelector('p');
-    if (label) label.textContent = speaker;
+    if (label) label.textContent = `Incoming transmission · ${speaker}`;
     this.#lines.className = 'hud-caption-lines';
     for (let i = 0; i < 2; i++) {
       const p = document.createElement('p');

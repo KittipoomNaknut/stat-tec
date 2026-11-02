@@ -7,7 +7,15 @@ import type { PerceptionSource } from '../perception/protocol';
 export const gestureConfig = {
   cursor: {
     /**
-     * A hand drives the cursor when it is raised above the waist and the arm is extended.
+     * Always-on cursor (research 024): the cursor is drawn and follows a hand whenever the player
+     * is tracked, but it is *active* (dwell, slap and draw respond) only while that hand points by
+     * the rules below. Without a pointing hand it follows the higher hand, dimmed and inert, moving
+     * to the other one when that wrist is higher by `switchMargin` (SW) for `switchAfterMs`.
+     */
+    switchMargin: 0.35,
+    switchAfterMs: 200,
+    /**
+     * A hand is active (points) when it is raised above the waist and the arm is extended.
      * Pointing measured 0.9–1.7 SW wrist-to-shoulder; scratching head / touching face 0.3–0.7.
      */
     activateExtension: 0.9,
@@ -39,7 +47,7 @@ export const gestureConfig = {
      * with no cursor during fidgeting or standing. Starting still needs the strict rules above.
      */
     keepWhileAboveHips: 1.0 as number | null,
-    /** Pointing must hold this long before the cursor appears — hides brief fidget flickers. */
+    /** Pointing must hold this long before the cursor turns active — hides brief fidget flickers. */
     activateAfterMs: 100,
     minVisibility: 0.5,
     /**
@@ -52,6 +60,87 @@ export const gestureConfig = {
      */
     box: { x0: 0.4, x1: 1.7, y0: -1.2, y1: 0.3 },
   },
+  /**
+   * Screen-space cursor smoothing (research 015): speeds in screens per second, deadband in
+   * screen widths. Measured on the playground sessions: frame-to-frame shake 6.0 → 2.2 px at
+   * 1080p, +~20 ms lag on fast sweeps, selections unchanged.
+   */
+  smoothing: {
+    // Research 024: 0.8 / 8 → 0.5 / 15 with the precision below, so the cursor stays on the hand
+    minCutoff: 0.5,
+    beta: 15,
+    dCutoff: 1,
+    deadband: 0.004,
+  },
+  /**
+   * Precision for a held hand (research 022), after smoothing: slow movement moves the cursor by
+   * `minGain` of itself, rising to 1:1 at `fastSpeed`; the cursor–hand gap closes with
+   * `recoverFastMs` while moving fast, `recoverSlowMs` otherwise. Speeds in screen heights per
+   * second (150 and 800 px/s at 1080p). Measured on the playground sessions: shake 1.84 → 1.00
+   * px, held still before a select 13.6 → 9.4 px, same selects, edges still reachable.
+   * `maxGap` bounds how far the cursor may trail the hand (a slow steady drag would otherwise
+   * trail it by ~140 px); scenes where the player draws switch precision off (`cursorPrecise`).
+   */
+  precision: {
+    windowMs: 100,
+    // Research 024: 60 px / 0.3 left the cursor 33–37 px off the hand on average ("it does not
+    // follow"); 35 px / 0.45 cuts that by a quarter and lag by 27% for +0.5 px shake, same selects.
+    maxGap: 35 / 1080,
+    minGain: 0.45,
+    slowSpeed: 150 / 1080,
+    fastSpeed: 800 / 1080,
+    recoverFastMs: 60,
+    recoverSlowMs: 2000,
+    aspect: 16 / 9,
+  },
+  /**
+   * Raise (EPISODE II: set the price with your hand). Level 0 when the higher wrist is this far
+   * above the hips (SW), 1 at `highAbove` — a hand overhead. Hanging arms measured ~0 above the
+   * hips; raised overhead 2.6–3.0 (research 009/010 recordings).
+   */
+  raise: {
+    lowAbove: 0.3,
+    highAbove: 2.6,
+    /** Smoothing time constant: steady value, still follows a deliberate move in ~¼ s. */
+    smoothingMs: 120,
+    minVisibility: 0.5,
+  },
+  /**
+   * Slap (EPISODE IV): a fast sweep of the cursor, speed in screen heights per second over
+   * `windowMs` (research 019). Measured on the recordings: button play in the side zone stays
+   * under 3 (p99 2.4); deliberate swipes reach 4–7.
+   */
+  slap: {
+    windowMs: 100,
+    /** Ignore the first frames after the cursor appears: too short a span to judge speed. */
+    minSpanMs: 60,
+    startSpeed: 3.5,
+    keepSpeed: 2.5,
+    /** Screen width / height of the kiosk TV, so a sideways sweep counts like a vertical one. */
+    aspect: 16 / 9,
+  },
+  /**
+   * Static poses (research 025), body space: SW units, +y down, shoulders at y = 0, nose ≈ −0.6,
+   * hips ≈ 1.5. Poses only count where a scene asks for them (PosePrompt).
+   */
+  pose: {
+    /** Hand up: wrist this far above the shoulders, and no further out than `upMaxOut`. */
+    upAbove: 0.75,
+    upMaxOut: 1.3,
+    /** The other hand counts as down below this (one-hand poses). */
+    downBelow: 0.3,
+    /** T: wrists within this of shoulder height and at least this far out. */
+    tMaxHeight: 0.45,
+    tMinOut: 1.2,
+    /** Cross: wrists past the center line by this, between these heights. */
+    crossPast: 0.05,
+    crossTop: -0.3,
+    crossBottom: 1.2,
+    /** Seen this long before it counts, then held this long to select. */
+    enterMs: 150,
+    holdMs: 700,
+    minVisibility: 0.5,
+  },
   dwell: {
     holdMs: 1200,
     /** Leaving the target for less than this keeps the progress. */
@@ -63,15 +152,15 @@ export const gestureConfig = {
   },
 } as const;
 
+type Widen<T> = { readonly [K in keyof T]: T[K] extends number ? number : Widen<T[K]> };
+/** Cursor thresholds with plain number types (the literals above are only the defaults). */
+export type CursorConfig = Widen<typeof gestureConfig.cursor>;
+
 /**
  * Per pose source: each model's errors differ, so thresholds are calibrated on recordings of each
  * (tests/replay). RTMPose reports crossed arms with straightness up to ~0.76, so it needs 0.8;
  * MediaPipe's elbows are rougher (left-hand pointing 0.46-0.78), which 0.8 would cut in half.
  */
-type Widen<T> = { readonly [K in keyof T]: T[K] extends number ? number : Widen<T[K]> };
-/** Cursor thresholds with plain number types (the literals above are only the defaults). */
-export type CursorConfig = Widen<typeof gestureConfig.cursor>;
-
 const CURSOR_BY_SOURCE: Record<PerceptionSource, Partial<CursorConfig>> = {
   server: {},
   mediapipe: { activateStraightness: 0.7 },

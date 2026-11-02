@@ -37,13 +37,14 @@ function cursorTrack(clipId: string, source: PerceptionSource) {
 }
 
 /**
- * Share of frames with a visible cursor, counted from when the player starts pointing — clips
+ * Share of frames with an active cursor (the hand points), counted from when the player starts
+ * pointing — clips
  * begin with a couple of seconds of reaction time with the hands still down.
  */
 const visibleShare = (track: ReturnType<typeof cursorTrack>) => {
-  const start = track.findIndex((f) => f.visible);
+  const start = track.findIndex((f) => f.active);
   const active = track.slice(Math.max(start, 0)).filter((f) => f.locked);
-  return active.filter((f) => f.visible).length / Math.max(active.length, 1);
+  return active.filter((f) => f.active).length / Math.max(active.length, 1);
 };
 
 const span = (values: number[]) => Math.max(...values) - Math.min(...values);
@@ -53,9 +54,17 @@ describe.each(SOLO_SESSIONS)('cursor replay $file', ({ file: FILE, source }) => 
     session = await loadSession(FILE);
   });
 
-  it.each(['idle-stand', 'idle-fidget'])('%s: cursor never appears', (id) => {
+  it.each(['idle-stand', 'idle-fidget', 'point-right-sweep', 'point-hold'])(
+    '%s: the cursor is drawn on every tracked frame (always on, research 024)',
+    (id) => {
+      const locked = cursorTrack(id, source).filter((f) => f.locked);
+      expect(locked.filter((f) => f.visible).length / locked.length).toBeGreaterThan(0.98);
+    },
+  );
+
+  it.each(['idle-stand', 'idle-fidget'])('%s: the cursor never turns active', (id) => {
     const shown = cursorTrack(id, source)
-      .filter((f) => f.visible)
+      .filter((f) => f.active)
       .map((f) => f.t.toFixed(0));
     expect(shown).toEqual([]);
   });
@@ -65,7 +74,7 @@ describe.each(SOLO_SESSIONS)('cursor replay $file', ({ file: FILE, source }) => 
     ['point-left-sweep', 'left'],
   ] as const)('%s: cursor follows the %s hand across most of the screen', (id, hand) => {
     const track = cursorTrack(id, source);
-    const shown = track.filter((f) => f.visible);
+    const shown = track.filter((f) => f.active);
     // MediaPipe session 0.97/0.94; RTMPose 0.77/0.95 — in the RTMPose right sweep the owner
     // dropped the hand to hip level (below the screen's bottom edge), which releases the cursor
     // by design: releasing any lower would keep it on when the arm hangs (wrist 0.03 SW from hips).
@@ -82,7 +91,7 @@ describe.each(SOLO_SESSIONS)('cursor replay $file', ({ file: FILE, source }) => 
     let hold = { start: -1, length: 0 };
     for (let i = 0; i < track.length; i++) {
       const a = track[i];
-      if (!a?.visible) continue;
+      if (!a?.active) continue;
       let j = i;
       for (
         let f = track[j];

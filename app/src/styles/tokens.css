@@ -1,34 +1,39 @@
-/* Design tokens — "Holographic HUD". See docs/ARCHITECTURE.md §11.3 and research 011.
+/* Design tokens — "STAT WARS": deep space in the department's pink→peach. Research 016.
    Sizes are in vh: the kiosk is read from 2–2.5 m, so type scales with the screen height. */
 :root {
   /* Color */
-  --bg: #050b18;
-  --bg-deep: #02060f;
-  --bg-grid: #0d1b33;
-  --panel: rgb(10 28 58 / 78%);
-  --panel-strong: rgb(8 22 46 / 90%);
-  --primary: #3fe0ff;
-  --accent: #ffc857;
-  --positive: #3dffa2;
-  --negative: #ff4d6d;
-  --text: #e6f1ff;
-  --text-dim: #7e93b5;
-  --line: color-mix(in srgb, var(--primary) 28%, transparent);
-  --line-strong: color-mix(in srgb, var(--primary) 70%, transparent);
+  --bg: #07040d;
+  --bg-deep: #030207;
+  --panel: rgb(26 9 26 / 78%);
+  --panel-top: rgb(44 15 42 / 78%);
+  --panel-strong: rgb(18 7 20 / 92%);
+  --primary: #f6629e;
+  --hot: #ff3d8f;
+  --accent: #febb97;
+  --positive: #4fe3b0;
+  --negative: #ff5470;
+  --text: #fff6fa;
+  --text-dim: #a993a7;
+  --line: rgb(255 150 195 / 22%);
+  --line-strong: rgb(255 150 195 / 50%);
+  --brand-gradient: linear-gradient(90deg, #f6629e, #febb97);
 
-  /* Glow (text-shadow / drop-shadow); kept soft so text stays sharp */
-  --glow-primary: 0 0 1.6vh color-mix(in srgb, var(--primary) 55%, transparent);
-  --glow-accent: 0 0 2vh color-mix(in srgb, var(--accent) 50%, transparent);
+  /* Glow */
+  --glow-primary: 0 0 2.4vh rgb(246 98 158 / 55%);
+  --glow-accent: 0 0 2vh rgb(254 187 151 / 45%);
 
   /* Typography */
-  --font-ui: 'Anuphan', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-ui: 'Bai Jamjuree', system-ui, sans-serif;
+  --font-display: 'Orbitron', 'Bai Jamjuree', sans-serif;
+  /* Kept for debug tools that still ask for a monospace */
+  --font-mono: ui-monospace, monospace;
   --size-hero: 18vh;
   --size-display: 11vh;
-  --size-headline: 8vh;
-  --size-caption: 5vh;
-  --size-label: 3.5vh;
-  --size-micro: 2.4vh;
+  --size-headline: 7.4vh;
+  --size-caption: 4.6vh;
+  --size-label: 3.4vh;
+  --size-micro: 2.2vh;
+  --size-eyebrow: 1.8vh;
   /* Thai stacks vowels and tone marks above and below the line: never tighter than 1.4 */
   --leading-thai: 1.45;
 
@@ -39,8 +44,7 @@
   --space-4: 4vh;
   --space-5: 6vh;
   --space-6: 9vh;
-  --radius: 0.8vh;
-  --bracket: 2.2vh;
+  --radius: 1.4vh;
   --stroke: max(2px, 0.22vh);
 
   /* Motion: expo.out to enter, power2.in to leave */
