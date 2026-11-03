@@ -11,7 +11,7 @@ import {
   matchSegment,
   type Iteration,
   type Point,
-} from '../segments/model';
+} from './segments';
 import type { SceneContext, SceneModule } from '../types';
 import {
   bestStrategy,
