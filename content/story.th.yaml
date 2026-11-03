@@ -19,7 +19,7 @@ attract:
   # ข้อความเลื่อนหายไปในอวกาศ วนทุก crawlSec วินาที
   crawl:
     - ร้านกาแฟเล็ก ๆ กำลังจะแพ้สงครามราคา
-    - คู่แข่งตัดราคา ลูกค้าเริ่มหนี
+    - วัน 11.11 กำลังมา ลูกค้าจะแน่นร้าน
     - CEO คนใหม่ ผู้อ่านข้อมูลออก…
     - ใช้ร่างกายของท่าน ตั้งราคาให้ชนะใน 5 นาที
   crawlSec: 26
@@ -36,7 +36,7 @@ welcome:
       lines: [ชูสองมือขึ้นเหนือหัว เพื่อเริ่มศึกราคา!]
       success: ลุยกันเลย!
 
-# STAT WARS: Price Wars (docs/STORY.md) — 3 ศึก ≤ 5 นาที · พูดน้อย ใช้ท่าเยอะ (research 025)
+# STAT WARS: Price Wars (docs/STORY.md) — 2 ศึก ≤ 5 นาที · พูดน้อย ใช้ท่าเยอะ (research 025)
 chapters:
   - id: coffee
     scene: c-coffee-pricing
@@ -58,10 +58,10 @@ chapters:
         lines: [ยกมือขึ้น = ขึ้นราคา · ลดมือ = ลดราคา]
         success: หาราคาที่ได้เงินมากที่สุด!
       - type: play
-        durationSec: 20
+        durationSec: 15
         hints:
-          - { afterSec: 7, text: ดูลูกค้าเดินเข้าร้านสิครับ }
-          - { afterSec: 13, text: ราคาไหนเส้นรายได้สูงสุด? }
+          - { afterSec: 5, text: ดูลูกค้าเดินเข้าร้านสิครับ }
+          - { afterSec: 10, text: ราคาไหนเส้นรายได้สูงสุด? }
       - type: reveal
         lines:
           - ท่านได้ **฿{revenue}** / วัน ที่ราคา ฿{price}
@@ -73,29 +73,6 @@ chapters:
       - type: lesson
         lines:
           - "**Regression** = หาจุดทำเงินสูงสุดจากข้อมูล"
-
-  - id: rival
-    scene: r-rival
-    title: คู่แข่งบุก
-    concept: Clustering
-    vars: [kept, chosenBest]
-    beats:
-      - type: mission
-        lines:
-          - { text: ด่วน! **Empire Coffee** มาเปิดตรงข้าม ขาย ฿49!, cue: rival }
-          - { text: ลูกค้าเราเริ่มเดินข้ามถนน…, cue: drift }
-      - type: reveal
-        lines:
-          - { text: AI แบ่งลูกค้าให้ดูครับ, cue: kmeans-run }
-          - { text: 3 กลุ่ม! **สายประหยัด** คือกลุ่มที่จะหนี, cue: clusters }
-          - { text: ทำท่าเลือกเลย! ท่านจะสู้ยังไง?, cue: choose-strategy }
-          - { cue: outcome }
-          - เก็บกำไรไว้ได้ **{kept}%**
-          - { text: ถูกต้อง! ลดเฉพาะคนที่จะหนี, when: chosenBest }
-          - { text: ดีที่สุดคือ ลดเฉพาะสายประหยัดครับ, when: "!chosenBest" }
-      - type: lesson
-        lines:
-          - "**Clustering** = ให้ AI จัดกลุ่มลูกค้าเอง"
 
   - id: slash
     scene: p-price-slash

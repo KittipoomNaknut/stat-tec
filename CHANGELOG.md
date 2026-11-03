@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Changed
+
+- The visit is two chapters: ราคาเดียว (Regression) → ศึก 11.11 (Dynamic pricing). EP II คู่แข่งบุก (K-means) is removed. A visit is about 2.6 minutes, down from 3.2 (research 028).
+- Setting the price with your hand lasts 15 s (was 20). The hints come at 5 and 10 s.
+- Profit bases are ฿650k (coffee) and ฿750k (slash). The best and worst totals stay ฿1.4M and ฿560k.
+- The booth log shows the slash chapter as EP II.
+
 ## [0.4.1] — 2026-11-03
 
 The cursor fixed at the source, confirmed live: the camera now runs at 30 fps (it was 10–16), and the cursor no longer stays grey until the arm swings out. Also a staff guide, and the scenes that left the story are removed.

@@ -34,13 +34,13 @@ function seeded(seed: number): () => number {
 
 describe('profit', () => {
   it('pays 40% of the base at score 0 and the full base at score 1', () => {
-    expect(chapterProfit(outcome('coffee', 0))).toBe(168_000);
-    expect(chapterProfit(outcome('coffee', 1))).toBe(420_000);
-    expect(chapterProfit(outcome('coffee', 7))).toBe(420_000);
+    expect(chapterProfit(outcome('coffee', 0))).toBe(260_000);
+    expect(chapterProfit(outcome('coffee', 1))).toBe(650_000);
+    expect(chapterProfit(outcome('coffee', 7))).toBe(650_000);
   });
 
   it('pays the full base for unscored chapters', () => {
-    expect(chapterProfit(outcome('rival', null))).toBe(450_000);
+    expect(chapterProfit(outcome('slash', null))).toBe(750_000);
   });
 
   it('has a base for every chapter in the story, totalling over a million', () => {

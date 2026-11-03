@@ -54,7 +54,7 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
   await strike(page, 'both-up');
   await expect.poll(() => phase(page)).toBe('chapter');
 
-  const chapters = ['coffee', 'rival', 'slash'];
+  const chapters = ['coffee', 'slash'];
   const seen = new Set<string>();
   let selected = 0;
   for (;;) {
@@ -80,8 +80,8 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
     await page.waitForTimeout(200);
   }
   expect([...seen]).toEqual(chapters);
-  // Pose questions: the coffee quiz, the rival's strategy and the T-pose before the AI's day
-  expect(selected).toBe(3);
+  // Pose questions: the coffee quiz and the T-pose before the AI's day
+  expect(selected).toBe(2);
 
   // Report: a real profit total and rank, then back to attract on its own.
   await expect.poll(() => phase(page)).toBe('report');
@@ -106,9 +106,6 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
     'pose:both-up',
     'chapter',
     'pose:right-up',
-    'chapter-done',
-    'chapter',
-    'pose:left-up',
     'chapter-done',
     'chapter',
     'pose:t-pose',

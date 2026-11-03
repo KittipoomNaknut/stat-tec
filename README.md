@@ -11,13 +11,12 @@
 - 🎯 **ควบคุมด้วยร่างกาย** — ชี้ / ชี้ค้าง / ยกมือ / ปัด / วาด · cursor ผ่าน smoothing + precision ([research 015](docs/research/015-cursor-smoothing.md), [022](docs/research/022-cursor-precision.md))
 - 📊 **Data Storytelling** — ทุกตัวเลขบนจอมาจากโมเดลจริงในเบราว์เซอร์
 
-  **Price Wars** — 3 ศึก ตอบด้วยท่า รอบละ ≈ 3.2 นาที ([STORY](docs/STORY.md))
+  **Price Wars** — 2 ศึก ตอบด้วยท่า รอบละ ≈ 2.6 นาที ([STORY](docs/STORY.md))
 
   | ตอน    | เรื่อง     | แนวคิด                                     |
   | ------ | ---------- | ------------------------------------------ |
   | EP I   | ราคาเดียว  | Regression (ตั้งราคากาแฟ)                  |
-  | EP II  | คู่แข่งบุก | K-means (ลดราคาให้ใคร)                     |
-  | EP III | ศึก 11.11  | Dynamic pricing (ฟันป้ายราคา, ราคาทั้งวัน) |
+  | EP II  | ศึก 11.11  | Dynamic pricing (ฟันป้ายราคา, ราคาทั้งวัน) |
 
 - ⚡ **60 fps** — วัดทั้งบทบน GPU จริง · Three.js + canvas
 - 🔒 **Privacy-first** — ไม่บันทึกภาพ ทุกอย่างประมวลผลในเครื่อง offline
@@ -60,7 +59,7 @@ Without the service the app falls back to MediaPipe in the browser automatically
 
 | URL / ปุ่ม                                      | ใช้ทำอะไร                                                             |
 | ----------------------------------------------- | --------------------------------------------------------------------- |
-| `?chapter=coffee` · `rival` · `slash`           | กระโดดเข้าบทนั้นทันทีเมื่อเริ่มเล่น                                   |
+| `?chapter=coffee` · `slash`                     | กระโดดเข้าบทนั้นทันทีเมื่อเริ่มเล่น                                   |
 | `?playground`                                   | ลองชี้ / ชี้ค้างปุ่ม 1–6 · **S** (หรือ F9) ดาวน์โหลด session ไว้วัดผล |
 | `?player=synthetic`                             | ร่างกายสังเคราะห์ (E2E) ไม่ใช้กล้อง                                   |
 | **F2**                                          | สลับเป็นเมาส์ (คลิก = ชี้ค้าง, ลาก = วาด, สะบัด = ตบ)                 |

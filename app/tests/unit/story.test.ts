@@ -43,7 +43,7 @@ function allLines(): { where: string; line: Line; vars: readonly string[] }[] {
 
 describe('content/story.th.yaml', () => {
   it('has the three Price Wars chapters in story order', () => {
-    expect(story.chapters.map((c) => c.id)).toEqual(['coffee', 'rival', 'slash']);
+    expect(story.chapters.map((c) => c.id)).toEqual(['coffee', 'slash']);
   });
 
   it('uses only vars that someone provides', () => {

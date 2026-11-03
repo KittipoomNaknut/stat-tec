@@ -82,7 +82,7 @@ interface Float {
 type Mode = 'idle' | 'tutorial' | 'play' | 'over' | 'reveal';
 
 /**
- * EP III — ศึก 11.11 ฟันป้ายราคา (Dynamic Pricing). Play: price tags fly up and the player
+ * EP II — ศึก 11.11 ฟันป้ายราคา (Dynamic Pricing). Play: price tags fly up and the player
  * slashes the gold ones (a fast sweep = slap). A tag's color is computed from EP I's demand at
  * how busy the shop is right now, so in the rush the gold prices are higher. Reveal: the AI
  * prices every hour of the day for its crowd and beats the best single price.
