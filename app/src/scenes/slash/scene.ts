@@ -675,15 +675,16 @@ function drawTag(g: CanvasRenderingContext2D, t: Tag, w: number, h: number, unit
       g.closePath();
       g.clip();
     }
-    g.shadowColor = color;
-    g.shadowBlur = (t.kind === 'gold' ? 3 : 1.4) * unit;
+    // The glow is a sprite stamped under the card: a canvas shadowBlur on every tag every frame
+    // took the GPU from the pose model and dropped the camera to ~10 fps (research 029)
+    const glow = glowSprite(t.kind, unit);
+    g.drawImage(glow.image, -glow.half.x, -glow.half.y);
     g.fillStyle = 'rgba(20,8,24,0.92)';
     g.strokeStyle = color;
     g.lineWidth = 0.55 * unit;
     roundRect(g, -tw / 2, -th / 2, tw, th, 1.6 * unit);
     g.fill();
     g.stroke();
-    g.shadowBlur = 0;
     // String hole
     g.beginPath();
     g.arc(-tw / 2 + 2 * unit, 0, 0.8 * unit, 0, Math.PI * 2);
@@ -720,6 +721,38 @@ function drawTag(g: CanvasRenderingContext2D, t: Tag, w: number, h: number, unit
   } else {
     drawHalf(0);
   }
+}
+
+const glows = new Map<string, { image: HTMLCanvasElement; half: { x: number; y: number } }>();
+
+/** The tag's outline with its glow, drawn once per kind and size (screen resize = new size). */
+function glowSprite(kind: TagKind, unit: number) {
+  const key = `${kind}@${unit.toFixed(2)}`;
+  const cached = glows.get(key);
+  if (cached) return cached;
+  const tw = 16 * unit;
+  const th = 8.6 * unit;
+  const blur = (kind === 'gold' ? 3 : 1.4) * unit;
+  const pad = Math.ceil(blur * 3);
+  const image = document.createElement('canvas');
+  image.width = Math.ceil(tw + 2 * pad);
+  image.height = Math.ceil(th + 2 * pad);
+  const half = { x: image.width / 2, y: image.height / 2 };
+  const g = image.getContext('2d');
+  if (g) {
+    g.translate(half.x, half.y);
+    g.shadowColor = COLOR[kind];
+    g.shadowBlur = blur;
+    g.fillStyle = 'rgba(20,8,24,0.92)';
+    g.strokeStyle = COLOR[kind];
+    g.lineWidth = 0.55 * unit;
+    roundRect(g, -tw / 2, -th / 2, tw, th, 1.6 * unit);
+    g.fill();
+    g.stroke();
+  }
+  const sprite = { image, half };
+  glows.set(key, sprite);
+  return sprite;
 }
 
 function roundRect(

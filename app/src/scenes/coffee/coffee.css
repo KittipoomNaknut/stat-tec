@@ -227,13 +227,6 @@
   fill: var(--text-dim);
 }
 
-.cf-guide {
-  stroke: var(--accent);
-  stroke-width: 2;
-  stroke-dasharray: 6 8;
-  opacity: 0.8;
-}
-
 .cf-point {
   fill: #fff;
   filter: drop-shadow(0 0 6px rgb(255 61 143 / 95%));
@@ -243,22 +236,6 @@
   fill: none;
   stroke: var(--primary);
   stroke-width: 3;
-}
-
-.cf-chip rect {
-  fill: rgb(40 10 35 / 92%);
-  stroke: var(--primary);
-  stroke-width: 2;
-}
-
-.cf-chip.is-y rect {
-  stroke: var(--accent);
-}
-
-.cf-svg .cf-chip text {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 27px;
 }
 
 .cf-table-head text {
