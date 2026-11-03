@@ -5,9 +5,8 @@
 export const scoringConfig = {
   floor: 0.4,
   baseByChapter: {
-    coffee: 420_000,
-    rival: 450_000,
-    slash: 530_000,
+    coffee: 650_000,
+    slash: 750_000,
   } as Readonly<Record<string, number>>,
   /** Leaderboard entries kept per day. */
   leaderboardSize: 500,

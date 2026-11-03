@@ -1,13 +1,12 @@
 /**
- * EP III — "ศึก 11.11 ฟันป้ายราคา" (Dynamic Pricing). Demand is EP I's line with its intercept
+ * EP II — "ศึก 11.11 ฟันป้ายราคา" (Dynamic Pricing). Demand is EP I's line with its intercept
  * scaled by how busy the shop is: cups = 520·busy − 3.6·price. A busier hour moves the best
  * price up, which is the whole point of pricing by the hour. Tag colors and every profit shown
  * come from here.
  */
 import { TRUE_DEMAND } from '../coffee/model';
-import { CUP_COST } from '../rival/model';
-
-export { CUP_COST };
+/** Cost to make one cup (฿): the margin is price − cost. */
+export const CUP_COST = 25;
 
 /** Price tags fly with prices in this range (฿). */
 export const TAG_RANGE = { min: 9, max: 220 } as const;

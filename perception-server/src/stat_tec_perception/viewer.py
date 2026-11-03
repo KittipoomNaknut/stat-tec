@@ -42,7 +42,7 @@ PROBLEMS: dict[str, tuple[str, str]] = {
     "on-battery": ("ไม่ได้เสียบสายชาร์จ", "เสียบสายชาร์จ (ใช้แบตเครื่องจะช้าลง)"),
 }
 
-CHAPTERS = {"coffee": "EP I", "rival": "EP II", "slash": "EP III"}
+CHAPTERS = {"coffee": "EP I", "slash": "EP II", "rival": "EP II (เก่า)"}
 POSES = {
     "both-up": "🙌",
     "left-up": "✋ซ้าย",

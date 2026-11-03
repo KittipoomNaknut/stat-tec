@@ -32,12 +32,12 @@ describe('booth log', () => {
   });
 
   it('stamps every event with the visit and chapter it happened in', () => {
-    setBoothContext({ visit: 3, chapter: 'rival' });
+    setBoothContext({ visit: 3, chapter: 'slash' });
     boothLog('pose', { pose: 'cross' });
     setBoothContext({});
     boothLog('reset');
     expect(recentBoothEvents().map((e) => e.fields)).toEqual([
-      { visit: 3, chapter: 'rival', pose: 'cross' },
+      { visit: 3, chapter: 'slash', pose: 'cross' },
       {},
     ]);
   });

@@ -79,7 +79,7 @@ export class Experience {
   #scene: SceneModule | null = null;
   #codename = '';
   #outcomes: ChapterOutcome[] = [];
-  /** Vars of the chapters played so far this visit (EP II starts from EP I's price). */
+  /** Vars of the chapters played so far this visit (a later chapter can build on an earlier one). */
   #carry: TemplateVars = {};
   #pausedMs = 0;
   /** The visit in progress for the booth log: when it started; null between visits. */

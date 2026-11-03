@@ -12,7 +12,7 @@ export interface SlapEvent {
 }
 
 /**
- * A fast sweep of the cursor (EP III: slash price tags; first built for the fraud scene). Built on
+ * A fast sweep of the cursor (EP II: slash price tags; first built for the fraud scene). Built on
  * the cursor rather than the raw wrist so it hits exactly where the player sees their hand, and so
  * the mouse (F2) and the body behave the same. Speed is the displacement over a short window, not
  * frame to frame: single frames are too noisy (research 019). Starts above `startSpeed`, holds
