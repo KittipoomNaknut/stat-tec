@@ -20,15 +20,9 @@ import type { PerceptionSource, PoseDetections } from '../perception/protocol';
 import { Renderer } from '../render/renderer';
 import { attractScene } from '../scenes/attract';
 import { SceneManager } from '../scenes/manager';
-import { coffeeScene } from '../scenes/coffee/scene';
-import { forecastScene } from '../scenes/forecast/scene';
-import { fraudScene } from '../scenes/fraud/scene';
-import { rivalScene } from '../scenes/rival/scene';
-import { segmentsScene } from '../scenes/segments/scene';
-import { slashScene } from '../scenes/slash/scene';
-import { placeholderScene } from '../scenes/placeholder';
+import { CHAPTER_SCENES } from '../scenes/registry';
 import { reportScene } from '../scenes/report';
-import type { SceneFactory, SceneModule } from '../scenes/types';
+import type { SceneModule } from '../scenes/types';
 import type { TemplateVars } from '../narrative/template';
 import { welcomeScene } from '../scenes/welcome';
 import { codename } from '../scoring/codename';
@@ -402,19 +396,10 @@ export class Experience {
     boothLog('chapter');
     this.#topBar.setChapter(index, this.#story.chapters.length, chapter.concept, chapter.title);
     this.#header.hide();
-    // Real scenes replace placeholders one by one (Phase 4).
-    // Scenes off the main path (segments, fraud, forecast) stay playable with ?chapter= only if
-    // the story lists them; the Price Wars story (2026-11) uses coffee, rival and slash.
-    const real: Record<string, (id: string, carry: TemplateVars) => SceneFactory> = {
-      'c-coffee-pricing': coffeeScene,
-      'd-segmentation': segmentsScene,
-      'f-fraud': fraudScene,
-      'h-forecast': forecastScene,
-      'r-rival': rivalScene,
-      'p-price-slash': slashScene,
-    };
-    const factory =
-      real[chapter.scene]?.(chapter.id, this.#carry) ?? placeholderScene(chapter.scene, chapter.id);
+    const scene = CHAPTER_SCENES[chapter.scene];
+    // The story test checks every chapter's scene exists; this only guards a hand-edited story
+    if (!scene) throw new Error(`story: no scene "${chapter.scene}" for chapter ${chapter.id}`);
+    const factory = scene(chapter.id, this.#carry);
     this.#scene = this.#scenes.show(factory);
     this.#run(
       chapter.beats,

@@ -342,7 +342,7 @@ class SlashScene implements SceneModule {
     while (h.length > 1 && c.t - (h[0]?.t ?? c.t) > 250) h.shift();
   }
 
-  /** The blade covers the whole sweep, as in EPISODE IV (research 020). */
+  /** The blade covers the whole sweep, as in the old fraud scene (research 020). */
   #onSlap(s: IntentOf<'slap'>): void {
     if (this.#mode !== 'tutorial' && this.#mode !== 'play') return;
     const since =

@@ -8,10 +8,11 @@ export interface DrawEvent {
 }
 
 /**
- * Drawing with the body (EPISODE V: draw the forecast): the pen is down while the cursor shows,
- * so raising and pointing the arm draws and dropping it lifts the pen. The cursor already
- * filters out fidgets (activation hold, straightness) and is smoothed, so strokes come out clean
- * without a second set of rules. Switching hands ends the stroke. The mouse draws by dragging.
+ * Drawing with the body (built for the forecast scene, removed after v0.4.0; no chapter uses it
+ * now): the pen is down while the cursor shows, so raising and pointing the arm draws and dropping
+ * it lifts the pen. The cursor already filters out fidgets (activation hold, straightness) and is
+ * smoothed, so strokes come out clean without a second set of rules. Switching hands ends the
+ * stroke. The mouse draws by dragging.
  */
 export class DrawDetector {
   #down = false;

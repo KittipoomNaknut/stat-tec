@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Removed
+
+- Old scenes that left the story with Price Wars: chapter A (placeholder), EPISODE III segments, IV fraud and V forecast, plus the unused title-screen globe. EP II keeps their customer data and K-means (moved to `scenes/rival/segments.ts`; the elbow chart went). The build is 58 KB smaller in JS (−4.6%) and 10 KB in CSS (−21%).
+
+### Changed
+
+- Chapters come from a scene registry (`scenes/registry.ts`), and a unit test checks that every chapter in the story has a real scene. A missing scene used to fall back to a placeholder without a word.
+
 ## [0.4.0] — 2026-11-03
 
 Phase 4 (Scenes), first release: **Price Wars**. One visit is three pricing battles told in about 3.2 minutes. The player answers with poses and sees themselves on screen. The booth now starts with one command, and a live log shows problems as they happen.
