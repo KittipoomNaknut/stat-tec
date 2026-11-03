@@ -144,11 +144,23 @@ export class CursorTracker {
     const straightness = elbowSeen
       ? extension / Math.max(dist(body, shoulder, elbow) + dist(body, elbow, wrist), 1e-6)
       : null;
+    // In the zone (research 027): a raised wrist out to the side of the body is pointing even
+    // when the arm is not straight — the Kinect idea of engaging by raising the hand into the
+    // interaction zone. A folded arm (scratching the head, touching the face) is still out.
+    const zone = c.zoneActivate;
+    const out = x(body, wrist) * (hand === 'right' ? 1 : -1);
+    const inZone =
+      zone !== null &&
+      above >= c.activateAboveHips &&
+      out >= zone.minOut &&
+      straightness !== null &&
+      straightness >= zone.minStraightness;
     return activating
-      ? above >= c.activateAboveHips &&
-          extension >= c.activateExtension &&
-          straightness !== null &&
-          straightness >= c.activateStraightness
+      ? inZone ||
+          (above >= c.activateAboveHips &&
+            extension >= c.activateExtension &&
+            straightness !== null &&
+            straightness >= c.activateStraightness)
       : (c.keepWhileAboveHips !== null && above >= c.keepWhileAboveHips) ||
           (above >= c.releaseAboveHips &&
             (straightness === null || straightness >= c.releaseStraightness) &&

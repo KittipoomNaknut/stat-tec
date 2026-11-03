@@ -156,7 +156,7 @@ export class Experience {
       this.#watchdog.error(String(e.reason), performance.now());
     });
 
-    const cursor = new HudCursor(hud);
+    const cursor = new HudCursor(hud, this.#story.system.pointHint);
     this.#cursor = cursor;
     this.bus.on('cursor', (c) => {
       cursor.move(c);
@@ -274,6 +274,7 @@ export class Experience {
     this.#skeleton.draw();
     this.#reportHealth(dtMs, nowMs);
     this.#cursor.suppressed = this.#scene?.showCursor?.() === false;
+    this.#cursor.hintWanted = this.#scene?.wantsPointing?.() === true;
     this.#gestures.precise = this.#scene?.cursorPrecise?.() !== false;
     this.#cursor.frame(dtMs);
     document.body.dataset['beat'] = state?.beat?.type ?? '';

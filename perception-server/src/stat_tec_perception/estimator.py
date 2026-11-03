@@ -1,8 +1,13 @@
 """
-YOLOX-m person detector (CUDA, every `det_every` frames) + RTMPose-x pose (TensorRT FP16).
+Person detector (YOLOX, CUDA) + RTMPose-x pose (TensorRT FP16).
 
-Between detections, each person's box comes from their previous keypoints. Measured on an
-RTX 4060 Laptop: 7.5 ms avg, 25 ms p95 (detector frames) — see spikes/pose-models.
+Research 027: YOLOX-tiny on every frame (5.4 ms) + RTMPose-x (3.6 ms) ≈ 9 ms a frame, steady.
+Before, YOLOX-m ran every 7th frame (19 ms) and the frames between cropped around the previous
+keypoints: a fast arm left that box, the wrist came out wrong, and the cursor lagged or went
+grey. On a test photo tiny and m found the same people with keypoints within 3 px.
+
+Frames between detections (`det_every` > 1), or a frame where the detector finds nobody, use
+boxes from the previous keypoints.
 """
 
 from __future__ import annotations
@@ -47,16 +52,20 @@ def largest_first(boxes: np.ndarray, limit: int) -> np.ndarray:
     return boxes[np.argsort(-areas)][:limit]
 
 
-class RtmPoseEstimator:
-    name = "rtmpose-x/trt-fp16 + yolox-m/cuda"
+DETECTORS = {"tiny": "lightweight", "m": "balanced"}  # rtmlib Body modes
 
-    def __init__(self, trt_cache: Path, det_every: int = 7, max_people: int = 3) -> None:
+
+class RtmPoseEstimator:
+    def __init__(
+        self, trt_cache: Path, det_every: int = 1, max_people: int = 3, detector: str = "tiny"
+    ) -> None:
         from .gpu import enable_gpu
 
         enable_gpu(trt_cache)
         from rtmlib import YOLOX, Body, RTMPose
 
-        det = Body.MODE["balanced"]
+        det = Body.MODE[DETECTORS[detector]]
+        self.name = f"rtmpose-x/trt-fp16 + yolox-{detector}/cuda every {det_every}"
         pose = Body.MODE["performance"]
         self._det = YOLOX(
             det["det"], model_input_size=det["det_input_size"], backend="onnxruntime", device="cuda"
@@ -78,7 +87,11 @@ class RtmPoseEstimator:
     def __call__(self, frame: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         h, w = frame.shape[:2]
         if self._frame % self._det_every == 0 or len(self._boxes) == 0:
-            self._boxes = np.asarray(self._det(frame), np.float32).reshape(-1, 4)
+            found = np.asarray(self._det(frame), np.float32).reshape(-1, 4)
+            # A missed detection keeps the boxes from the last keypoints, so one bad frame
+            # does not drop the player
+            if len(found) > 0 or len(self._boxes) == 0:
+                self._boxes = found
         self._frame += 1
         boxes = largest_first(self._boxes, self._max_people)
         if len(boxes) == 0:

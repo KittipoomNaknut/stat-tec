@@ -154,6 +154,7 @@ system:
   idle: ลองทำตามเงาข้างจอดูครับ
   reconnecting: กำลังเชื่อมต่อระบบใหม่… รอสักครู่ครับ
   skip: ข้าม
+  pointHint: กางแขนออกข้างตัว แล้วชี้
 
 codename:
   animals:

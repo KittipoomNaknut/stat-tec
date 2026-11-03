@@ -47,6 +47,15 @@ export const gestureConfig = {
      * with no cursor during fidgeting or standing. Starting still needs the strict rules above.
      */
     keepWhileAboveHips: 1.0 as number | null,
+    /**
+     * Start pointing in the zone (research 027): wrist raised (`activateAboveHips`), at least
+     * `minOut` SW out from the body's center line on its own side, arm straighter than
+     * `minStraightness` — no full extension needed. `null` turns it off.
+     */
+    zoneActivate: { minOut: 0.6, minStraightness: 0.6 } as {
+      minOut: number;
+      minStraightness: number;
+    } | null,
     /** Pointing must hold this long before the cursor turns active — hides brief fidget flickers. */
     activateAfterMs: 100,
     minVisibility: 0.5,

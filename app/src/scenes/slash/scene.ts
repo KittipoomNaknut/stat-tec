@@ -153,6 +153,10 @@ class SlashScene implements SceneModule {
     return true;
   }
 
+  wantsPointing(): boolean {
+    return this.#mode === 'tutorial' || this.#mode === 'play';
+  }
+
   setFade(value: number): void {
     this.#ctx.hud.style.opacity = String(value);
   }
