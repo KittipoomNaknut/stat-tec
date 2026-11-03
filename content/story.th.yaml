@@ -98,6 +98,7 @@ chapters:
           - { text: ให้ AI ขายทั้งวันบ้าง… กางแขนเลย!, cue: t-pose }
           - { text: AI เปลี่ยนราคาทุกชั่วโมง ตามคนในร้าน, cue: ai-day }
           - AI ได้มากกว่าราคาเดียว **{gain}%**!
+          - { text: กราฟ 3 มิติ! ยกมือหมุน กางมือซูม, cue: surface }
       - type: lesson
         lines:
           - "**Dynamic Pricing** · แอปเรียกรถก็ใช้แบบนี้"

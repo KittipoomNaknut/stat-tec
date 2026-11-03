@@ -36,6 +36,11 @@ export type Intent = Base &
     /** The pose held now (null when none) and how far the hold is; `held` on the select frame. */
     | { type: 'pose'; pose: PoseName | null; progress: number; held: boolean }
     | { type: 'draw'; phase: 'start' | 'move' | 'end'; x: number; y: number }
+    /**
+     * Raised hands for turning a 3D chart: `x`, `y` in [-1, 1] (right, up), `spread` in [0, 1]
+     * with both hands up, else null. `count` = hands raised; x and y hold at 0 when none.
+     */
+    | { type: 'hands'; count: 0 | 1 | 2; x: number; y: number; spread: number | null }
   );
 
 export type IntentType = Intent['type'];

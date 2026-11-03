@@ -150,6 +150,23 @@ export const gestureConfig = {
     holdMs: 700,
     minVisibility: 0.5,
   },
+  /**
+   * Hands for exploring a 3D chart (research 030), body space. A hand counts once its wrist is
+   * this far above the hips (hanging arms ≈ 0, a hand at the chest ≈ 1.1). Each hand's resting
+   * x is `restOut` to its side, so one raised hand starts from the middle.
+   */
+  hands: {
+    raisedAbove: 0.9,
+    restOut: 0.5,
+    /** x of ±`reach` from rest = full turn; y from `levelY` (chest) up by `rise` = full tilt. */
+    reach: 1.4,
+    levelY: 0.2,
+    rise: 1.3,
+    /** Wrist gap (SW) mapped to spread 0..1: hands together → wide apart. */
+    spreadMin: 0.6,
+    spreadMax: 3.2,
+    minVisibility: 0.5,
+  },
   dwell: {
     holdMs: 1200,
     /** Leaving the target for less than this keeps the progress. */

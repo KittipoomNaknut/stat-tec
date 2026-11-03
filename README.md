@@ -11,7 +11,7 @@
 - 🎯 **ควบคุมด้วยร่างกาย** — ชี้ / ชี้ค้าง / ยกมือ / ปัด / วาด · cursor ผ่าน smoothing + precision ([research 015](docs/research/015-cursor-smoothing.md), [022](docs/research/022-cursor-precision.md))
 - 📊 **Data Storytelling** — ทุกตัวเลขบนจอมาจากโมเดลจริงในเบราว์เซอร์
 
-  **Price Wars** — 2 ศึก ตอบด้วยท่า รอบละ ≈ 2.5 นาที ([STORY](docs/STORY.md))
+  **Price Wars** — 2 ศึก ตอบด้วยท่า + กราฟ 3 มิติหมุนด้วยมือ รอบละ ≈ 2.8 นาที ([STORY](docs/STORY.md))
 
   | ตอน    | เรื่อง     | แนวคิด                                     |
   | ------ | ---------- | ------------------------------------------ |

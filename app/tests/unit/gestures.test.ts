@@ -4,6 +4,7 @@ import { CursorTracker } from '../../src/gestures/cursor';
 import { DwellDetector } from '../../src/gestures/dwell';
 import { classify, PoseDetector } from '../../src/gestures/pose';
 import { GestureEngine } from '../../src/gestures/engine';
+import { HandsDetector } from '../../src/gestures/hands';
 import { RaiseDetector } from '../../src/gestures/raise';
 import { IntentBus } from '../../src/input/intent-bus';
 import type { Intent } from '../../src/input/intents';
@@ -239,6 +240,37 @@ describe('RaiseDetector', () => {
 
   it('reports nothing without a player', () => {
     expect(new RaiseDetector().update(null, 0)).toBeNull();
+  });
+});
+
+describe('HandsDetector', () => {
+  const hands = new HandsDetector();
+
+  it('ignores hanging arms', () => {
+    expect(hands.update(body(null))).toEqual({ count: 0, x: 0, y: 0, spread: null });
+  });
+
+  it('turns with one raised hand moved sideways, from the middle at rest', () => {
+    const rest = hands.update(body([0.5, 0.2]));
+    expect(rest?.count).toBe(1);
+    expect(Math.abs(rest?.x ?? 1)).toBeLessThan(0.05);
+    expect(hands.update(body([1.9, 0.2]))?.x).toBeCloseTo(1, 1);
+    expect(hands.update(body([-0.9, 0.2]))?.x).toBeCloseTo(-1, 1);
+    // the left hand works the same way
+    expect(hands.update(body(null, [-1.9, 0.2]))?.x).toBeCloseTo(-1, 1);
+    expect(hands.update(body(null, [0.9, 0.2]))?.x).toBeCloseTo(1, 1);
+  });
+
+  it('tilts with the hands higher, and only zooms with both up', () => {
+    expect(hands.update(body([0.5, -1.1]))?.y).toBeCloseTo(1, 1);
+    expect(hands.update(body([0.5, 0.2]))?.spread).toBeNull();
+    const together = hands.update(body([0.3, 0], [-0.3, 0]));
+    const apart = hands.update(body([1.8, 0], [-1.8, 0]));
+    expect(together?.count).toBe(2);
+    expect(together?.spread).toBeCloseTo(0, 5);
+    expect(apart?.spread).toBeGreaterThan(0.95);
+    // both hands centred: no turn
+    expect(Math.abs(apart?.x ?? 1)).toBeLessThan(0.05);
   });
 });
 

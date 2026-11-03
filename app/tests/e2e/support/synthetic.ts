@@ -8,6 +8,8 @@ export interface Synthetic {
   rest(): void;
   /** Strike and hold a pose (research 025). */
   pose(name: 'both-up' | 'left-up' | 'right-up' | 'cross' | 't-pose'): void;
+  /** Hold both wrists in body space (null = that hand down): steering the 3D chart. */
+  hands(right: [number, number] | null, left: [number, number] | null): void;
 }
 
 declare global {

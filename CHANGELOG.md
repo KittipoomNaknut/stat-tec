@@ -5,12 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Added
+
+- A new `hands` intent (`HandsDetector`): raised hands as a joystick (turn, tilt, spread). The synthetic player can hold both wrists (`hands()`).
+
 ### Changed
 
 - The visit is two chapters: ราคาเดียว (Regression) → ศึก 11.11 (Dynamic pricing). EP II คู่แข่งบุก (K-means) is removed. A visit is about 2.6 minutes, down from 3.2 (research 028).
 - Setting the price with your hand lasts 15 s (was 20). The hints come at 5 and 10 s.
 - Profit bases are ฿650k (coffee) and ฿750k (slash). The best and worst totals stay ฿1.4M and ฿560k.
 - The booth log shows the slash chapter as EP II.
+- EP II ends with a 3D profit surface (hour × price → profit) that you turn and zoom with your hands for 15 s. Move a raised hand sideways to turn it, raise it to tilt, and spread both hands to zoom. The gold ridge is the AI's price each hour. Pose still holds 30 fps (research 030).
 - Every player is called CEO STAT, set in `codename:` in the story file. The random codenames (such as "เหยี่ยวหัวไว #79") are gone.
 - The regression reveal is faster: all 13 days fly from the table onto the chart together, and the line search and revenue curve are quicker. From the first point to the end of EP I takes 13 s (was 23 s) (research 029).
 

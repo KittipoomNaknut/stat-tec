@@ -20,6 +20,7 @@ import {
   tagPrice,
   type TagKind,
 } from './model';
+import { ProfitSurface } from './surface';
 import './slash.css';
 
 /** Gold = sell at this price · gray = below cost · red = nobody buys. Shape marks too. */
@@ -41,6 +42,18 @@ const PLAY_SEC = 20;
 const RUSH = 1.12;
 /** How long the T-pose prompt waits (story time) before the AI goes anyway. */
 const T_POSE_MS = 8000;
+/** Story time to turn and zoom the 3D profit surface (research 030). */
+const EXPLORE_MS = 15_000;
+/** The surface's resting view: turned a little, tilted toward the player. */
+const VIEW = {
+  yaw: -0.45,
+  turn: 0.95,
+  tilt: 0.42,
+  tiltRange: 0.32,
+  zoom: 0.9,
+  zoomMin: 0.8,
+  zoomMax: 1.45,
+};
 
 export function slashScene(chapterId: string) {
   return (ctx: SceneContext): SceneModule => new SlashScene(ctx, chapterId);
@@ -79,7 +92,7 @@ interface Float {
   age: number;
 }
 
-type Mode = 'idle' | 'tutorial' | 'play' | 'over' | 'reveal';
+type Mode = 'idle' | 'tutorial' | 'play' | 'over' | 'reveal' | 'explore';
 
 /**
  * EP II — ศึก 11.11 ฟันป้ายราคา (Dynamic Pricing). Play: price tags fly up and the player
@@ -122,6 +135,13 @@ class SlashScene implements SceneModule {
 
   readonly #off: (() => void)[] = [];
 
+  /** The 3D surface and where the hands are steering it (research 030). */
+  #surface: ProfitSurface | null = null;
+  #hands: IntentOf<'hands'> | null = null;
+  readonly #view = { yaw: VIEW.yaw, tilt: VIEW.tilt, zoom: VIEW.zoom };
+  #zoomGoal: number = VIEW.zoom;
+  #published = 0;
+
   constructor(ctx: SceneContext, chapterId: string) {
     this.#ctx = ctx;
     this.#chapterId = chapterId;
@@ -146,11 +166,19 @@ class SlashScene implements SceneModule {
       ctx.bus.on('slap', (s) => {
         this.#onSlap(s);
       }),
+      ctx.bus.on('hands', (h) => {
+        this.#hands = h;
+      }),
     );
   }
 
   ownsLesson(): boolean {
     return true;
+  }
+
+  /** The hands steer the 3D chart while exploring, so no pointer then. */
+  showCursor(): boolean {
+    return this.#mode !== 'explore';
   }
 
   wantsPointing(): boolean {
@@ -159,6 +187,7 @@ class SlashScene implements SceneModule {
 
   setFade(value: number): void {
     this.#ctx.hud.style.opacity = String(value);
+    if (this.#surface) this.#surface.opacity = value;
   }
 
   vars() {
@@ -187,10 +216,13 @@ class SlashScene implements SceneModule {
     this.#anim.cancel();
     delete document.body.dataset['slashTarget'];
     delete document.body.dataset['slashGold'];
+    delete document.body.dataset['surfaceView'];
+    this.#surface?.dispose();
     for (const off of this.#off) off();
   }
 
-  update(dtMs: number): void {
+  update(dtMs: number, timeSec: number): void {
+    this.#steer(dtMs, timeSec);
     this.#now += dtMs;
     this.#anim.update(dtMs);
     if (this.#mode === 'play') this.#playMs += dtMs;
@@ -236,6 +268,12 @@ class SlashScene implements SceneModule {
         (ms, step) => this.#anim.tween(ms, step, { ease: ease.linear }),
         T_POSE_MS,
       ).then(() => {
+        this.#ctx.signal('continue');
+      });
+      return true;
+    }
+    if (cue === 'surface') {
+      void this.#explore().then(() => {
         this.#ctx.signal('continue');
       });
       return true;
@@ -562,6 +600,78 @@ class SlashScene implements SceneModule {
     gain.textContent = `+${String(this.vars().gain)}% จากราคาเดียว`;
     gain.hidden = false;
     await this.#anim.wait(500);
+  }
+
+  // ---------- Explore in 3D ----------
+
+  /** The day's profit as a 3D surface the player turns and zooms with their hands. */
+  async #explore(): Promise<void> {
+    const surface = new ProfitSurface(this.#dynamic.prices, this.#flat.prices[0] ?? 0);
+    surface.root.position.set(-1.5, 1.05, 0);
+    this.#ctx.world.add(surface.root);
+    this.#surface = surface;
+    this.#plotPanel.classList.remove('is-shown');
+    const hint = document.createElement('div');
+    hint.className = 'ps-explore';
+    hint.innerHTML = `
+      <p class="hud-eyebrow">กำไร ทุกชั่วโมง × ทุกราคา</p>
+      <ul>
+        <li><b>✋ ↔</b> เลื่อนมือ = หมุน</li>
+        <li><b>🙌</b> กาง-หุบมือ = ซูม</li>
+        <li class="ps-ridge"><span class="ps-swatch"></span>สันสีทอง = ราคาที่ AI เลือก</li>
+      </ul>
+      <div class="ps-explore-time"><i></i></div>`;
+    this.#root.append(hint);
+    const bar = hint.querySelector('.ps-explore-time i') as HTMLElement;
+    requestAnimationFrame(() => {
+      hint.classList.add('is-shown');
+    });
+    await this.#anim.tween(
+      1400,
+      (t) => {
+        surface.rise = t;
+      },
+      { ease: ease.outExpo },
+    );
+    this.#mode = 'explore';
+    await this.#anim.tween(
+      EXPLORE_MS,
+      (t) => {
+        bar.style.transform = `scaleX(${String(1 - t)})`;
+      },
+      { ease: ease.linear },
+    );
+    this.#mode = 'reveal';
+    hint.classList.remove('is-shown');
+  }
+
+  /** Eases the surface toward where the hands point; sways gently when no hand is up. */
+  #steer(dtMs: number, timeSec: number): void {
+    const surface = this.#surface;
+    if (!surface) return;
+    const h = this.#mode === 'explore' ? this.#hands : null;
+    const free = !h || h.count === 0;
+    const yaw = free ? VIEW.yaw + 0.25 * Math.sin(timeSec * 0.5) : VIEW.yaw + h.x * VIEW.turn;
+    const tilt = free ? VIEW.tilt : VIEW.tilt + h.y * VIEW.tiltRange;
+    if (h?.spread != null) {
+      this.#zoomGoal = VIEW.zoomMin + h.spread * (VIEW.zoomMax - VIEW.zoomMin);
+    }
+    const k = 1 - Math.exp(-dtMs / 220);
+    const v = this.#view;
+    v.yaw += (yaw - v.yaw) * k;
+    v.tilt += (tilt - v.tilt) * k;
+    v.zoom += (this.#zoomGoal - v.zoom) * k;
+    surface.setView(v.yaw, v.tilt, v.zoom);
+    // Zoomed in, the chart slides toward the middle of the screen
+    surface.root.position.x =
+      -1.5 + 0.5 * ((v.zoom - VIEW.zoomMin) / (VIEW.zoomMax - VIEW.zoomMin));
+    surface.update(timeSec);
+    this.#published += dtMs;
+    if (this.#published > 200) {
+      this.#published = 0;
+      document.body.dataset['surfaceView'] =
+        `${v.yaw.toFixed(2)},${v.tilt.toFixed(2)},${v.zoom.toFixed(2)}`;
+    }
   }
 
   // ---------- Drawing ----------

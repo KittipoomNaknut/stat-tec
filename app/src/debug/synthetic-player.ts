@@ -65,6 +65,8 @@ export class SyntheticPlayer {
   /** A held pose overrides both arms until `rest()` or `pointAt()`. */
   #pose: PoseName | null = null;
   #path: { from: Point; to: Point; start: number; ms: number }[] = [];
+  /** Both wrists held by `hands()`, right then left; cleared by any other move. */
+  #held: readonly [Point, Point] | null = null;
   readonly #body = new Float32Array(LANDMARK_COUNT * LANDMARK_STRIDE);
 
   constructor(emit: (frame: SyntheticFrame, nowMs: number) => void) {
@@ -104,10 +106,12 @@ export class SyntheticPlayer {
   /** Strikes and holds a pose with both arms (research 025). */
   pose(name: PoseName): void {
     this.#pose = name;
+    this.#held = null;
   }
 
   pointAt(x: number, y: number, ms = GLIDE_MS): void {
     this.#pose = null;
+    this.#held = null;
     const { box } = gestureConfig.cursor;
     const target: Point = [box.x0 + x * (box.x1 - box.x0), box.y0 + y * (box.y1 - box.y0)];
     const now = performance.now();
@@ -120,9 +124,16 @@ export class SyntheticPlayer {
         ];
   }
 
+  /** Holds both wrists where given (body space, the player's right is +x): steering a chart. */
+  hands(right: Point | null, left: Point | null): void {
+    this.#pose = null;
+    this.#held = [right ?? REST_WRIST, left ?? mirror(REST_WRIST)];
+  }
+
   /** Lowers the arm (no cursor). */
   rest(): void {
     this.#pose = null;
+    this.#held = null;
     this.#path = [{ from: this.#wrist, to: REST_WRIST, start: performance.now(), ms: RAISE_MS }];
   }
 
@@ -139,8 +150,7 @@ export class SyntheticPlayer {
       b[i * LANDMARK_STRIDE + 1] = y;
       b[i * LANDMARK_STRIDE + 3] = 1;
     };
-    const mirror = ([x, y]: Point): Point => [-x, y];
-    const posed = this.#pose ? POSE_WRISTS[this.#pose] : null;
+    const posed = this.#pose ? POSE_WRISTS[this.#pose] : this.#held;
     const rightWrist = posed ? posed[0] : this.#wrist;
     const leftWrist = posed ? posed[1] : mirror(REST_WRIST);
     const [wx, wy] = rightWrist;
@@ -159,6 +169,10 @@ export class SyntheticPlayer {
     set(Landmark.LEFT_HIP, [-0.35, HIP_Y]);
     return { lock: 'locked', playerId: this.#playerId, body: b };
   }
+}
+
+function mirror([x, y]: Point): Point {
+  return [-x, y];
 }
 
 function lerp(a: number, b: number, t: number): number {
