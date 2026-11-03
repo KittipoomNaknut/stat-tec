@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Fixed
+
+- **Grey cursor that wouldn't press, and a cursor that lagged the hand** (research 027).
+  - The webcam was allowed to drop to 10–16 fps in dim light. The pose service now holds the frame rate (`exposure_auto_priority` off).
+  - The person detector now runs on every frame with YOLOX-tiny: about 9 ms a frame, steady. Before, YOLOX-m ran every 7th frame and fast arms slipped out of the crop box.
+  - A raised hand out to the side now counts as pointing without a fully stretched arm, the way Kinect engages a hand. Fidgeting still never activates it.
+  - A grey cursor in EP III shows "กางแขนออกข้างตัว แล้วชี้".
+
 ### Removed
 
 - Old scenes that left the story with Price Wars: chapter A (placeholder), EPISODE III segments, IV fraud and V forecast, plus the unused title-screen globe. EP II keeps their customer data and K-means (moved to `scenes/rival/segments.ts`; the elbow chart went). The build is 58 KB smaller in JS (−4.6%) and 10 KB in CSS (−21%).

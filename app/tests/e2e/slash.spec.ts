@@ -46,6 +46,25 @@ test('slashing gold tags sells and the chapter plays through to the report', asy
     .poll(() => page.locator('body').getAttribute('data-chapter'), { timeout: 20_000 })
     .toBe('slash');
   await expect(page.locator('.ps-legend')).toBeVisible();
+  // Hands down while the tags fly: the grey cursor says how to point (research 027)
+  await page.evaluate(() => {
+    window.statTecSynthetic.rest();
+  });
+  await expect(page.locator('.hud-point-hint')).toBeVisible({
+    timeout: 5000,
+  });
+  // ...on screen, clear of the caption (the lowered hand parks the cursor at the bottom)
+  const hint = await page.locator('.hud-point-hint').boundingBox();
+  expect(hint).not.toBeNull();
+  if (hint) {
+    expect(hint.y).toBeGreaterThanOrEqual(0);
+    expect(hint.y + hint.height).toBeLessThanOrEqual(1080);
+    expect(hint.x).toBeGreaterThanOrEqual(0);
+    expect(hint.x + hint.width).toBeLessThanOrEqual(1920);
+    const caption = await page.locator('.hud-caption').boundingBox();
+    if (caption) expect(hint.y + hint.height).toBeLessThanOrEqual(caption.y);
+  }
+  await page.screenshot({ path: 'test-results/slash-hint.png' });
   // Tutorial and play: 8 s + 20 s of story time at ×2
   await slashFor(page, 16_000);
   const gold = Number(await page.locator('body').getAttribute('data-slash-gold'));
