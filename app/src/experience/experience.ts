@@ -25,7 +25,6 @@ import { reportScene } from '../scenes/report';
 import type { SceneModule } from '../scenes/types';
 import type { TemplateVars } from '../narrative/template';
 import { welcomeScene } from '../scenes/welcome';
-import { codename } from '../scoring/codename';
 import { chapterProfit, totalProfit, type ChapterOutcome } from '../scoring/profit';
 import { ceoStyle } from '../scoring/style';
 import { Leaderboard } from '../storage/leaderboard';
@@ -373,8 +372,7 @@ export class Experience {
 
   #enterWelcome(): void {
     this.#renderer.stage.planet = false;
-    const today = new Set(this.#leaderboard.today().map((e) => e.codename));
-    this.#codename = codename(this.#story.codename, Math.random, today);
+    this.#codename = this.#story.codename;
     this.#outcomes = [];
     this.#carry = {};
     this.#topBar.setProfit(0, false);
