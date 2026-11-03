@@ -12,6 +12,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   - The person detector now runs on every frame with YOLOX-tiny: about 9 ms a frame, steady. Before, YOLOX-m ran every 7th frame and fast arms slipped out of the crop box.
   - A raised hand out to the side now counts as pointing without a fully stretched arm, the way Kinect engages a hand. Fidgeting still never activates it.
   - A grey cursor in EP III shows "กางแขนออกข้างตัว แล้วชี้".
+- The playground also saves with **S** (F9 needs Fn on many laptops; the owner's recording never downloaded), and confirms on screen.
+
+### Added
+
+- `docs/STAFF_GUIDE.md`: a one-page booth guide for non-developers covering setup, start and stop, what each red problem means, and privacy answers.
 
 ### Removed
 

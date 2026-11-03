@@ -29,6 +29,7 @@
 | [Architecture](docs/ARCHITECTURE.md)    | สถาปัตยกรรมระบบแบบละเอียด                               |
 | [Roadmap](docs/ROADMAP.md)              | แผนงานแบ่ง Phase + Definition of Done                   |
 | [Story](docs/STORY.md)                  | โครงเรื่องและบทพูด                                      |
+| [Staff guide](docs/STAFF_GUIDE.md)      | คู่มือเฝ้าบูธ 1 หน้า: เปิด/ปิด, แก้ปัญหา                |
 | [Contributing](docs/CONTRIBUTING.md)    | Git workflow, commit, PR                                |
 | [ADRs](docs/adr/)                       | บันทึกการตัดสินใจทางสถาปัตยกรรม                         |
 | [Benchmarks](docs/benchmarks/phase1.md) | ผลวัดโมเดลและ pipeline                                  |
@@ -57,15 +58,15 @@ Without the service the app falls back to MediaPipe in the browser automatically
 
 ### Dev / review
 
-| URL / ปุ่ม                                      | ใช้ทำอะไร                                                    |
-| ----------------------------------------------- | ------------------------------------------------------------ |
-| `?chapter=coffee` · `rival` · `slash`           | กระโดดเข้าบทนั้นทันทีเมื่อเริ่มเล่น                          |
-| `?playground`                                   | ลองชี้ / ชี้ค้างปุ่ม 1–6 · **F9** ดาวน์โหลด session ไว้วัดผล |
-| `?player=synthetic`                             | ร่างกายสังเคราะห์ (E2E) ไม่ใช้กล้อง                          |
-| **F2**                                          | สลับเป็นเมาส์ (คลิก = ชี้ค้าง, ลาก = วาด, สะบัด = ตบ)        |
-| **F1**                                          | overlay debug (โครงกระดูก, กล้อง, สถานะ service)             |
-| **F5**                                          | รีเซ็ตกลับหน้า attract                                       |
-| `?styleguide` · `?debug` · `?bench` · `?record` | ชิ้นส่วน HUD · overlay โครงกระดูก · benchmark · อัด fixture  |
+| URL / ปุ่ม                                      | ใช้ทำอะไร                                                             |
+| ----------------------------------------------- | --------------------------------------------------------------------- |
+| `?chapter=coffee` · `rival` · `slash`           | กระโดดเข้าบทนั้นทันทีเมื่อเริ่มเล่น                                   |
+| `?playground`                                   | ลองชี้ / ชี้ค้างปุ่ม 1–6 · **S** (หรือ F9) ดาวน์โหลด session ไว้วัดผล |
+| `?player=synthetic`                             | ร่างกายสังเคราะห์ (E2E) ไม่ใช้กล้อง                                   |
+| **F2**                                          | สลับเป็นเมาส์ (คลิก = ชี้ค้าง, ลาก = วาด, สะบัด = ตบ)                 |
+| **F1**                                          | overlay debug (โครงกระดูก, กล้อง, สถานะ service)                      |
+| **F5**                                          | รีเซ็ตกลับหน้า attract                                                |
+| `?styleguide` · `?debug` · `?bench` · `?record` | ชิ้นส่วน HUD · overlay โครงกระดูก · benchmark · อัด fixture           |
 
 ## Requirements
 
