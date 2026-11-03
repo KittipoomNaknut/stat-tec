@@ -5,6 +5,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-11-03
+
+The cursor fixed at the source, confirmed live: the camera now runs at 30 fps (it was 10–16), and the cursor no longer stays grey until the arm swings out. Also a staff guide, and the scenes that left the story are removed.
+
 ### Fixed
 
 - **Grey cursor that wouldn't press, and a cursor that lagged the hand** (research 027).
@@ -13,6 +17,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
   - A raised hand out to the side now counts as pointing without a fully stretched arm, the way Kinect engages a hand. Fidgeting still never activates it.
   - A grey cursor in EP III shows "กางแขนออกข้างตัว แล้วชี้".
 - The playground also saves with **S** (F9 needs Fn on many laptops; the owner's recording never downloaded), and confirms on screen.
+- Confirmed on the booth laptop: the camera at 30.3–30.5 fps with "frame rate held in dim light" in `perception.log`, and the owner's verdict "ใช้ได้แล้ว".
 
 ### Added
 
@@ -175,7 +180,8 @@ Phase 0 (Foundation) and Phase 1 (Perception spike). The camera sees a person, s
 - One person very close to the camera can be detected twice (fixed by PlayerLock in Phase 2)
 - Worker crash recovery is not implemented yet (Phase 3 watchdog)
 
-[Unreleased]: https://github.com/KittipoomNaknut/stat-tec/compare/v0.4.0...develop
+[Unreleased]: https://github.com/KittipoomNaknut/stat-tec/compare/v0.4.1...develop
+[0.4.1]: https://github.com/KittipoomNaknut/stat-tec/releases/tag/v0.4.1
 [0.4.0]: https://github.com/KittipoomNaknut/stat-tec/releases/tag/v0.4.0
 [0.3.0]: https://github.com/KittipoomNaknut/stat-tec/releases/tag/v0.3.0
 [0.2.0]: https://github.com/KittipoomNaknut/stat-tec/releases/tag/v0.2.0

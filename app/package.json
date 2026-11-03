@@ -1,7 +1,7 @@
 {
   "name": "stat-tec-app",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.1",
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {
