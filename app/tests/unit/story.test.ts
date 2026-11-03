@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Line } from '../../src/narrative/schema';
 import { GLOBAL_VARS, parseStory, REPORT_VARS, story } from '../../src/narrative/story';
 import { lineText, lineVars, placeholders } from '../../src/narrative/template';
+import { CHAPTER_SCENES } from '../../src/scenes/registry';
 
 /** Characters that take horizontal space (Thai vowel/tone marks stack and take none). */
 function visibleLength(text: string): number {
@@ -93,5 +94,13 @@ system: { paused: a, tooFar: a, otherPerson: a, idle: a, reconnecting: a, skip: 
 codename: { animals: [a, b, c, d], titles: [a, b, c, d] }
 `;
     expect(() => parseStory(broken)).toThrow(/a line needs text or a cue[\s\S]*durationSec/);
+  });
+});
+
+describe('story scenes', () => {
+  it('every chapter names a scene that exists (no placeholder fallback)', () => {
+    for (const chapter of story.chapters) {
+      expect(CHAPTER_SCENES, `${chapter.id} → ${chapter.scene}`).toHaveProperty([chapter.scene]);
+    }
   });
 });

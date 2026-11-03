@@ -11,12 +11,13 @@
 - 🎯 **ควบคุมด้วยร่างกาย** — ชี้ / ชี้ค้าง / ยกมือ / ปัด / วาด · cursor ผ่าน smoothing + precision ([research 015](docs/research/015-cursor-smoothing.md), [022](docs/research/022-cursor-precision.md))
 - 📊 **Data Storytelling** — ทุกตัวเลขบนจอมาจากโมเดลจริงในเบราว์เซอร์
 
-  | ตอน         | เรื่อง             | แนวคิด                               |
-  | ----------- | ------------------ | ------------------------------------ |
-  | EPISODE II  | ศึกราคากาแฟ        | Regression                           |
-  | EPISODE III | สามกลุ่มแห่งลูกค้า | K-means + Elbow                      |
-  | EPISODE IV  | จับโกงข้ามกาแล็กซี | Anomaly Detection (1,000,000 รายการ) |
-  | EPISODE V   | พยากรณ์ 11.11      | Time-Series Forecasting              |
+  **Price Wars** — 3 ศึก ตอบด้วยท่า รอบละ ≈ 3.2 นาที ([STORY](docs/STORY.md))
+
+  | ตอน    | เรื่อง     | แนวคิด                                     |
+  | ------ | ---------- | ------------------------------------------ |
+  | EP I   | ราคาเดียว  | Regression (ตั้งราคากาแฟ)                  |
+  | EP II  | คู่แข่งบุก | K-means (ลดราคาให้ใคร)                     |
+  | EP III | ศึก 11.11  | Dynamic pricing (ฟันป้ายราคา, ราคาทั้งวัน) |
 
 - ⚡ **60 fps** — วัดทั้งบทบน GPU จริง · Three.js + canvas
 - 🔒 **Privacy-first** — ไม่บันทึกภาพ ทุกอย่างประมวลผลในเครื่อง offline
@@ -28,6 +29,7 @@
 | [Architecture](docs/ARCHITECTURE.md)    | สถาปัตยกรรมระบบแบบละเอียด                               |
 | [Roadmap](docs/ROADMAP.md)              | แผนงานแบ่ง Phase + Definition of Done                   |
 | [Story](docs/STORY.md)                  | โครงเรื่องและบทพูด                                      |
+| [Staff guide](docs/STAFF_GUIDE.md)      | คู่มือเฝ้าบูธ 1 หน้า: เปิด/ปิด, แก้ปัญหา                |
 | [Contributing](docs/CONTRIBUTING.md)    | Git workflow, commit, PR                                |
 | [ADRs](docs/adr/)                       | บันทึกการตัดสินใจทางสถาปัตยกรรม                         |
 | [Benchmarks](docs/benchmarks/phase1.md) | ผลวัดโมเดลและ pipeline                                  |
@@ -56,15 +58,15 @@ Without the service the app falls back to MediaPipe in the browser automatically
 
 ### Dev / review
 
-| URL / ปุ่ม                                            | ใช้ทำอะไร                                                    |
-| ----------------------------------------------------- | ------------------------------------------------------------ |
-| `?chapter=coffee` · `segments` · `fraud` · `forecast` | กระโดดเข้าบทนั้นทันทีเมื่อเริ่มเล่น                          |
-| `?playground`                                         | ลองชี้ / ชี้ค้างปุ่ม 1–6 · **F9** ดาวน์โหลด session ไว้วัดผล |
-| `?player=synthetic`                                   | ร่างกายสังเคราะห์ (E2E) ไม่ใช้กล้อง                          |
-| **F2**                                                | สลับเป็นเมาส์ (คลิก = ชี้ค้าง, ลาก = วาด, สะบัด = ตบ)        |
-| **F1**                                                | overlay debug (โครงกระดูก, กล้อง, สถานะ service)             |
-| **F5**                                                | รีเซ็ตกลับหน้า attract                                       |
-| `?styleguide` · `?debug` · `?bench` · `?record`       | ชิ้นส่วน HUD · overlay โครงกระดูก · benchmark · อัด fixture  |
+| URL / ปุ่ม                                      | ใช้ทำอะไร                                                             |
+| ----------------------------------------------- | --------------------------------------------------------------------- |
+| `?chapter=coffee` · `rival` · `slash`           | กระโดดเข้าบทนั้นทันทีเมื่อเริ่มเล่น                                   |
+| `?playground`                                   | ลองชี้ / ชี้ค้างปุ่ม 1–6 · **S** (หรือ F9) ดาวน์โหลด session ไว้วัดผล |
+| `?player=synthetic`                             | ร่างกายสังเคราะห์ (E2E) ไม่ใช้กล้อง                                   |
+| **F2**                                          | สลับเป็นเมาส์ (คลิก = ชี้ค้าง, ลาก = วาด, สะบัด = ตบ)                 |
+| **F1**                                          | overlay debug (โครงกระดูก, กล้อง, สถานะ service)                      |
+| **F5**                                          | รีเซ็ตกลับหน้า attract                                                |
+| `?styleguide` · `?debug` · `?bench` · `?record` | ชิ้นส่วน HUD · overlay โครงกระดูก · benchmark · อัด fixture           |
 
 ## Requirements
 

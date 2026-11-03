@@ -1,16 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   assign,
-  bestKmeans,
   BLIND_START,
   customers,
-  elbow,
   kmeans,
   matchSegment,
   SEGMENTS,
-} from '../../src/scenes/segments/model';
+} from '../../src/scenes/rival/segments';
 
-describe('segments model', () => {
+describe('rival customers and K-means', () => {
   const { points, truth } = customers();
 
   it('has 600 customers, the same for every visitor, inside the plot', () => {
@@ -44,15 +42,5 @@ describe('segments model', () => {
     const map = end.centers.map((c) => SEGMENTS.indexOf(matchSegment(c)));
     const agree = labels.filter((l, i) => map[l] === truth[i]).length / points.length;
     expect(agree).toBeGreaterThan(0.95);
-  });
-
-  it('the elbow is at k = 3', () => {
-    const { sse, k } = elbow(points);
-    expect(k).toBe(3);
-    for (let i = 1; i < sse.length; i++) expect(sse[i]).toBeLessThan(sse[i - 1] ?? Infinity);
-  });
-
-  it('best k-means is deterministic', () => {
-    expect(bestKmeans(points, 3).sse).toBe(bestKmeans(points, 3).sse);
   });
 });

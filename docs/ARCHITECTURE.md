@@ -173,19 +173,16 @@ stat-tec/
 │   │   │   ├── renderer.ts         # Three.js + postprocessing + adaptive resolution
 │   │   │   ├── shaders/
 │   │   │   └── materials/
-│   │   ├── viz/                    # component ใช้ซ้ำ: ParticleField, Bars3D, LineChart3D, Globe
+│   │   ├── viz/                    # component ใช้ซ้ำ: ParticleField, Bars3D, LineChart3D
 │   │   ├── hud/                    # DOM overlay: caption, progress, profit, cursor, dwell ring, mini-skeleton
 │   │   ├── audio/
 │   │   ├── scenes/
 │   │   │   ├── types.ts            # SceneModule interface
-│   │   │   ├── attract/
-│   │   │   ├── welcome/
-│   │   │   ├── a-you-are-data/
-│   │   │   ├── c-coffee-pricing/
-│   │   │   ├── d-segmentation/
-│   │   │   ├── f-fraud/
-│   │   │   ├── h-forecast/
-│   │   │   └── z-ceo-report/
+│   │   │   ├── registry.ts         # scene id ใน story → ฉาก (เทสต์เช็กว่าทุกบทมีฉากจริง)
+│   │   │   ├── attract.ts · welcome.ts · report.ts
+│   │   │   ├── coffee/             # EP I ราคาเดียว (regression)
+│   │   │   ├── rival/              # EP II คู่แข่งบุก (K-means; segments.ts = ลูกค้า 600 คน)
+│   │   │   └── slash/              # EP III ศึก 11.11 (dynamic pricing)
 │   │   ├── storage/                # IndexedDB: leaderboard, session stats
 │   │   └── debug/                  # overlay, perf graph, pose recorder
 │   ├── tests/
@@ -410,8 +407,8 @@ interface SceneResult {
 | **ยกสองแขน**        | `raise both`       | ข้อมือทั้งสอง สูงกว่าจมูก > 0.3 SW ต่อเนื่อง 300 ms                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | ออกเมื่อต่ำกว่าจมูก                                                                                                                                                                                                                                          | ยืนยัน/ฉลอง            |
 | **เอียงตัว**        | `lean`             | มุมของเส้น กลางสะโพก→กลางไหล่ กับแนวดิ่ง; dead zone ±5°, เต็มสเกล ±20°                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | low-pass เพิ่ม                                                                                                                                                                                                                                               | ฉากเสริม (B, G)        |
 | **ขว้าง**           | `throw`            | ความเร็วข้อมือพีค > 3.0 SW/s แล้วลดลง > 50% ใน 100 ms → จุดปล่อย + เวกเตอร์                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | cooldown 500 ms                                                                                                                                                                                                                                              | D แม่เหล็ก             |
-| **ตบ**              | `slap`             | cursor (กรองแล้ว) เร็ว ≥ 3.5 ความสูงจอ/s ในหน้าต่าง 100 ms — ส่ง event ทุกเฟรมที่ยังเร็ว ฉาก hit-test ตามเส้นทาง ([research 019](research/019-slap-draw-gestures.md))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | คงไว้จนช้ากว่า 2.5; ทิ้ง 60 ms แรกหลัง cursor โผล่/เปลี่ยนมือ                                                                                                                                                                                                | F จับโกง               |
-| **วาดเส้น**         | `draw`             | "ปากกาลง" เมื่อ cursor โผล่ ยกเมื่อ cursor หายหรือเปลี่ยนมือ (research 019)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | ใช้ hysteresis ของ cursor เอง                                                                                                                                                                                                                                | H พยากรณ์              |
+| **ตบ**              | `slap`             | cursor (กรองแล้ว) เร็ว ≥ 3.5 ความสูงจอ/s ในหน้าต่าง 100 ms — ส่ง event ทุกเฟรมที่ยังเร็ว ฉาก hit-test ตามเส้นทาง ([research 019](research/019-slap-draw-gestures.md))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | คงไว้จนช้ากว่า 2.5; ทิ้ง 60 ms แรกหลัง cursor โผล่/เปลี่ยนมือ                                                                                                                                                                                                | EP III ฟันป้ายราคา     |
+| **วาดเส้น**         | `draw`             | "ปากกาลง" เมื่อ cursor โผล่ ยกเมื่อ cursor หายหรือเปลี่ยนมือ (research 019)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | ใช้ hysteresis ของ cursor เอง                                                                                                                                                                                                                                | (ยังไม่มีบทใช้)        |
 | **กาง/หุบแขน**      | `zoom`             | ทั้งสองมืออยู่ใน comfort box; scale = ระยะสองมือตอนนี้ / ตอนเริ่ม                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | เริ่มเมื่อสองมือขึ้นพร้อมกัน ≤ 300 ms                                                                                                                                                                                                                        | ฉากเสริม (I)           |
 
 **การป้องกัน false trigger**
@@ -522,15 +519,13 @@ chapters:
 - `base` ต่อฉากตั้งใน config รวมแล้วอยู่ในหลักล้านบาท (ดูอลังการ)
 - **CEO Style** สะสมจากพฤติกรรม: `analyst` (ใกล้คำตอบโมเดล), `risk-taker` (เลือกสุดโต่ง), `intuitive` (ตัดสินใจเร็ว)
 - Leaderboard: เรียงตามกำไรรวม, รีเซ็ตทุกวัน (key ตามวันที่), เก็บใน localStorage (≤ 500 รายการ/วัน — เล็กพอ, sync, ไม่ต้องใช้ IndexedDB), แสดง codename เท่านั้น
-- `base` ต่อบท: data 120k · coffee 280k · segments 320k · fraud 300k · forecast 380k → สูงสุด ฿1.4M, ต่ำสุด ฿560k (`config/scoring.ts`)
+- `base` ต่อบท (Price Wars, v0.4.0): coffee 420k · rival 450k · slash 530k → สูงสุด ฿1.4M, ต่ำสุด ฿560k (`config/scoring.ts`)
 
-| ฉาก | นิยาม score                                     |
-| --- | ----------------------------------------------- |
-| A   | ไม่มีคะแนน (warm-up) — ได้ base คงที่           |
-| C   | `1 −                                            | price − optimal | / range` |
-| D   | ความเหมาะสมของกลุ่มที่เลือกยิงโฆษณา (ROI จำลอง) |
-| F   | F1-score ของการตบ (จับถูก vs ตบลูกค้าดี)        |
-| H   | `1 − MAPE` ของเส้นที่วาดเทียบค่าจริง (clamp)    |
+| ฉาก            | นิยาม score                                                     |
+| -------------- | --------------------------------------------------------------- |
+| coffee (EP I)  | `1 − \|price − optimal\| / range`                               |
+| rival (EP II)  | กำไรของทางที่เลือก / กำไรของทางที่ดีที่สุด (ลดเฉพาะสายประหยัด)  |
+| slash (EP III) | `0.5 × ความแม่น (ทอง / ทั้งหมดที่ฟัน) + 0.5 × min(1, ทอง / 10)` |
 
 ---
 

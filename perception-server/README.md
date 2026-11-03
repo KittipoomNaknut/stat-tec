@@ -17,7 +17,7 @@ preview is sent only to a local client that asks for it (debug overlay).
 ```bash
 cd perception-server
 uv sync --extra gpu
-uv run --extra gpu stat-tec-perception            # --camera 0 --port 8765 --det-every 7 --max-people 3
+uv run --extra gpu stat-tec-perception            # --camera 0 --port 8765 --detector tiny --det-every 1 --max-people 3
 ```
 
 Always pass `--extra gpu` to `uv run`; without it uv syncs the CPU-only environment first.

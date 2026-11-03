@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import fcntl
 import logging
+import os
+import struct
 import time
 from pathlib import Path
 
@@ -12,10 +15,43 @@ import numpy as np
 log = logging.getLogger(__name__)
 RECONNECT_S = 2.0
 
+# V4L2 ioctl and control ids (linux/videodev2.h, v4l2-controls.h)
+_VIDIOC_G_CTRL = 0xC008561B
+_VIDIOC_S_CTRL = 0xC008561C
+_EXPOSURE_AUTO_PRIORITY = 0x009A0903
+
+
+def hold_frame_rate(index: int) -> bool | None:
+    """
+    Stops the webcam from lowering its frame rate in dim light (research 027): with
+    `exposure_auto_priority` on, the built-in webcam ran at 10-16 fps in an evening room, and
+    the cursor lagged. Off, auto exposure must fit the frame time (the picture gets a little
+    darker; the pose model copes). Returns True if it was on and is now off, False if it was
+    already off, None if the camera has no such control (or this is not Linux).
+    """
+    try:
+        fd = os.open(f"/dev/video{index}", os.O_RDWR | os.O_NONBLOCK)
+    except OSError:
+        return None
+    try:
+        control = bytearray(struct.pack("Ii", _EXPOSURE_AUTO_PRIORITY, 0))
+        fcntl.ioctl(fd, _VIDIOC_G_CTRL, control)
+        if struct.unpack("Ii", control)[1] == 0:
+            return False
+        fcntl.ioctl(fd, _VIDIOC_S_CTRL, bytearray(struct.pack("Ii", _EXPOSURE_AUTO_PRIORITY, 0)))
+        return True
+    except OSError:
+        return None
+    finally:
+        os.close(fd)
+
 
 class Camera:
-    def __init__(self, index: int, width: int, height: int, fps: int) -> None:
+    def __init__(
+        self, index: int, width: int, height: int, fps: int, hold_fps: bool = True
+    ) -> None:
         self.index = index
+        self.hold_fps = hold_fps
         self.width = width
         self.height = height
         self.fps = fps
@@ -62,5 +98,11 @@ class Camera:
         self.width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         log.info("camera %s (%s) opened at %dx%d", self.index, self.label, self.width, self.height)
+        if self.hold_fps:
+            held = hold_frame_rate(self.index)
+            if held:
+                log.info(
+                    "camera %s: frame rate held in dim light (exposure priority off)", self.index
+                )
         self._cap = cap
         return True

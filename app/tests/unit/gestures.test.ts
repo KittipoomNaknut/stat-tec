@@ -57,12 +57,29 @@ describe('CursorTracker', () => {
 
   it('follows the clearly higher hand when neither points, without ping-pong', () => {
     const c = new CursorTracker();
-    // Left wrist 0.6 SW higher, bent (not pointing): moves over after 200 ms, not before
-    expect(c.update(body([0.6, 0.6], [-0.6, 0.0]), 0).hand).toBe('right');
-    expect(c.update(body([0.6, 0.6], [-0.6, 0.0]), 100).hand).toBe('right');
-    expect(c.update(body([0.6, 0.6], [-0.6, 0.0]), 260).hand).toBe('left');
+    // Left wrist 0.9 SW higher, bent (not pointing): moves over after 200 ms, not before
+    const bent = { left: [-1.0, 0.6] as Point };
+    expect(c.update(body([0.6, 0.9], [-0.6, 0.0], bent), 0).hand).toBe('right');
+    expect(c.update(body([0.6, 0.9], [-0.6, 0.0], bent), 100).hand).toBe('right');
+    expect(c.update(body([0.6, 0.9], [-0.6, 0.0], bent), 260).hand).toBe('left');
     // Back to about level: stays on the left
-    expect(c.update(body([0.6, 0.6], [-0.6, 0.5]), 600).hand).toBe('left');
+    expect(c.update(body([0.6, 0.9], [-0.6, 0.5], bent), 600).hand).toBe('left');
+  });
+
+  it('starts pointing with a raised hand out to the side, arm not fully stretched (027)', () => {
+    // Wrist up and 1.0 SW out, 0.58 SW from the shoulder (too short for the stretched-arm rule),
+    // straightness 0.66: the Kinect-style "hand raised into the zone".
+    const zone = body([1.0, -0.3], null, { right: [0.9, 0.15] });
+    expect(point(new CursorTracker(), zone).active).toBe(true);
+    // The same arm with the zone rule off stays inert, as before research 027
+    const off = new CursorTracker({ ...gestureConfig.cursor, zoneActivate: null });
+    expect(point(off, zone).active).toBe(false);
+  });
+
+  it('ignores a hand scratching the head, even with the elbow up and out', () => {
+    // Elbow high out to the side, hand on the head near the center line
+    const scratch = body([0.25, -0.95], null, { right: [0.95, -0.35] });
+    expect(point(new CursorTracker(), scratch).active).toBe(false);
   });
 
   it('ignores a raised but bent arm (touching the face)', () => {

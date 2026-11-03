@@ -11,6 +11,11 @@ const RING_C = 2 * Math.PI * RING_R;
 const FOLLOW_TAU_MS = 28;
 /** While dwelling, the drawn cursor leans this far toward the button's center (visual only). */
 const MAGNET = 0.35;
+/**
+ * A grey cursor this long while the scene wants pointing shows how to point (research 027): the
+ * owner's first live try stayed grey until they happened to swing the arm out.
+ */
+const HINT_AFTER_MS = 1200;
 
 /** On-screen hand cursor with a dwell progress ring. Pure DOM, animated with transforms only. */
 export class HudCursor {
@@ -24,8 +29,13 @@ export class HudCursor {
   /** True once the owner calls frame(): then the cursor eases instead of jumping. */
   #animated = false;
   #magnet: { rect: Rect; strength: number } | null = null;
+  readonly #hint = document.createElement('span');
+  /** How long the cursor has been shown grey, and whether the scene wants a pointing hand. */
+  #inertMs = 0;
+  #inert = false;
+  #hintWanted = false;
 
-  constructor(parent: HTMLElement) {
+  constructor(parent: HTMLElement, hint = '') {
     this.#root.className = 'hud-cursor';
     this.#root.hidden = true;
     this.#root.innerHTML = `
@@ -38,7 +48,12 @@ export class HudCursor {
     const progress = this.#root.querySelector<SVGCircleElement>('.hud-cursor-progress');
     if (!progress) throw new Error('cursor markup missing');
     this.#progress = progress;
-    parent.append(this.#root);
+    // A banner over the play area rather than a label on the ring: a lowered hand parks the
+    // cursor at the bottom edge, under the caption.
+    this.#hint.className = 'hud-point-hint';
+    this.#hint.hidden = true;
+    this.#hint.textContent = hint;
+    parent.append(this.#root, this.#hint);
   }
 
   #suppressed = false;
@@ -49,12 +64,18 @@ export class HudCursor {
     this.#root.hidden = value || !this.#visible;
   }
 
+  /** True while the scene needs a pointing hand (see SceneModule.wantsPointing). */
+  set hintWanted(value: boolean) {
+    this.#hintWanted = value;
+  }
+
   move(cursor: IntentOf<'cursor'>): void {
     const appearing = cursor.visible && !this.#visible;
     this.#visible = cursor.visible;
     this.#root.hidden = this.#suppressed || !cursor.visible;
     // A lowered hand: still shows where the cursor is, dimmed, selecting nothing.
     this.#root.classList.toggle('is-inert', !cursor.active);
+    this.#inert = cursor.visible && !cursor.active;
     if (!cursor.visible) return;
     this.#target = { x: cursor.x, y: cursor.y };
     // Appear where the hand is, not sliding in from the last place it was seen.
@@ -76,6 +97,10 @@ export class HudCursor {
   /** Call every animation frame for smooth motion between pose updates. */
   frame(dtMs: number): void {
     this.#animated = true;
+    this.#inertMs = this.#inert && this.#hintWanted ? this.#inertMs + dtMs : 0;
+    const hinting = this.#inertMs >= HINT_AFTER_MS && !this.#suppressed;
+    this.#root.classList.toggle('is-hinting', hinting);
+    this.#hint.hidden = !hinting;
     if (!this.#visible) return;
     const k = 1 - Math.exp(-dtMs / FOLLOW_TAU_MS);
     this.#shown.x += (this.#target.x - this.#shown.x) * k;

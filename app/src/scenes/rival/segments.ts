@@ -1,7 +1,8 @@
 /**
- * EPISODE III — "สามกลุ่มแห่งลูกค้า": 600 customers of Data Café and the K-means the AI runs on
- * them. Customers are points in (visits per month, spend per visit), scaled to [0, 1] so both
- * axes count equally. Every number on screen comes from here.
+ * EP II's customers (research 018, 023): 600 customers of Data Café and the K-means the AI runs
+ * on them. Customers are points in (visits per month, spend per visit), scaled to [0, 1] so both
+ * axes count equally. Every number on screen comes from here. (Moved from the old EPISODE III
+ * segments scene, which was removed; the elbow chart went with it.)
  */
 
 export interface Point {
@@ -166,50 +167,6 @@ export function kmeans(
   return steps;
 }
 
-/** k-means++ start (deterministic), then Lloyd; best of a few restarts. For the elbow chart. */
-export function bestKmeans(points: readonly Point[], k: number, seed = 7, restarts = 4): Iteration {
-  const random = seeded(seed + k * 101);
-  let best: Iteration | null = null;
-  for (let r = 0; r < restarts; r++) {
-    const start: Point[] = [points[Math.floor(random() * points.length)] as Point];
-    while (start.length < k) {
-      const d = points.map((p) => Math.min(...start.map((c) => dist2(p, c))));
-      const total = d.reduce((a, b) => a + b, 0);
-      let pick = random() * total;
-      let i = 0;
-      while (i < d.length - 1 && pick > (d[i] ?? 0)) pick -= d[i++] ?? 0;
-      start.push(points[i] as Point);
-    }
-    const end = kmeans(points, start).at(-1);
-    if (end && (!best || end.sse < best.sse)) best = end;
-  }
-  if (!best) throw new Error('no k-means result');
-  return best;
-}
-
-/**
- * SSE for k = 1 … maxK, and the elbow by the Kneedle rule: on the normalized curve, the k
- * farthest below the straight line from the first point to the last. (A second-difference
- * rule picked k = 2 when the first drop dwarfed the rest — research 018.)
- */
-export function elbow(points: readonly Point[], maxK = 6): { sse: number[]; k: number } {
-  const curve = Array.from({ length: maxK }, (_, i) => bestKmeans(points, i + 1).sse);
-  const first = curve[0] ?? 1;
-  const last = curve[maxK - 1] ?? 0;
-  let k = 1;
-  let gap = -Infinity;
-  curve.forEach((v, i) => {
-    const x = i / (maxK - 1);
-    const y = (v - last) / (first - last);
-    const below = 1 - x - y; // chord from (0, 1) to (1, 0)
-    if (below > gap) {
-      gap = below;
-      k = i + 1;
-    }
-  });
-  return { sse: curve, k };
-}
-
 /**
  * The AI's blind guess: three centers stacked along the right edge, where few customers are.
  * Clearly wrong, yet it settles on the true groups in steps that each look better (research
@@ -220,9 +177,6 @@ export const BLIND_START: readonly Point[] = [
   { x: 0.92, y: 0.5 },
   { x: 0.92, y: 0.8 },
 ];
-
-/** SSE in the [0, 1] feature space is small; shown ×1000 so the counter reads as a number. */
-export const SSE_SCALE = 1000;
 
 /** Which true segment a found cluster matches (by its center). */
 export function matchSegment(center: Point): Segment {

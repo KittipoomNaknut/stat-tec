@@ -21,9 +21,20 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument(
-        "--det-every", type=int, default=7, help="run the person detector every N frames"
+        "--det-every", type=int, default=1, help="run the person detector every N frames"
+    )
+    parser.add_argument(
+        "--detector",
+        choices=["tiny", "m"],
+        default="tiny",
+        help="YOLOX size (research 027: tiny every frame ≈ 5 ms; m ≈ 19 ms)",
     )
     parser.add_argument("--max-people", type=int, default=3)
+    parser.add_argument(
+        "--dynamic-fps",
+        action="store_true",
+        help="let the camera lower its frame rate in dim light (off by default: research 027)",
+    )
     parser.add_argument(
         "--preview-fps", type=float, default=24, help="camera previews for the HUD player-cam"
     )
@@ -40,9 +51,12 @@ def main() -> None:
     from .estimator import RtmPoseEstimator
 
     estimator = RtmPoseEstimator(
-        args.trt_cache, det_every=args.det_every, max_people=args.max_people
+        args.trt_cache,
+        det_every=args.det_every,
+        max_people=args.max_people,
+        detector=args.detector,
     )
-    camera = Camera(args.camera, args.width, args.height, args.fps)
+    camera = Camera(args.camera, args.width, args.height, args.fps, hold_fps=not args.dynamic_fps)
     events = EventLog(None if args.no_log else args.log_dir)
     server = PerceptionServer(
         camera, estimator, args.host, args.port, args.preview_fps, events=events

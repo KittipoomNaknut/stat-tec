@@ -125,6 +125,8 @@ export const storySchema = z
         idle: text,
         reconnecting: text,
         skip: text,
+        /** Under a grey cursor when the scene needs pointing (research 027). */
+        pointHint: text,
       })
       .strict(),
     codename: z.object({ animals: z.array(text).min(4), titles: z.array(text).min(4) }).strict(),

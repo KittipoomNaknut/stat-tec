@@ -32,10 +32,14 @@ export class Playground {
     this.#log.onChange(() => {
       this.#render();
     });
+    // F9 or S: on many laptops F9 is a hardware key unless Fn is held (research 027: the
+    // owner's first recording never downloaded), so S works too, with a note on screen.
     window.addEventListener('keydown', (e) => {
-      if (e.key !== 'F9') return;
+      if (e.key !== 'F9' && e.key.toLowerCase() !== 's') return;
       e.preventDefault();
-      void exportSession(this.#log, targets, recorder);
+      void exportSession(this.#log, targets, recorder).then((files) => {
+        this.#render(`บันทึกแล้ว → Downloads: ${files.join(', ')} (ถ้า Chrome ถาม ให้กดอนุญาต)`);
+      });
     });
     const grid = document.createElement('div');
     grid.className = 'playground';
@@ -92,7 +96,7 @@ export class Playground {
     const s = this.#log.summary();
     const tried = s.selected + s['left-target'] + s['cursor-hidden'];
     const attempts = `กดติด ${String(s.selected)}/${String(tried)} · หลุดเป้า ${String(s['left-target'])} · cursor หาย ${String(s['cursor-hidden'])} · ผ่านเฉย ๆ ${String(s['passed-by'])}`;
-    this.#status.textContent = `${message} · ${attempts} · input: ${this.#mode} (F2) · player: ${this.#presence} · F9 บันทึก · F1 debug`;
+    this.#status.textContent = `${message} · ${attempts} · input: ${this.#mode} (F2) · player: ${this.#presence} · S บันทึก · F1 debug`;
   }
 }
 
@@ -100,8 +104,9 @@ async function exportSession(
   log: DwellAttemptLog,
   targets: TargetRegistry,
   recorder: SessionRecorder,
-): Promise<void> {
+): Promise<string[]> {
   const stamp = new Date().toISOString().replaceAll(':', '-');
+  const files = [`playground-${stamp}.attempts.json`];
   const attempts = {
     version: 1,
     recordedAt: new Date().toISOString(),
@@ -115,8 +120,10 @@ async function exportSession(
     `playground-${stamp}.attempts.json`,
   );
   if (recorder.frames > 0) {
+    files.push(`playground-${stamp}.pose.json.gz`);
     download(await encodeSession(recorder.session()), `playground-${stamp}.pose.json.gz`);
   }
+  return files;
 }
 
 function download(blob: Blob, name: string): void {

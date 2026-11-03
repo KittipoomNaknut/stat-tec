@@ -22,3 +22,36 @@ def test_skips_people_with_too_few_points():
 def test_largest_first_and_limit():
     boxes = np.array([[0, 0, 10, 10], [0, 0, 100, 100], [0, 0, 50, 50]], np.float32)
     np.testing.assert_array_equal(largest_first(boxes, 2)[:, 2], [100, 50])
+
+
+def _estimator_with(detections):
+    """An RtmPoseEstimator with fake models: the detector returns `detections` in turn."""
+    from stat_tec_perception.estimator import RtmPoseEstimator
+
+    est = object.__new__(RtmPoseEstimator)
+    seen = iter(detections)
+    est._det = lambda frame: next(seen)
+    est.crops = []
+
+    def pose(frame, bboxes):
+        est.crops.append(bboxes)
+        kp = np.array([[[100.0, 100.0], [200.0, 300.0]] + [[150.0, 200.0]] * 15])
+        return kp, np.full((1, 17), 0.9)
+
+    est._pose = pose
+    est._det_every, est._max_people, est._frame = 1, 3, 0
+    est._boxes = np.zeros((0, 4), np.float32)
+    return est
+
+
+def test_detects_every_frame_and_survives_a_missed_detection():
+    frame = np.zeros((720, 1280, 3), np.uint8)
+    person = [[90.0, 90.0, 210.0, 310.0]]
+    est = _estimator_with([person, [], person])
+    for _ in range(3):
+        keypoints, _ = est(frame)
+        assert len(keypoints) == 1  # the player is never dropped
+    assert est.crops[0] == person
+    # Frame 2: the detector found nobody, so the crop came from frame 1's keypoints
+    assert est.crops[1] != person and len(est.crops[1]) == 1
+    assert est.crops[2] == person

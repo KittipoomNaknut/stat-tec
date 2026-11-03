@@ -3,7 +3,7 @@
  * the 600 of the segments model (visits per month × spend); K-means finds the three groups and
  * the player picks how to answer the rival. Every result on screen is computed here.
  */
-import { SEGMENTS, type Segment } from '../segments/model';
+import { SEGMENTS, type Segment } from './segments';
 
 /** Cost to make one cup (฿): the margin is price − cost. */
 export const CUP_COST = 25;

@@ -31,6 +31,9 @@ USB camera (MJPEG 720p30)
   → WebSocket 127.0.0.1:8765 (binary)
 ```
 
+- **ปรับ 2026-11-03 ([research 027](../research/027-cursor-grey-and-lag.md)):**
+  - ตัวหาคนเปลี่ยนเป็น **YOLOX-tiny ทุกเฟรม** (5.4 ms) แทน YOLOX-m ทุก 7 เฟรม รวมแล้วประมาณ 9 ms ต่อเฟรมอย่างคงที่ แขนที่ขยับเร็วจะไม่หลุดกรอบอีก
+  - ตอนเปิดกล้องจะปิด `exposure_auto_priority` เพื่อไม่ให้ fps ตกในที่มืด
 - **Raw detections เท่านั้น** — PlayerLock, stabilizer, One Euro, body space, gestures ยังอยู่ฝั่งแอป (ทดสอบไว้แล้ว ไม่ต้องเขียนใหม่ใน Python)
 - จุดที่ COCO-17 ไม่มี (นิ้ว, ส้นเท้า, ปลายเท้า, ตาใน/นอก) ส่ง visibility = 0
 - `visibility = clamp(score, 0, 1)`: วัดแล้ว score ของ RTMPose อยู่ช่วงเดียวกับ MediaPipe visibility (จุดที่เห็นชัด 0.5–1.05) → threshold เดิมของ PlayerLock / stabilizer / cursor ใช้ได้

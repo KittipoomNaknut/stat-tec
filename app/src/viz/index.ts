@@ -1,2 +1,2 @@
-/** Reusable visualization components (particles, bars, lines, globe). */
+/** Reusable visualization components (particles, bars, lines). */
 export {};

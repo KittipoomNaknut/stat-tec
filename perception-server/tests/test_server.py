@@ -96,3 +96,9 @@ def test_slow_client_keeps_only_the_newest_messages():
         assert [client.queue.get_nowait() for _ in range(client.queue.qsize())] == ["m8", "m9"]
 
     asyncio.run(test())
+
+
+def test_holding_the_frame_rate_without_a_camera_is_a_no_op():
+    from stat_tec_perception.camera import hold_frame_rate
+
+    assert hold_frame_rate(99) is None

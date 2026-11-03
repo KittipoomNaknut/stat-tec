@@ -47,6 +47,15 @@ export const gestureConfig = {
      * with no cursor during fidgeting or standing. Starting still needs the strict rules above.
      */
     keepWhileAboveHips: 1.0 as number | null,
+    /**
+     * Start pointing in the zone (research 027): wrist raised (`activateAboveHips`), at least
+     * `minOut` SW out from the body's center line on its own side, arm straighter than
+     * `minStraightness` — no full extension needed. `null` turns it off.
+     */
+    zoneActivate: { minOut: 0.6, minStraightness: 0.6 } as {
+      minOut: number;
+      minStraightness: number;
+    } | null,
     /** Pointing must hold this long before the cursor turns active — hides brief fidget flickers. */
     activateAfterMs: 100,
     minVisibility: 0.5,
@@ -106,7 +115,7 @@ export const gestureConfig = {
     minVisibility: 0.5,
   },
   /**
-   * Slap (EPISODE IV): a fast sweep of the cursor, speed in screen heights per second over
+   * Slap (EP III slash): a fast sweep of the cursor, speed in screen heights per second over
    * `windowMs` (research 019). Measured on the recordings: button play in the side zone stays
    * under 3 (p99 2.4); deliberate swipes reach 4–7.
    */

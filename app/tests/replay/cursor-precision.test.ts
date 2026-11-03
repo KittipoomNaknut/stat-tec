@@ -28,8 +28,11 @@ describe.each(SESSIONS)('cursor precision on $pose', (session) => {
     const before = await measure(session, smoothed);
     const after = await measure(session, precise);
     expect(after.shake).toBeLessThan(before.shake * 0.7);
-    // Research 024 traded some steadiness (≥ 25% → ≥ 20%) for a cursor that stays on the hand
-    expect(after.steady).toBeLessThan(before.steady * 0.8);
+    // Research 024 traded some steadiness (≥ 25% → ≥ 20%) for a cursor that stays on the hand.
+    // Research 027: the zone rule activates a little sooner, so the 600 ms before each select
+    // holds more of the approach in both stages (10.5/13.4 → 12.3/15.1 on the side-zone
+    // session); precision still takes ≥ 18% off.
+    expect(after.steady).toBeLessThan(before.steady * 0.82);
     expect(after.selects).toBeGreaterThanOrEqual(before.selects);
     expect(Math.abs(selectDelay(after, before))).toBeLessThan(50);
     expect(after.edge).toBeGreaterThanOrEqual(0.99);
