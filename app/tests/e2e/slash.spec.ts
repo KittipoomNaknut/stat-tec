@@ -75,6 +75,25 @@ test('slashing gold tags sells and the chapter plays through to the report', asy
   await expect(page.locator('.ps-plot')).toHaveClass(/is-shown/, { timeout: 60_000 });
   await expect(page.locator('.ps-gain')).toBeVisible({ timeout: 30_000 });
   await page.screenshot({ path: 'test-results/slash-day.png' });
+
+  // The 3D profit surface turns and zooms with the hands (research 030)
+  await expect(page.locator('.ps-explore.is-shown')).toBeVisible({ timeout: 30_000 });
+  const view = async () =>
+    ((await page.locator('body').getAttribute('data-surface-view')) ?? '0,0,0')
+      .split(',')
+      .map(Number);
+  await page.evaluate(() => {
+    window.statTecSynthetic.hands([1.9, -0.2], null);
+  });
+  await expect.poll(async () => (await view())[0], { timeout: 3000 }).toBeGreaterThan(0.2);
+  await page.evaluate(() => {
+    window.statTecSynthetic.hands([1.8, -0.3], [-1.8, -0.3]);
+  });
+  await expect.poll(async () => (await view())[2], { timeout: 3000 }).toBeGreaterThan(1.3);
+  await page.screenshot({ path: 'test-results/slash-surface.png' });
+  await page.evaluate(() => {
+    window.statTecSynthetic.rest();
+  });
   await expect
     .poll(() => page.locator('body').getAttribute('data-phase'), { timeout: 60_000 })
     .toBe('report');

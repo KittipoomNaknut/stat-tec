@@ -10,6 +10,7 @@ import { CursorSmoother } from './cursor-smoother';
 import { DrawDetector } from './draw';
 import { DwellDetector } from './dwell';
 import { PoseDetector } from './pose';
+import { HandsDetector } from './hands';
 import { RaiseDetector } from './raise';
 import { SlapDetector } from './slap';
 
@@ -38,6 +39,7 @@ export class GestureEngine {
   readonly #slap = new SlapDetector();
   readonly #draw = new DrawDetector();
   readonly #pose = new PoseDetector();
+  readonly #hands = new HandsDetector();
   #lastPose: string | null = null;
   #lock: LockState = 'searching';
   #playerId = 0;
@@ -82,6 +84,8 @@ export class GestureEngine {
     for (const event of this.#draw.update(cursor)) this.#bus.emit({ ...event, ...meta });
     const raise = this.#raise.update(input.lock === 'locked' ? input.body : null, tMs);
     if (raise) this.#bus.emit({ type: 'raise', ...raise, ...meta });
+    const hands = this.#hands.update(input.lock === 'locked' ? input.body : null);
+    if (hands) this.#bus.emit({ type: 'hands', ...hands, ...meta });
     // Poses: every frame while one is seen (progress), once more when it ends
     const pose = this.#pose.update(input.lock === 'locked' ? input.body : null, tMs);
     if (pose.pose !== null || this.#lastPose !== null) {
