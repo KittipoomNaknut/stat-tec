@@ -41,10 +41,7 @@ export class CoffeeChart {
   readonly #svg: SVGSVGElement;
   readonly #anim: Animator;
   readonly #days: readonly Day[];
-  readonly #layers: Record<
-    'grid' | 'guides' | 'resid' | 'line' | 'points' | 'chips' | 'side',
-    SVGGElement
-  >;
+  readonly #layers: Record<'grid' | 'resid' | 'line' | 'points' | 'chips' | 'side', SVGGElement>;
   readonly #rows: SVGGElement[] = [];
   #laser: SVGLineElement | null = null;
   #glow: SVGLineElement | null = null;
@@ -79,7 +76,6 @@ export class CoffeeChart {
     const g = (cls: string) => el('g', { class: cls }, this.#svg);
     this.#layers = {
       grid: g('cf-grid'),
-      guides: g('cf-guides'),
       resid: g('cf-resid'),
       line: g('cf-line'),
       points: g('cf-points'),
@@ -141,11 +137,11 @@ export class CoffeeChart {
       );
     }
     for (const t of ticks) t.style.opacity = '0';
-    await this.#anim.tween(700, (t) => {
+    await this.#anim.tween(400, (t) => {
       xAxis.setAttribute('x2', String(PLOT.x0 + (PLOT.x1 - PLOT.x0) * t));
       yAxis.setAttribute('y2', String(PLOT.y1 - (PLOT.y1 - PLOT.y0) * t));
     });
-    void this.#anim.tween(500, (t) => {
+    void this.#anim.tween(300, (t) => {
       for (const tk of ticks) tk.style.opacity = String(t);
     });
     await this.#table();
@@ -183,11 +179,11 @@ export class CoffeeChart {
       row.style.opacity = '0';
       this.#rows.push(row);
     });
-    await this.#anim.tween(400, (t) => (head.style.opacity = String(t)));
+    await this.#anim.tween(200, (t) => (head.style.opacity = String(t)));
     await Promise.all(
       this.#rows.map((row, i) =>
         this.#anim.tween(
-          380,
+          250,
           (t) => {
             row.style.opacity = String(t);
             row.setAttribute(
@@ -195,98 +191,64 @@ export class CoffeeChart {
               `translate(${String((1 - t) * 40)} ${String(TABLE.y + i * TABLE.row)})`,
             );
           },
-          { delay: i * 45 },
+          { delay: i * 20 },
         ),
       ),
     );
   }
 
   /**
-   * Every day becomes a point: its X flies to the price axis, its Y to the cups axis, guides meet
-   * and a star lights up. The first goes slowly so the idea lands; the rest speed up (one
-   * visit ≤ 5 min, Price Wars).
+   * Every day becomes a point: all 13 fly at once from their table row to (price, cups), a few
+   * ms apart, and light up as they land (owner, 2026-11-03: faster, the data lands together).
    */
-  async plotDays(slow = 1): Promise<void> {
-    for (const [i, d] of this.#days.entries()) {
-      const pace = i < slow ? 1 : 0.24;
-      await this.#plotDay(i, d, pace);
-    }
-    await this.#anim.tween(500, (t) => {
+  async plotDays(): Promise<void> {
+    await Promise.all(this.#days.map((d, i) => this.#plotDay(i, d, i * 40)));
+    await this.#anim.tween(300, (t) => {
       for (const row of this.#rows) row.style.opacity = String(1 - 0.6 * t);
     });
   }
 
-  async #plotDay(i: number, d: Day, pace: number): Promise<void> {
+  async #plotDay(i: number, d: Day, delay: number): Promise<void> {
     const row = this.#rows[i];
-    row?.classList.add('is-active');
-    const rowY = TABLE.y + i * TABLE.row;
-    const chips = this.#layers.chips;
-    const chip = (label: string, cls: string) => {
-      const c = el('g', { class: `cf-chip ${cls}` }, chips);
-      el('rect', { x: -62, y: -30, width: 124, height: 46, rx: 23 }, c);
-      text(label, { x: 0, y: 4, 'text-anchor': 'middle' }, c);
-      return c;
-    };
-    const xChip = chip(`฿${String(d.price)}`, 'is-x');
-    const yChip = chip(String(d.cups), 'is-y');
-    const fly = (c: SVGGElement, from: [number, number], to: [number, number], lift: number) =>
-      this.#anim.tween(
-        900 * pace,
-        (t) => {
-          const x = from[0] + (to[0] - from[0]) * t;
-          // An arc: rises first, then lands
-          const y = from[1] + (to[1] - from[1]) * t - Math.sin(t * Math.PI) * lift;
-          c.setAttribute('transform', `translate(${String(x)} ${String(y)})`);
-        },
-        { ease: ease.inOutCubic },
-      );
-    await Promise.all([
-      fly(xChip, [TABLE.x + 180, rowY - 8], [sx(d.price), PLOT.y1 + 36], 120),
-      fly(yChip, [TABLE.x + 410, rowY - 8], [PLOT.x0 - 66, sy(d.cups)], 80),
-    ]);
-    // Guides grow from both axes and meet at the point
-    const gv = el(
-      'line',
-      { x1: sx(d.price), x2: sx(d.price), y1: PLOT.y1, y2: PLOT.y1, class: 'cf-guide' },
-      this.#layers.guides,
-    );
-    const gh = el(
-      'line',
-      { x1: PLOT.x0, x2: PLOT.x0, y1: sy(d.cups), y2: sy(d.cups), class: 'cf-guide' },
-      this.#layers.guides,
-    );
-    await this.#anim.tween(500 * pace, (t) => {
-      gv.setAttribute('y2', String(PLOT.y1 + (sy(d.cups) - PLOT.y1) * t));
-      gh.setAttribute('x2', String(PLOT.x0 + (sx(d.price) - PLOT.x0) * t));
-    });
+    const from: [number, number] = [TABLE.x - 30, TABLE.y + i * TABLE.row - 8];
+    const to: [number, number] = [sx(d.price), sy(d.cups)];
     const star = el(
       'circle',
-      { cx: sx(d.price), cy: sy(d.cups), r: 0, class: 'cf-point' },
+      { cx: from[0], cy: from[1], r: 7, class: 'cf-point' },
       this.#layers.points,
     );
+    star.style.opacity = '0';
+    await this.#anim.wait(delay);
+    row?.classList.add('is-active');
+    await this.#anim.tween(
+      700,
+      (t) => {
+        star.style.opacity = String(Math.min(1, t * 4));
+        // An arc: rises first, then lands
+        star.setAttribute('cx', String(from[0] + (to[0] - from[0]) * t));
+        star.setAttribute(
+          'cy',
+          String(from[1] + (to[1] - from[1]) * t - Math.sin(t * Math.PI) * 90),
+        );
+      },
+      { ease: ease.inOutCubic },
+    );
+    row?.classList.remove('is-active');
     const flash = el(
       'circle',
-      { cx: sx(d.price), cy: sy(d.cups), r: 0, class: 'cf-flash' },
+      { cx: to[0], cy: to[1], r: 0, class: 'cf-flash' },
       this.#layers.points,
     );
     await this.#anim.tween(
-      420 * pace,
+      320,
       (t) => {
-        star.setAttribute('r', String(9 * ease.outBack(t)));
+        star.setAttribute('r', String(7 + 2 * ease.outBack(t)));
         flash.setAttribute('r', String(10 + 34 * t));
         flash.style.opacity = String(1 - t);
       },
       { ease: ease.linear },
     );
     flash.remove();
-    row?.classList.remove('is-active');
-    void this.#anim
-      .tween(400 * pace, (t) => {
-        for (const n of [xChip, yChip, gv, gh]) n.style.opacity = String(1 - t);
-      })
-      .then(() => {
-        for (const n of [xChip, yChip, gv, gh]) n.remove();
-      });
   }
 
   /**
@@ -310,7 +272,7 @@ export class CoffeeChart {
     let currentSse = first.sse;
     this.#setLine(current);
     setDigits(this.#sse, Math.round(currentSse).toLocaleString('en-US'));
-    await this.#anim.tween(600, (t) => {
+    await this.#anim.tween(300, (t) => {
       if (this.#laser) this.#laser.style.opacity = String(t);
       for (const r of this.#resid) r.style.opacity = String(t);
     });
@@ -328,13 +290,13 @@ export class CoffeeChart {
       this.#note.textContent =
         n === attempts.length - 1 ? 'เส้นที่ดีที่สุด' : `ลองครั้งที่ ${String(n + 1)}`;
       if (n === 0) {
-        await this.#anim.wait(700);
+        await this.#anim.wait(400);
         continue;
       }
       const from = current;
       const fromSse = currentSse;
       await this.#anim.tween(
-        650,
+        380,
         (t) => {
           this.#setLine({
             intercept: from.intercept + (attempt.line.intercept - from.intercept) * t,
@@ -349,11 +311,11 @@ export class CoffeeChart {
       );
       current = attempt.line;
       currentSse = attempt.sse;
-      await this.#anim.wait(n === attempts.length - 1 ? 200 : 250);
+      await this.#anim.wait(n === attempts.length - 1 ? 150 : 100);
     }
     // Lock: a flash along the laser, residuals fade
     this.root.classList.add('is-locked');
-    await this.#anim.tween(700, (t) => {
+    await this.#anim.tween(400, (t) => {
       for (const r of this.#resid) r.style.opacity = String(1 - t * 0.7);
     });
   }
@@ -421,7 +383,7 @@ export class CoffeeChart {
     const length = curve.getTotalLength();
     curve.style.strokeDasharray = String(length);
     curve.style.strokeDashoffset = String(length);
-    await this.#anim.tween(1400, (t) => (curve.style.strokeDashoffset = String(length * (1 - t))), {
+    await this.#anim.tween(800, (t) => (curve.style.strokeDashoffset = String(length * (1 - t))), {
       ease: ease.inOutCubic,
     });
     // Peak (the model) and the player's price
@@ -447,9 +409,9 @@ export class CoffeeChart {
     // The peak's label sits above the curve, the player's below it: they never collide.
     const you = mark(player, `ท่าน ฿${String(player)}`, 'is-player', 58);
     const peak = mark(best, `สูงสุด ฿${String(best)}`, 'is-best', -30);
-    await this.#anim.tween(500, (t) => (you.style.opacity = String(t)));
+    await this.#anim.tween(300, (t) => (you.style.opacity = String(t)));
     await this.#anim.tween(
-      600,
+      400,
       (t) => {
         peak.style.opacity = String(t);
         peak.setAttribute(
