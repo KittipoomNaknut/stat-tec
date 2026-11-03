@@ -91,7 +91,7 @@ chapters: [{ id: a, scene: a, title: t, concept: c, beats: [{ type: play }] }]
 report: { title: r, lines: [x] }
 styles: { analyst: { label: a, description: d }, risk-taker: { label: a, description: d }, intuitive: { label: a, description: d } }
 system: { paused: a, tooFar: a, otherPerson: a, idle: a, reconnecting: a, skip: a }
-codename: { animals: [a, b, c, d], titles: [a, b, c, d] }
+codename: STAT
 `;
     expect(() => parseStory(broken)).toThrow(/a line needs text or a cue[\s\S]*durationSec/);
   });

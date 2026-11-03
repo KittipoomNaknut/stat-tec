@@ -11,6 +11,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - Setting the price with your hand lasts 15 s (was 20). The hints come at 5 and 10 s.
 - Profit bases are ฿650k (coffee) and ฿750k (slash). The best and worst totals stay ฿1.4M and ฿560k.
 - The booth log shows the slash chapter as EP II.
+- Every player is called CEO STAT, set in `codename:` in the story file. The random codenames (such as "เหยี่ยวหัวไว #79") are gone.
 - The regression reveal is faster: all 13 days fly from the table onto the chart together, and the line search and revenue curve are quicker. From the first point to the end of EP I takes 13 s (was 23 s) (research 029).
 
 ### Fixed

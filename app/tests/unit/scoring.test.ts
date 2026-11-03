@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { scoringConfig } from '../../src/config/scoring';
 import { story } from '../../src/narrative/story';
-import { codename } from '../../src/scoring/codename';
 import { chapterProfit, totalProfit, type ChapterOutcome } from '../../src/scoring/profit';
 import { ceoStyle } from '../../src/scoring/style';
 import { Leaderboard, type KeyValueStore } from '../../src/storage/leaderboard';
@@ -20,15 +19,6 @@ function memoryStore(): KeyValueStore & { data: Map<string, string> } {
     setItem: (k, v) => {
       data.set(k, v);
     },
-  };
-}
-
-/** Deterministic random in [0, 1). */
-function seeded(seed: number): () => number {
-  let s = seed;
-  return () => {
-    s = (s * 1664525 + 1013904223) % 2 ** 32;
-    return s / 2 ** 32;
   };
 }
 
@@ -69,17 +59,9 @@ describe('ceoStyle', () => {
   });
 });
 
-describe('codename', () => {
-  it('combines an animal, a title and a two-digit number', () => {
-    const name = codename(story.codename, seeded(1));
-    expect(name).toMatch(/^\S+ #\d{2}$/);
-    const animal = story.codename.animals.find((a) => name.startsWith(a));
-    expect(animal).toBeDefined();
-  });
-
-  it('avoids names already used today', () => {
-    const first = codename(story.codename, seeded(7));
-    expect(codename(story.codename, seeded(7), new Set([first]))).not.toBe(first);
+describe('player name', () => {
+  it('is the same fixed name for everyone', () => {
+    expect(story.codename).toBe('STAT');
   });
 });
 

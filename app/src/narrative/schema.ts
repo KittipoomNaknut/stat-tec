@@ -129,7 +129,8 @@ export const storySchema = z
         pointHint: text,
       })
       .strict(),
-    codename: z.object({ animals: z.array(text).min(4), titles: z.array(text).min(4) }).strict(),
+    /** What every player is called: "CEO {codename}". */
+    codename: text,
   })
   .strict()
   .superRefine((story, ctx) => {
