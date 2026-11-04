@@ -18,6 +18,7 @@ import { TargetRegistry } from './input/targets';
 import { Camera, type CameraSettings } from './perception/camera';
 import { recentBoothEvents, setBoothSink } from './core/booth-log';
 import { isPerceptionSupported, PerceptionClient } from './perception/client';
+import type { StaffCommand } from './perception/server-protocol';
 import type { PerceptionOptions, PoseDetections } from './perception/protocol';
 
 const UNSUPPORTED = 'This browser cannot stream camera frames to a worker. Use Chrome/Chromium.';
@@ -70,7 +71,14 @@ function startExperience(parent: HTMLElement): void {
     const player = new SyntheticPlayer((frame, now) => {
       experience.onBody(frame, now);
     });
-    Object.assign(window, { statTecSynthetic: player, statTecBooth: recentBoothEvents });
+    Object.assign(window, {
+      statTecSynthetic: player,
+      statTecBooth: recentBoothEvents,
+      // E2E: the staff screen's commands without a pose service (research 035)
+      statTecCommand: (name: Exclude<StaffCommand, 'pick'>) => {
+        experience.command(name);
+      },
+    });
     return;
   }
   startOverlay(parent, {
@@ -84,6 +92,9 @@ function startExperience(parent: HTMLElement): void {
     preview: true,
     onPreview: (jpeg) => {
       experience.onPreview(jpeg);
+    },
+    onCommand: (name) => {
+      experience.command(name);
     },
   }).setVisible(false);
 }
@@ -145,6 +156,7 @@ interface OverlayListeners {
   /** Keep camera previews coming even while the overlay is hidden. */
   preview?: boolean;
   onPreview?: (jpeg: ArrayBuffer) => void;
+  onCommand?: (name: Exclude<StaffCommand, 'pick'>) => void;
 }
 
 function startOverlay(parent: HTMLElement, listeners: OverlayListeners = {}): DebugOverlay {
@@ -188,6 +200,9 @@ function startOverlay(parent: HTMLElement, listeners: OverlayListeners = {}): De
     },
     onError: (message) => {
       overlay.setError(message);
+    },
+    onCommand: (name) => {
+      listeners.onCommand?.(name);
     },
   });
   perception = client;

@@ -1,3 +1,4 @@
+import type { StaffCommand } from './server-protocol';
 /** Messages between the main thread and the perception worker. */
 import type { BoothEvent } from '../core/booth-log';
 import type { OneEuroParams } from './one-euro';
@@ -80,4 +81,6 @@ export type FromWorker =
   | { type: 'camera'; camera: CameraInfo }
   | { type: 'preview'; jpeg: ArrayBuffer }
   | { type: 'server'; connected: boolean; fps: number; inferenceMs: number }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  /** From the staff screen through the service (research 035); `pick` never comes here. */
+  | { type: 'command'; name: Exclude<StaffCommand, 'pick'> };

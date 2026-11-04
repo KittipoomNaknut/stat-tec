@@ -100,4 +100,34 @@ describe('PlayerLock', () => {
     const { result } = run(lock, [{ ...CENTER, visibility: 0.2 }], 0, 1000);
     expect(result).toMatchObject({ state: 'searching', otherIndices: [] });
   });
+
+  describe('staff pick (research 035)', () => {
+    const LEFT: SyntheticPose = { cx: 0.3, cy: 0.5, sw: 0.14 };
+    const RIGHT: SyntheticPose = { cx: 0.62, cy: 0.5, sw: 0.14 };
+
+    it('locks at once onto whoever was clicked, even outside the play zone', () => {
+      const lock = new PlayerLock();
+      const edge: SyntheticPose = { cx: 0.12, cy: 0.5, sw: 0.14 };
+      lock.pick(0.12, 0.5, 0);
+      const { result } = run(lock, [edge], 0, 0);
+      expect(result).toMatchObject({ state: 'locked', playerId: 1, playerIndex: 0 });
+    });
+
+    it('hands a running visit over to someone else without starting a new one', () => {
+      const lock = new PlayerLock();
+      const { t, result: first } = run(lock, [RIGHT, LEFT], 0, 1000);
+      expect(first.playerIndex).toBe(0); // the more central person
+      lock.pick(0.3, 0.5, t);
+      const { result } = run(lock, [RIGHT, LEFT], t + FRAME_MS, 500);
+      expect(result).toMatchObject({ state: 'locked', playerId: 1, playerIndex: 1 });
+    });
+
+    it('drops a pick on empty space after a second', () => {
+      const lock = new PlayerLock();
+      lock.pick(0.9, 0.9, 0);
+      run(lock, [], 0, 1100);
+      const { result } = run(lock, [{ cx: 0.88, cy: 0.5, sw: 0.14 }], 1200, 300);
+      expect(result.state).toBe('searching'); // the old pick did not lock this late arrival
+    });
+  });
 });

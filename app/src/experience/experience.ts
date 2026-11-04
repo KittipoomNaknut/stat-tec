@@ -1,4 +1,5 @@
 import { createActor } from 'xstate';
+import type { StaffCommand } from '../perception/server-protocol';
 import { APP_DELAYS, appMachine, phaseOf, type AppPhase } from '../core/app-machine';
 import { boothLog, setBoothContext } from '../core/booth-log';
 import { Watchdog } from '../core/watchdog';
@@ -81,6 +82,10 @@ export class Experience {
   /** Vars of the chapters played so far this visit (a later chapter can build on an earlier one). */
   #carry: TemplateVars = {};
   #pausedMs = 0;
+  /** Paused from the staff screen: the story and scenes stand still until it says go. */
+  #staffPaused = false;
+  /** Ends the running chapter with its current result (the staff screen's "next"). */
+  #finishChapter: (() => void) | null = null;
   /** The visit in progress for the booth log: when it started; null between visits. */
   #visitStartedAt: number | null = null;
   #health = { since: 0, frames: 0, longFrames: 0 };
@@ -247,7 +252,7 @@ export class Experience {
   }
 
   frame(dtMs: number, nowMs: number): void {
-    const dt = dtMs * this.#speed;
+    const dt = this.#staffPaused ? 0 : dtMs * this.#speed;
     const paused = this.#phase === 'paused';
     if (!paused) this.#narrative?.update(dt);
     this.#scenes.update(dt, (nowMs * this.#speed) / 1000);
@@ -400,24 +405,25 @@ export class Experience {
     if (!scene) throw new Error(`story: no scene "${chapter.scene}" for chapter ${chapter.id}`);
     const factory = scene(chapter.id, this.#carry);
     this.#scene = this.#scenes.show(factory);
-    this.#run(
-      chapter.beats,
-      () => {
-        const outcome = this.#scene?.result();
-        this.#carry = { ...this.#carry, ...this.#scene?.vars() };
-        if (outcome) {
-          this.#outcomes.push(outcome);
-          this.#topBar.setProfit(this.#profitSoFar());
-        }
-        boothLog('chapter-done', {
-          score: outcome?.score === null || !outcome ? null : Math.round(outcome.score * 100) / 100,
-          profit: outcome ? chapterProfit(outcome) : null,
-        });
-        this.#actor.send({ type: 'CHAPTER_DONE' });
-      },
-      chapter.concept,
-      chapter.title,
-    );
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      this.#finishChapter = null;
+      const outcome = this.#scene?.result();
+      this.#carry = { ...this.#carry, ...this.#scene?.vars() };
+      if (outcome) {
+        this.#outcomes.push(outcome);
+        this.#topBar.setProfit(this.#profitSoFar());
+      }
+      boothLog('chapter-done', {
+        score: outcome?.score === null || !outcome ? null : Math.round(outcome.score * 100) / 100,
+        profit: outcome ? chapterProfit(outcome) : null,
+      });
+      this.#actor.send({ type: 'CHAPTER_DONE' });
+    };
+    this.#finishChapter = finish;
+    this.#run(chapter.beats, finish, chapter.concept, chapter.title);
   }
 
   #enterReport(): void {
@@ -480,6 +486,39 @@ export class Experience {
       },
       onDone,
     });
+  }
+
+  /**
+   * A command from the staff screen (research 035). Each one is logged, so the booth log shows
+   * what the staff did and when.
+   */
+  command(name: Exclude<StaffCommand, 'pick'>): void {
+    const phase = this.#phase;
+    boothLog('staff', { command: name, phase });
+    switch (name) {
+      case 'start':
+        // Attract: begin a visit now; welcome: skip waiting for both hands up
+        if (phase === 'attract') this.#actor.send({ type: 'PRESENCE_ENTER' });
+        else if (phase === 'welcome') this.#actor.send({ type: 'WELCOME_DONE' });
+        break;
+      case 'skip':
+        this.#narrative?.skip();
+        break;
+      case 'next':
+        // The whole chapter: scored as it stands, like the end of the story would
+        if (phase === 'chapter') this.#finishChapter?.();
+        else if (phase === 'welcome') this.#actor.send({ type: 'WELCOME_DONE' });
+        break;
+      case 'pause':
+        this.#staffPaused = !this.#staffPaused;
+        document.body.dataset['staffPaused'] = String(this.#staffPaused);
+        break;
+      case 'reset':
+        this.#staffPaused = false;
+        document.body.dataset['staffPaused'] = 'false';
+        this.#actor.send({ type: 'RESET' });
+        break;
+    }
   }
 
   readonly #onKey = (e: KeyboardEvent): void => {

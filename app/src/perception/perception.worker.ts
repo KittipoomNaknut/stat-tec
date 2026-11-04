@@ -32,6 +32,8 @@ let previewWanted = false;
 /** Booth events waiting for the service (it may be restarting); the oldest go first. */
 let boothQueue: string[] = [];
 const MAX_BOOTH_QUEUE = 100;
+/** How often the game tells the staff screen who it follows. */
+const LOCK_REPORT_MS = 200;
 
 self.onmessage = (event: MessageEvent<ToWorker>) => {
   const message = event.data;
@@ -108,6 +110,14 @@ function connectServer(url: string): Promise<string> {
           resolve(text.model);
         } else if (text?.type === 'status') {
           post({ type: 'server', connected: true, fps: text.fps, inferenceMs: text.inferenceMs });
+        } else if (text?.type === 'command') {
+          if (text.name === 'pick') {
+            if (typeof text.x === 'number' && typeof text.y === 'number') {
+              tracker.pick(text.x, text.y, performance.now());
+            }
+          } else {
+            post({ type: 'command', name: text.name });
+          }
         }
         return;
       }
@@ -144,6 +154,26 @@ function flushBooth(): void {
   if (socket?.readyState !== WebSocket.OPEN) return;
   for (const event of boothQueue) socket.send(event);
   boothQueue = [];
+}
+
+let lockReportedAt = 0;
+
+/**
+ * Who the game follows, a few times a second, for the staff screen (research 035): the torso
+ * center in image [0, 1] coordinates. A handful of bytes; the service drops it if nobody watches.
+ */
+function reportLock(state: string, player: Float32Array | null): void {
+  const now = performance.now();
+  if (now - lockReportedAt < LOCK_REPORT_MS || socket?.readyState !== WebSocket.OPEN) return;
+  lockReportedAt = now;
+  let x: number | null = null;
+  let y: number | null = null;
+  if (player) {
+    const torso = [11, 12, 23, 24];
+    x = torso.reduce((s, i) => s + (player[i * LANDMARK_STRIDE] ?? 0), 0) / 4;
+    y = torso.reduce((s, i) => s + (player[i * LANDMARK_STRIDE + 1] ?? 0), 0) / 4;
+  }
+  socket.send(JSON.stringify({ type: 'lock', state, x, y }));
 }
 
 function sendPreviewWish(): void {
@@ -250,6 +280,7 @@ function publish(
 ): void {
   const tracked = tracker.process(landmarks, poseCount, width, height, tMs);
   const { player, body, shown } = tracked;
+  reportLock(tracked.state, player);
   post(
     {
       type: 'detections',

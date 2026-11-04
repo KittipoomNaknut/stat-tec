@@ -41,6 +41,10 @@ const TORSO = [
   Landmark.RIGHT_HIP,
 ] as const;
 const MIN_VISIBILITY = 0.5;
+/** A staff pick waits this long for someone to be there, then is dropped. */
+const PICK_WAIT_MS = 1000;
+/** With no box under the click, the nearest torso this close (frame widths) is taken. */
+const PICK_RADIUS = 0.2;
 
 /**
  * Chooses one player and keeps them (docs/ARCHITECTURE.md §5.3):
@@ -55,9 +59,20 @@ export class PlayerLock {
   #lastSeen = 0;
   /** Last known player (or candidate): where they were and how big. */
   #tracked: Candidate | null = null;
+  /** A staff pick waiting for a frame (image [0, 1] coordinates) and until when it is valid. */
+  #pick: { x: number; y: number; until: number } | null = null;
 
   constructor(config: typeof playerLockConfig = playerLockConfig) {
     this.#config = config;
+  }
+
+  /**
+   * The staff screen picked whoever is at (x, y) in the image ([0, 1], not mirrored): lock onto
+   * them on the next frames (research 035). A visit already running carries on with them (same
+   * player id: the game resumes rather than restarting); otherwise they start a new one.
+   */
+  pick(x: number, y: number, nowMs: number): void {
+    this.#pick = { x, y, until: nowMs + PICK_WAIT_MS };
   }
 
   update(
@@ -71,6 +86,16 @@ export class PlayerLock {
     const candidates = this.#candidates(data, poseCount, width, height);
     let player: Candidate | undefined;
     let candidate: Candidate | undefined;
+
+    const picked = this.#takePick(candidates, height / width, tMs);
+    if (picked) {
+      const running = this.#state === 'locked' || this.#state === 'lost';
+      if (!running) this.#playerId++;
+      this.#state = 'locked';
+      this.#tracked = picked;
+      this.#lastSeen = tMs;
+      return this.#result(candidates, picked, undefined);
+    }
 
     switch (this.#state) {
       case 'searching': {
@@ -128,6 +153,14 @@ export class PlayerLock {
       }
     }
 
+    return this.#result(candidates, player, candidate);
+  }
+
+  #result(
+    candidates: readonly Candidate[],
+    player: Candidate | undefined,
+    candidate: Candidate | undefined,
+  ): LockResult {
     const self = player ?? candidate;
     return {
       state: this.#state,
@@ -135,6 +168,35 @@ export class PlayerLock {
       playerIndex: player?.index ?? -1,
       otherIndices: candidates.filter((k) => k !== self && !this.#isGhost(k)).map((k) => k.index),
     };
+  }
+
+  /** The candidate the staff picked: the one whose box holds the point, else the nearest torso. */
+  #takePick(candidates: readonly Candidate[], aspect: number, tMs: number): Candidate | null {
+    const p = this.#pick;
+    if (!p) return null;
+    if (tMs > p.until) {
+      this.#pick = null;
+      return null;
+    }
+    const x = p.x;
+    const y = p.y * aspect;
+    const pad = 0.03;
+    const inside = candidates.filter(
+      (k) =>
+        x >= k.box.x0 - pad && x <= k.box.x1 + pad && y >= k.box.y0 - pad && y <= k.box.y1 + pad,
+    );
+    const pool = inside.length > 0 ? inside : candidates;
+    let best: Candidate | null = null;
+    let bestD = inside.length > 0 ? Infinity : PICK_RADIUS;
+    for (const k of pool) {
+      const d = Math.hypot(k.x - x, k.y - y);
+      if (d < bestD) {
+        best = k;
+        bestD = d;
+      }
+    }
+    if (best) this.#pick = null;
+    return best;
   }
 
   /** Moves the tracked reference to `k`, smoothing its scale. */

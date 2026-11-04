@@ -6,6 +6,7 @@ import type {
   PoseDetections,
   ToWorker,
 } from './protocol';
+import type { StaffCommand } from './server-protocol';
 
 export interface PerceptionEvents {
   /** `options.source` is the source in use (the service, or MediaPipe after a fallback). */
@@ -17,6 +18,8 @@ export interface PerceptionEvents {
   /** JPEG preview from the service, while `setPreview(true)`. */
   onPreview?: (jpeg: ArrayBuffer) => void;
   onServer?: (status: { connected: boolean; fps: number; inferenceMs: number }) => void;
+  /** A staff-screen command through the service (research 035). */
+  onCommand?: (name: Exclude<StaffCommand, 'pick'>) => void;
 }
 
 /** Frames reach the worker through MediaStreamTrackProcessor, which Firefox lacks on window. */
@@ -53,6 +56,9 @@ export class PerceptionClient {
           break;
         case 'error':
           events.onError(message.message);
+          break;
+        case 'command':
+          events.onCommand?.(message.name);
           break;
       }
     };
