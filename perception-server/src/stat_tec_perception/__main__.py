@@ -18,6 +18,11 @@ def main() -> None:
     parser.add_argument("--width", type=int, default=1280)
     parser.add_argument("--height", type=int, default=720)
     parser.add_argument("--fps", type=int, default=30)
+    parser.add_argument(
+        "--fourcc",
+        default="MJPG",
+        help="camera pixel format: MJPG for webcams, GRBG for the Xbox 360 Kinect (640x480)",
+    )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument(
@@ -56,7 +61,14 @@ def main() -> None:
         max_people=args.max_people,
         detector=args.detector,
     )
-    camera = Camera(args.camera, args.width, args.height, args.fps, hold_fps=not args.dynamic_fps)
+    camera = Camera(
+        args.camera,
+        args.width,
+        args.height,
+        args.fps,
+        hold_fps=not args.dynamic_fps,
+        fourcc=args.fourcc,
+    )
     events = EventLog(None if args.no_log else args.log_dir)
     server = PerceptionServer(
         camera, estimator, args.host, args.port, args.preview_fps, events=events

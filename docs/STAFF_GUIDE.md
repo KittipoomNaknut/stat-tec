@@ -22,6 +22,17 @@
 - **ลองเล่นเอง 1 รอบ:** เมื่อเริ่ม ให้ชูสองมือ 🙌 แล้วเล่นจนจบ
 - **ช่องดูตัวเองมุมขวาบน:** ถ้าไม่เห็นตัวเองในช่องนี้ แปลว่ากล้องไม่เห็นผู้เล่น
 
+## ลองกล้องตัวอื่น (เช่น Kinect)
+
+```bash
+for d in /sys/class/video4linux/video*; do echo "/dev/$(basename $d): $(cat $d/name)"; done
+STAT_TEC_PERCEPTION_ARGS="--camera 2 --fourcc GRBG --width 640 --height 480" ./scripts/demo.sh start
+```
+
+- เลข `--camera` ดูจากบรรทัดแรก (Kinect ขึ้นชื่อ `gspca main driver`)
+- กด **F1** ในเกม: เห็นภาพกล้องและโครงกระดูก · ดู fps ในหน้า `./scripts/demo.sh log`
+- กล้องเดิม: `./scripts/demo.sh start` เฉย ๆ
+
 ## ระหว่างวัน
 
 | เห็นอะไร                                   | ทำอะไร                                                                                                     |

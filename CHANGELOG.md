@@ -7,6 +7,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- `--fourcc` for the pose service. The Xbox 360 Kinect has no MJPG and needs `--camera 2 --fourcc GRBG --width 640 --height 480`, which gives 30 fps color.
 - A new `hands` intent (`HandsDetector`): raised hands as a joystick (turn, tilt, spread). The synthetic player can hold both wrists (`hands()`).
 
 ### Changed
