@@ -1,28 +1,38 @@
-/* Staff screen (research 034): plain and readable at a glance, no animation (it must stay light). */
+/* Staff screen (research 034, 035): a raw terminal look. No animation, no web fonts: it must stay light. */
 html,
 body {
   margin: 0;
   height: 100%;
-  background: #0d0710;
-  color: var(--text);
-  font-family: var(--font-ui);
+  background: #000;
+  color: #b8ffcc;
+  font:
+    15px/1.35 ui-monospace,
+    'DejaVu Sans Mono',
+    monospace;
 }
 
 #operator {
   display: grid;
-  grid-template-columns: 1fr 34vw;
+  grid-template-columns: 1fr 640px;
   height: 100vh;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font: inherit;
 }
 
 .op-cam {
   position: relative;
-  background: #000;
+  border-right: 1px solid #1f3a28;
 }
 
 .op-cam canvas {
+  display: block;
   width: 100%;
   height: 100%;
-  display: block;
+  cursor: crosshair;
 }
 
 .op-wait {
@@ -30,116 +40,60 @@ body {
   inset: 0;
   display: grid;
   place-items: center;
-  margin: 0;
-  font-size: 3vh;
-  color: var(--text-dim);
+  color: #ffb000;
 }
 
 .op-wait[hidden] {
   display: none;
 }
 
-.op-legend {
-  position: absolute;
-  left: 1.5vh;
-  bottom: 1.5vh;
-  display: flex;
-  gap: 2vh;
-  margin: 0;
-  padding: 0.8vh 1.4vh;
-  list-style: none;
-  background: rgb(10 4 14 / 80%);
-  border-radius: 1vh;
-  font-size: 1.8vh;
-}
-
-.op-legend .is-ok {
-  color: #4ade80;
-}
-
-.op-legend .is-no {
-  color: #9a8a99;
-}
-
-.op-legend .is-drop {
-  color: #f59e0b;
-}
-
 .op-side {
   display: flex;
   flex-direction: column;
-  gap: 1.4vh;
-  padding: 1.8vh;
+  gap: 10px;
   min-height: 0;
-  border-left: 1px solid rgb(255 255 255 / 10%);
+  padding: 10px 12px;
 }
 
-.op-tiles {
+.op-stat,
+.op-problems {
+  padding: 6px 8px;
+  border: 1px solid #1f3a28;
+}
+
+.op-stat.is-bad,
+.op-problems.is-bad {
+  border-color: #ff3355;
+  color: #ff8899;
+}
+
+.op-keys {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1vh;
+  gap: 2px;
 }
 
-.op-tile {
-  padding: 1vh 1.2vh;
-  border-radius: 1vh;
-  background: rgb(255 255 255 / 5%);
-  border-left: 0.6vh solid #555;
+.op-keys button {
+  padding: 3px 6px;
+  border: 1px solid #1f3a28;
+  background: #050f08;
+  color: #00ff66;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.op-tile span {
-  display: block;
-  font-size: 1.6vh;
-  color: var(--text-dim);
+.op-keys button:hover {
+  background: #0c2414;
 }
 
-.op-tile b {
-  font-size: 2.8vh;
+.op-keys p {
+  margin: 2px 0 0;
+  color: #ff2bd6;
 }
 
-.op-tile.is-ok {
-  border-color: #4ade80;
-}
-
-.op-tile.is-warn {
-  border-color: #facc15;
-}
-
-.op-tile.is-bad {
-  border-color: #f43f5e;
-  background: rgb(244 63 94 / 15%);
-}
-
-.op-problem {
-  padding: 1.2vh 1.4vh;
-  border-radius: 1vh;
-  background: rgb(244 63 94 / 18%);
-  border: 2px solid #f43f5e;
-  color: #ffd5dd;
-  font-size: 2.2vh;
-}
-
-.op-problem + .op-problem {
-  margin-top: 0.8vh;
-}
-
-.op-problem p {
-  margin: 0.4vh 0 0;
-  font-size: 2vh;
-}
-
-.op-fine {
-  padding: 1vh 1.4vh;
-  border-radius: 1vh;
-  background: rgb(74 222 128 / 12%);
-  color: #4ade80;
-  font-size: 2.2vh;
-}
-
-.op-today {
-  margin: 0;
-  font-size: 1.8vh;
-  color: var(--text-dim);
+.op-ack {
+  min-height: 1.35em;
+  color: #ffb000;
 }
 
 .op-log {
@@ -147,35 +101,27 @@ body {
   min-height: 0;
   overflow-y: auto;
   margin: 0;
-  padding: 0;
+  padding: 6px 8px;
   list-style: none;
-  font-size: 1.9vh;
-  line-height: 1.45;
-}
-
-.op-log time {
-  margin-right: 1vh;
-  color: var(--text-dim);
-  font-family: var(--font-mono);
-  font-size: 1.6vh;
+  border: 1px solid #1f3a28;
 }
 
 .op-log .is-red {
-  color: #f87171;
+  color: #ff5566;
 }
 
 .op-log .is-warn {
-  color: #facc15;
+  color: #ffd000;
 }
 
 .op-log .is-ok {
-  color: #4ade80;
+  color: #00ff66;
 }
 
 .op-log .is-dim {
-  color: var(--text-dim);
+  color: #5f7a68;
 }
 
 .op-log .is-bold {
-  font-weight: 700;
+  color: #fff;
 }

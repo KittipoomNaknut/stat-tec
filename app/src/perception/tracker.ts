@@ -29,6 +29,11 @@ export class PoseTracker {
   #lastPlayerAt = -Infinity;
   #filteredPlayerId = 0;
 
+  /** Staff screen: lock onto whoever is at (x, y) in the image (research 035). */
+  pick(x: number, y: number, nowMs: number): void {
+    this.#lock.pick(x, y, nowMs);
+  }
+
   constructor(filter: OneEuroParams | null) {
     this.#filters = filter
       ? [0, 1, 2].map(() => new OneEuroFilterBank(LANDMARK_COUNT, filter))

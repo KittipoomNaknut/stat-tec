@@ -40,6 +40,8 @@ SCENE_INTERVAL_S = 1 / 15  # the staff screen's skeletons: 15 a second is plenty
 OPERATOR_QUEUE = 32
 OPERATOR_BACKLOG = 40
 _CLASS = {RED: "red", YELLOW: "warn", GREEN: "ok", DIM: "dim", BOLD: "bold"}
+# What the staff screen may tell the game (research 035); anything else is ignored
+STAFF_COMMANDS = {"start", "skip", "next", "pause", "reset", "pick"}
 
 
 @dataclass(eq=False)
@@ -172,8 +174,9 @@ class PerceptionServer:
         log.info("staff screen connected")
         sender = asyncio.create_task(self._send_loop(client))
         try:
-            async for _ in connection:
-                pass
+            async for message in connection:
+                if isinstance(message, str):
+                    self._on_staff(message)
         except ConnectionClosed:
             pass
         finally:
@@ -181,6 +184,30 @@ class PerceptionServer:
             self._clients.discard(client)
             self._record_scene()
             log.info("staff screen disconnected")
+
+    def _on_staff(self, message: str) -> None:
+        """A staff-screen command: checked, then passed to the game. The game logs it."""
+        try:
+            data = json.loads(message)
+        except json.JSONDecodeError:
+            return
+        if not isinstance(data, dict) or data.get("type") != "command":
+            return
+        name = data.get("name")
+        if name not in STAFF_COMMANDS:
+            return
+        command: dict = {"type": "command", "name": name}
+        if name == "pick":
+            x, y = data.get("x"), data.get("y")
+            if not all(isinstance(v, int | float) and 0 <= v <= 1 for v in (x, y)):
+                return
+            command |= {"x": x, "y": y}
+            # The game does not log picks itself (they go straight to its tracker)
+            self.events.write("service", "staff", command="pick", x=round(x, 2), y=round(y, 2))
+        text = json.dumps(command)
+        for client in list(self._clients):
+            if not client.operator:
+                client.offer(text)
 
     def _games(self) -> int:
         return sum(not c.operator for c in self._clients)
@@ -213,6 +240,10 @@ class PerceptionServer:
             return
         if data.get("type") == "preview":
             client.preview = bool(data.get("enabled"))
+        elif data.get("type") == "lock":
+            # Who the game follows, for the staff screen (not logged: several a second)
+            lock = {k: data.get(k) for k in ("state", "x", "y")}
+            self._to_operators(json.dumps({"type": "lock", **lock}))
         elif data.get("type") == "event":
             event = clean_app_event(data)
             if event is None:

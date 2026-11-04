@@ -17,5 +17,7 @@ declare global {
     statTecSynthetic: Synthetic;
     /** Booth-log events so far (src/core/booth-log.ts), names and fields only. */
     statTecBooth: () => readonly { name: string; level: string; fields: Record<string, unknown> }[];
+    /** A staff-screen command, as if it came through the pose service (research 035). */
+    statTecCommand: (name: 'start' | 'skip' | 'next' | 'pause' | 'reset') => void;
   }
 }

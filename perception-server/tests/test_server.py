@@ -162,3 +162,31 @@ async def _next_text(ws):
         message = await ws.recv()
         if isinstance(message, str):
             return message
+
+
+def test_staff_commands_reach_the_game_and_bad_ones_do_not():
+    async def test(url):
+        async with connect(url) as game, connect(f"{url}/operator") as staff:
+            await game.recv()  # hello
+            await staff.send(json.dumps({"type": "command", "name": "rm -rf"}))
+            await staff.send(json.dumps({"type": "command", "name": "pick", "x": 2, "y": 0.5}))
+            await staff.send(json.dumps({"type": "command", "name": "pick", "x": 0.3, "y": 0.6}))
+            await staff.send(json.dumps({"type": "command", "name": "skip"}))
+            got = []
+            while len(got) < 2:
+                message = await game.recv()
+                if isinstance(message, str) and json.loads(message)["type"] == "command":
+                    got.append(json.loads(message))
+            assert got == [
+                {"type": "command", "name": "pick", "x": 0.3, "y": 0.6},
+                {"type": "command", "name": "skip"},
+            ]
+            # the game reports who it follows; the staff screen hears it
+            await game.send(json.dumps({"type": "lock", "state": "locked", "x": 0.4, "y": 0.5}))
+            while True:
+                data = json.loads(await _next_text(staff))
+                if data["type"] == "lock":
+                    assert data == {"type": "lock", "state": "locked", "x": 0.4, "y": 0.5}
+                    break
+
+    asyncio.run(with_server(test))

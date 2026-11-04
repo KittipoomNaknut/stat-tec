@@ -42,6 +42,14 @@ PROBLEMS: dict[str, tuple[str, str]] = {
     "on-battery": ("ไม่ได้เสียบสายชาร์จ", "เสียบสายชาร์จ (ใช้แบตเครื่องจะช้าลง)"),
 }
 
+STAFF = {
+    "start": "เริ่มเกม",
+    "skip": "ข้ามบทพูด",
+    "next": "ข้ามทั้งบท",
+    "pause": "พัก / เล่นต่อ",
+    "reset": "กลับหน้าแรก",
+    "pick": "เลือกผู้เล่น",
+}
 CHAPTERS = {"coffee": "EP I", "slash": "EP II", "rival": "EP II (เก่า)"}
 POSES = {
     "both-up": "🙌",
@@ -138,6 +146,9 @@ def describe(e: dict[str, Any]) -> tuple[str, str]:
         )
     if name == "reset":
         return DIM, "F5 สตาฟกลับหน้าแรก"
+    if name == "staff":
+        what = STAFF.get(str(e.get("command")), str(e.get("command")))
+        return BOLD, f"🛠 สตาฟสั่ง: {what}"
     if name in ("service-start", "service-stop", "app-connected", "app-disconnected"):
         size = f"{e.get('width')}x{e.get('height')}"
         label = {

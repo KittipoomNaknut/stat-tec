@@ -27,9 +27,14 @@ export interface ServerCamera {
   frameRate: number;
 }
 
+/** What the staff screen can tell the game (research 035); `pick` is handled by the tracker. */
+export const STAFF_COMMANDS = ['start', 'skip', 'next', 'pause', 'reset', 'pick'] as const;
+export type StaffCommand = (typeof STAFF_COMMANDS)[number];
+
 export type ServerText =
   | { type: 'hello'; model: string; camera: ServerCamera }
-  | { type: 'status'; fps: number; inferenceMs: number };
+  | { type: 'status'; fps: number; inferenceMs: number }
+  | { type: 'command'; name: StaffCommand; x?: number; y?: number };
 
 /** The 4-byte tag at the start of a binary message. */
 export function binaryKind(message: ArrayBuffer): string {
@@ -67,8 +72,12 @@ export function previewJpeg(message: ArrayBuffer): ArrayBuffer {
 
 export function parseText(message: string): ServerText | null {
   try {
-    const data = JSON.parse(message) as { type?: unknown };
-    return data.type === 'hello' || data.type === 'status' ? (data as ServerText) : null;
+    const data = JSON.parse(message) as { type?: unknown; name?: unknown };
+    if (data.type === 'hello' || data.type === 'status') return data as ServerText;
+    if (data.type === 'command' && STAFF_COMMANDS.includes(data.name as StaffCommand)) {
+      return data as ServerText;
+    }
+    return null;
   } catch {
     return null;
   }

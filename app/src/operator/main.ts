@@ -1,20 +1,19 @@
 /**
- * The staff screen (research 034): the camera with every skeleton the pose service saw, why each
- * one was or was not taken as a player, and the live booth log. A second, light page for a second
- * monitor: it only draws a 2D canvas when new data arrives, and the pose service sends it the
- * same preview JPEG it already makes for the player-cam. Camera images stay on this machine.
+ * Staff screen (research 034, 035): raw numbers, the camera with every skeleton the pose service
+ * saw and why it was or was not taken, the live booth log, and controls: start, skip a line,
+ * skip a chapter, pause, reset, and click a person to make them the player. A light 2D page for
+ * a second monitor; camera images stay on this machine.
  */
-import '../styles/fonts.css';
-import '../styles/tokens.css';
 import './operator.css';
 import { perceptionDefaults } from '../config/perception';
-import { draw, type Scene } from './draw';
+import { draw, imagePoint, type Lock, type Scene } from './draw';
 
 interface Health {
   fps?: number;
   inferenceMs?: number;
   appFps?: number | null;
   gpuC?: number;
+  gpuLoad?: number;
   cpuC?: number;
   people?: number;
   clients?: number;
@@ -23,46 +22,45 @@ interface Health {
 interface Ops {
   health: Health;
   problems: { title: string; todo: string; sinceS: number }[];
-  today: {
-    visits: number;
-    finished: number;
-    abandoned: number;
-    avgMin: number | null;
-    poseTimeouts: number;
-    poses: number;
-    problems: number;
-    errors: number;
-  };
+  today: Record<string, number | null>;
 }
+type Command = 'start' | 'skip' | 'next' | 'pause' | 'reset';
+
+const KEYS: Record<string, [Command, string]> = {
+  s: ['start', 'start    เริ่มเกม / ข้ามชูสองมือ'],
+  n: ['skip', 'skip     ข้ามบทพูด'],
+  b: ['next', 'next     ข้ามทั้งบท'],
+  p: ['pause', 'pause    พัก / เล่นต่อ'],
+  r: ['reset', 'reset    กลับหน้าแรก'],
+};
 
 const root = document.getElementById('operator') as HTMLElement;
 root.innerHTML = `
-  <section class="op-cam">
-    <canvas></canvas>
-    <p class="op-wait">รอตัวจับท่า… (./scripts/demo.sh start)</p>
-    <ul class="op-legend">
-      <li class="is-ok">✓ ผ่าน: ส่งให้เกม (เกมเลือกคนที่อยู่กลางและใกล้สุด 1 คน)</li>
-      <li class="is-no">✕ ถูกตัด + เหตุผล</li><li class="is-drop">กรอบส้ม = ไม่ถูกจับท่า</li>
-    </ul>
-  </section>
+  <section class="op-cam"><canvas></canvas><pre class="op-wait">waiting for pose service on :8765 …</pre></section>
   <aside class="op-side">
-    <div class="op-tiles"></div>
-    <div class="op-problems"></div>
-    <p class="op-today"></p>
+    <pre class="op-stat"></pre>
+    <pre class="op-problems"></pre>
+    <div class="op-keys">${Object.entries(KEYS)
+      .map(([k, [, label]]) => `<button data-key="${k}">[${k.toUpperCase()}] ${label}</button>`)
+      .join('')}<p>click a skeleton = make them the player</p></div>
+    <pre class="op-ack"></pre>
     <ol class="op-log"></ol>
   </aside>`;
 const canvas = root.querySelector('canvas') as HTMLCanvasElement;
 const wait = root.querySelector('.op-wait') as HTMLElement;
-const tiles = root.querySelector('.op-tiles') as HTMLElement;
+const stat = root.querySelector('.op-stat') as HTMLElement;
 const problems = root.querySelector('.op-problems') as HTMLElement;
-const today = root.querySelector('.op-today') as HTMLElement;
+const ack = root.querySelector('.op-ack') as HTMLElement;
 const feed = root.querySelector('.op-log') as HTMLOListElement;
 
+let socket: WebSocket | null = null;
 let image: ImageBitmap | null = null;
 let scene: Scene | null = null;
+let lock: Lock | null = null;
+let health: Health = {};
 let dirty = false;
 let drawnAt = 0;
-/** At most this often: plenty to watch skeletons, and half the preview rate (research 034). */
+/** At most this often: plenty to watch skeletons, half the preview rate (research 034). */
 const DRAW_EVERY_MS = 1000 / 12;
 
 function connect(): void {
@@ -71,9 +69,11 @@ function connect(): void {
   const ws = new WebSocket(`${base}/operator`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
+    socket = ws;
     wait.hidden = true;
   };
   ws.onclose = () => {
+    socket = null;
     wait.hidden = false;
     setTimeout(connect, 2000);
   };
@@ -92,6 +92,9 @@ function connect(): void {
     if (msg.type === 'scene') {
       scene = msg as unknown as Scene;
       dirty = true;
+    } else if (msg.type === 'lock') {
+      lock = msg as unknown as Lock;
+      showStat();
     } else if (msg.type === 'log') {
       addLine(msg['t'] as number, msg['cls'] as string, msg['text'] as string);
     } else if (msg.type === 'ops') {
@@ -100,11 +103,21 @@ function connect(): void {
   };
 }
 
+function send(command: Record<string, unknown>, label: string): void {
+  if (socket?.readyState !== WebSocket.OPEN) {
+    ack.textContent = `! not connected — "${label}" not sent`;
+    return;
+  }
+  socket.send(JSON.stringify({ type: 'command', ...command }));
+  const at = new Date().toLocaleTimeString('en-GB');
+  ack.textContent = `> ${at}  sent ${label}${health.clients ? '' : '   (! game not connected)'}`;
+}
+
 function frame(now: number): void {
   if (dirty && now - drawnAt >= DRAW_EVERY_MS) {
     dirty = false;
     drawnAt = now;
-    draw(canvas, image, scene);
+    draw(canvas, image, scene, lock);
   }
   requestAnimationFrame(frame);
 }
@@ -112,86 +125,53 @@ function frame(now: number): void {
 function addLine(t: number, cls: string, text: string): void {
   const li = document.createElement('li');
   if (cls) li.className = `is-${cls}`;
-  const time = document.createElement('time');
-  time.textContent = new Date(t * 1000).toLocaleTimeString('th-TH', { hour12: false });
-  li.append(time, document.createTextNode(text));
+  li.textContent = `${new Date(t * 1000).toLocaleTimeString('en-GB')}  ${text}`;
   feed.append(li);
-  while (feed.children.length > 60) feed.firstElementChild?.remove();
+  while (feed.children.length > 80) feed.firstElementChild?.remove();
   feed.scrollTop = feed.scrollHeight;
 }
 
-function showOps({ health: h, problems: open, today: d }: Ops): void {
-  const tile = (label: string, value: string, state: 'ok' | 'warn' | 'bad' | 'off') =>
-    `<div class="op-tile is-${state}"><span>${label}</span><b>${value}</b></div>`;
-  const grade = (
-    v: number | null | undefined,
-    bad: (n: number) => boolean,
-    warn: (n: number) => boolean,
-  ) => (v == null ? 'off' : bad(v) ? 'bad' : warn(v) ? 'warn' : 'ok');
-  tiles.innerHTML = [
-    tile(
-      'กล้อง',
-      h.fps == null ? '-' : `${String(h.fps)} fps`,
-      grade(
-        h.fps,
-        (n) => n < 20,
-        (n) => n < 24,
-      ),
-    ),
-    tile(
-      'จับท่า',
-      h.inferenceMs == null ? '-' : `${String(h.inferenceMs)} ms`,
-      grade(
-        h.inferenceMs,
-        (n) => n > 40,
-        (n) => n > 30,
-      ),
-    ),
-    tile(
-      'เกม',
-      h.appFps == null ? 'ไม่ได้เปิด' : `${String(h.appFps)} fps`,
-      h.clients
-        ? grade(
-            h.appFps,
-            (n) => n < 30,
-            (n) => n < 45,
-          )
-        : 'bad',
-    ),
-    tile(
-      'GPU',
-      h.gpuC == null ? '-' : `${String(h.gpuC)}°C`,
-      grade(
-        h.gpuC,
-        (n) => n >= 85,
-        (n) => n >= 78,
-      ),
-    ),
-    tile(
-      'CPU',
-      h.cpuC == null ? '-' : `${String(h.cpuC)}°C`,
-      grade(
-        h.cpuC,
-        (n) => n >= 95,
-        (n) => n >= 85,
-      ),
-    ),
-    tile('ผู้เล่นในภาพ', String(h.people ?? 0), h.people ? 'ok' : 'off'),
-  ].join('');
-  if (h.mains === false) tiles.insertAdjacentHTML('beforeend', tile('ไฟ', 'ใช้แบต', 'bad'));
-  problems.innerHTML = open.length
-    ? open
-        .map(
-          (p) =>
-            `<div class="op-problem"><b>█ ${p.title}</b> <small>${String(p.sinceS)} s</small>${p.todo ? `<p>→ ${p.todo}</p>` : ''}</div>`,
-        )
-        .join('')
-    : '<div class="op-fine">✓ ไม่มีปัญหา</div>';
-  today.textContent =
-    `วันนี้ ${String(d.visits)} รอบ (จบ ${String(d.finished)} · ออกกลางคัน ${String(d.abandoned)})` +
-    ` · เฉลี่ย ${d.avgMin == null ? '-' : `${String(d.avgMin)} นาที`}` +
-    ` · ท่าหมดเวลา ${String(d.poseTimeouts)}/${String(d.poses)} · ปัญหา ${String(d.problems)}`;
+const n = (v: number | null | undefined, unit = '') => (v == null ? '   -' : `${String(v)}${unit}`);
+
+function showStat(): void {
+  const h = health;
+  const where =
+    lock?.x == null || lock.y == null ? '' : ` @ ${lock.x.toFixed(2)},${lock.y.toFixed(2)}`;
+  stat.textContent = [
+    `CAM   ${n(h.fps, ' fps').padEnd(12)}POSE ${n(h.inferenceMs, ' ms').padEnd(11)}GAME ${h.clients ? n(h.appFps, ' fps') : 'NOT CONNECTED'}`,
+    `GPU   ${n(h.gpuC, '°C').padEnd(7)}${n(h.gpuLoad, '%').padEnd(5)}CPU  ${n(h.cpuC, '°C').padEnd(11)}POWER ${h.mains === false ? 'BATTERY' : 'mains'}`,
+    `SEEN  ${String(h.people ?? 0)} people     LOCK ${lock?.state ?? '-'}${where}`,
+  ].join('\n');
+  stat.classList.toggle('is-bad', !h.clients || (h.fps ?? 30) < 20 || (h.inferenceMs ?? 0) > 40);
 }
+
+function showOps(o: Ops): void {
+  health = o.health;
+  showStat();
+  const d = o.today;
+  const today = `TODAY visits ${String(d['visits'])} done ${String(d['finished'])} left ${String(d['abandoned'])} avg ${d['avgMin'] == null ? '-' : `${String(d['avgMin'])}m`} timeouts ${String(d['poseTimeouts'])}/${String(d['poses'])} problems ${String(d['problems'])} errors ${String(d['errors'])}`;
+  problems.textContent = o.problems.length
+    ? `${o.problems.map((p) => `!! ${p.title}  ${String(p.sinceS)}s\n   → ${p.todo}`).join('\n')}\n${today}`
+    : `OK no problems\n${today}`;
+  problems.classList.toggle('is-bad', o.problems.length > 0);
+}
+
+window.addEventListener('keydown', (e) => {
+  const key = KEYS[e.key.toLowerCase()];
+  if (!key || e.ctrlKey || e.altKey || e.metaKey) return;
+  e.preventDefault();
+  send({ name: key[0] }, key[0]);
+});
+root.querySelector('.op-keys')?.addEventListener('click', (e) => {
+  const key = (e.target as HTMLElement).closest('button')?.dataset['key'];
+  const entry = key ? KEYS[key] : undefined;
+  if (entry) send({ name: entry[0] }, entry[0]);
+});
+canvas.addEventListener('click', (e) => {
+  const p = imagePoint(canvas, image, e.offsetX, e.offsetY);
+  if (!p) return;
+  send({ name: 'pick', x: p.x, y: p.y }, `pick @ ${p.x.toFixed(2)},${p.y.toFixed(2)}`);
+});
 
 connect();
 requestAnimationFrame(frame);
