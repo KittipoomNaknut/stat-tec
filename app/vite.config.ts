@@ -32,4 +32,13 @@ export default defineConfig({
   worker: {
     format: 'es',
   },
+  build: {
+    rollupOptions: {
+      // The game, and the staff screen for a second monitor (research 034)
+      input: {
+        main: fileURLToPath(new URL('index.html', import.meta.url)),
+        operator: fileURLToPath(new URL('operator.html', import.meta.url)),
+      },
+    },
+  },
 });

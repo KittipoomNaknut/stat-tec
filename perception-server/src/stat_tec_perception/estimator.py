@@ -81,7 +81,12 @@ EDGE = 0.02
 
 
 def looks_like_a_person(kp: np.ndarray, sc: np.ndarray, width: int) -> bool:
-    """A whole, upright person facing the camera, not a sliver or a thing (research 033).
+    return why_not_a_person(kp, sc, width) is None
+
+
+def why_not_a_person(kp: np.ndarray, sc: np.ndarray, width: int) -> str | None:
+    """None for a whole, upright person facing the camera, not a sliver or a thing (research
+    033); else which rule failed: "unseen", "head", "torso" or "edge".
 
     - a head and both shoulders are seen, the head between and above the shoulders
     - with the hips in view, a torso of human proportions below the shoulders (hips are not
@@ -92,19 +97,21 @@ def looks_like_a_person(kp: np.ndarray, sc: np.ndarray, width: int) -> bool:
     than 264 ms (the app's lock waits 300 ms); walking in and out at the edge is rejected.
     """
     if min(sc[L_SHOULDER], sc[R_SHOULDER], sc[NOSE]) < SEEN:
-        return False
+        return "unseen"
     ls, rs, nose = kp[L_SHOULDER], kp[R_SHOULDER], kp[NOSE]
     mid = (ls + rs) / 2
     sw = float(np.linalg.norm(ls - rs))
     if abs(nose[0] - mid[0]) > 0.75 * sw or nose[1] > mid[1]:
-        return False
+        return "head"
     if min(sc[L_HIP], sc[R_HIP]) >= SEEN:
         hips = (kp[L_HIP] + kp[R_HIP]) / 2
         torso = float(np.linalg.norm(hips - mid))
         if hips[1] - mid[1] < 0.5 * sw or not 0.25 <= sw / max(torso, 1e-6) <= 1.6:
-            return False
+            return "torso"
     edge = EDGE * width
-    return min(ls[0], rs[0]) > edge and max(ls[0], rs[0]) < width - edge
+    if min(ls[0], rs[0]) <= edge or max(ls[0], rs[0]) >= width - edge:
+        return "edge"
+    return None
 
 
 def largest_first(boxes: np.ndarray, limit: int) -> np.ndarray:
@@ -149,6 +156,9 @@ class RtmPoseEstimator:
         self._zone = zone
         self._min_height = min_height
         self._body_check = body_check
+        # The staff screen asks for everything the filters saw (research 034); off = no cost
+        self.record_scene = False
+        self.scene: dict | None = None
         self._det_every = det_every
         self._max_people = max_people
         self._frame = 0
@@ -156,12 +166,14 @@ class RtmPoseEstimator:
 
     def __call__(self, frame: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         h, w = frame.shape[:2]
+        record = getattr(self, "record_scene", False)
+        dropped: list[tuple[list[float], str]] = []
         if self._frame % self._det_every == 0 or len(self._boxes) == 0:
-            found = tall_enough(
-                in_zone(np.asarray(self._det(frame), np.float32).reshape(-1, 4), w, self._zone),
-                h,
-                self._min_height,
-            )
+            raw = np.asarray(self._det(frame), np.float32).reshape(-1, 4)
+            zoned = in_zone(raw, w, self._zone)
+            found = tall_enough(zoned, h, self._min_height)
+            if record:
+                dropped = _dropped(raw, zoned, "zone") + _dropped(zoned, found, "small")
             # A missed detection keeps the boxes from the last keypoints, so one bad frame
             # does not drop the player
             if len(found) > 0 or len(self._boxes) == 0:
@@ -169,11 +181,41 @@ class RtmPoseEstimator:
         self._frame += 1
         boxes = largest_first(self._boxes, self._max_people)
         if len(boxes) == 0:
+            if record:
+                self.scene = _scene(w, h, dropped, [])
             return np.zeros((0, 17, 2)), np.zeros((0, 17))
         keypoints, scores = self._pose(frame, bboxes=boxes.tolist())
         self._boxes = in_zone(boxes_from_keypoints(keypoints, scores, w, h), w, self._zone)
-        if self._body_check:
-            # Still tracked (the boxes above), just not reported as people
-            keep = [looks_like_a_person(k, s, w) for k, s in zip(keypoints, scores, strict=True)]
-            keypoints, scores = keypoints[keep], scores[keep]
-        return keypoints, scores
+        why = [
+            why_not_a_person(k, s, w) if self._body_check else None
+            for k, s in zip(keypoints, scores, strict=True)
+        ]
+        if record:
+            self.scene = _scene(w, h, dropped, list(zip(keypoints, scores, why, strict=True)))
+        keep = [r is None for r in why]
+        # Rejected poses are still tracked (the boxes above), just not reported as people
+        return keypoints[keep], scores[keep]
+
+
+def _dropped(before: np.ndarray, after: np.ndarray, why: str) -> list[tuple[list[float], str]]:
+    kept = {tuple(b) for b in after.tolist()}
+    return [(b, why) for b in before.tolist() if tuple(b) not in kept]
+
+
+def _scene(w: int, h: int, dropped: list, poses: list) -> dict:
+    """What the filters saw this frame, normalized to [0, 1], for the staff screen."""
+
+    def box(b: list[float]) -> list[float]:
+        return [round(b[0] / w, 4), round(b[1] / h, 4), round(b[2] / w, 4), round(b[3] / h, 4)]
+
+    return {
+        "dropped": [{"box": box(b), "why": r} for b, r in dropped],
+        "poses": [
+            {
+                "kp": [[round(float(x) / w, 4), round(float(y) / h, 4)] for x, y in k],
+                "sc": [round(float(v), 2) for v in s],
+                "why": r,
+            }
+            for k, s, r in poses
+        ],
+    }
