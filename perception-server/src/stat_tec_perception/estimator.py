@@ -74,6 +74,39 @@ def tall_enough(boxes: np.ndarray, height: int, min_height: float) -> np.ndarray
     return boxes[(boxes[:, 3] - boxes[:, 1]) >= min_height * height]
 
 
+# COCO-17 indices
+NOSE, L_SHOULDER, R_SHOULDER, L_HIP, R_HIP = 0, 5, 6, 11, 12
+SEEN = 0.5
+EDGE = 0.02
+
+
+def looks_like_a_person(kp: np.ndarray, sc: np.ndarray, width: int) -> bool:
+    """A whole, upright person facing the camera, not a sliver or a thing (research 033).
+
+    - a head and both shoulders are seen, the head between and above the shoulders
+    - with the hips in view, a torso of human proportions below the shoulders (hips are not
+      required: a player close to the camera has them out of frame)
+    - no shoulder on the side edge of the image (someone half in view)
+
+    On the RTMPose recordings of real play this rejects 0-2% of frames, never for longer
+    than 264 ms (the app's lock waits 300 ms); walking in and out at the edge is rejected.
+    """
+    if min(sc[L_SHOULDER], sc[R_SHOULDER], sc[NOSE]) < SEEN:
+        return False
+    ls, rs, nose = kp[L_SHOULDER], kp[R_SHOULDER], kp[NOSE]
+    mid = (ls + rs) / 2
+    sw = float(np.linalg.norm(ls - rs))
+    if abs(nose[0] - mid[0]) > 0.75 * sw or nose[1] > mid[1]:
+        return False
+    if min(sc[L_HIP], sc[R_HIP]) >= SEEN:
+        hips = (kp[L_HIP] + kp[R_HIP]) / 2
+        torso = float(np.linalg.norm(hips - mid))
+        if hips[1] - mid[1] < 0.5 * sw or not 0.25 <= sw / max(torso, 1e-6) <= 1.6:
+            return False
+    edge = EDGE * width
+    return min(ls[0], rs[0]) > edge and max(ls[0], rs[0]) < width - edge
+
+
 def largest_first(boxes: np.ndarray, limit: int) -> np.ndarray:
     areas = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
     return boxes[np.argsort(-areas)][:limit]
@@ -91,6 +124,7 @@ class RtmPoseEstimator:
         detector: str = "tiny",
         zone: Zone | None = None,
         min_height: float = 0.0,
+        body_check: bool = True,
     ) -> None:
         from .gpu import enable_gpu
 
@@ -114,6 +148,7 @@ class RtmPoseEstimator:
             raise RuntimeError(f"pose model is not on TensorRT: {providers}")
         self._zone = zone
         self._min_height = min_height
+        self._body_check = body_check
         self._det_every = det_every
         self._max_people = max_people
         self._frame = 0
@@ -137,4 +172,8 @@ class RtmPoseEstimator:
             return np.zeros((0, 17, 2)), np.zeros((0, 17))
         keypoints, scores = self._pose(frame, bboxes=boxes.tolist())
         self._boxes = in_zone(boxes_from_keypoints(keypoints, scores, w, h), w, self._zone)
+        if self._body_check:
+            # Still tracked (the boxes above), just not reported as people
+            keep = [looks_like_a_person(k, s, w) for k, s in zip(keypoints, scores, strict=True)]
+            keypoints, scores = keypoints[keep], scores[keep]
         return keypoints, scores

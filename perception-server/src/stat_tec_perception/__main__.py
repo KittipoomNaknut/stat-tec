@@ -46,6 +46,11 @@ def main() -> None:
     )
     parser.add_argument("--max-people", type=int, default=3)
     parser.add_argument(
+        "--no-body-check",
+        action="store_true",
+        help="report every pose, even slivers and odd shapes (research 033)",
+    )
+    parser.add_argument(
         "--min-height",
         type=float,
         default=0.25,
@@ -86,6 +91,7 @@ def main() -> None:
         detector=args.detector,
         zone=args.zone,
         min_height=args.min_height,
+        body_check=not args.no_body_check,
     )
     camera = Camera(
         args.camera,

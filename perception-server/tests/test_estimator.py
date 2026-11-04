@@ -4,6 +4,7 @@ from stat_tec_perception.estimator import (
     boxes_from_keypoints,
     in_zone,
     largest_first,
+    looks_like_a_person,
     tall_enough,
 )
 
@@ -47,6 +48,7 @@ def _estimator_with(detections, zone=None, min_height=0.0):
     est._det_every, est._max_people, est._frame = 1, 3, 0
     est._zone = zone
     est._min_height = min_height
+    est._body_check = False
     est._boxes = np.zeros((0, 4), np.float32)
     return est
 
@@ -93,3 +95,33 @@ def test_only_the_player_at_the_spot_is_posed_among_small_detections():
     est = _estimator_with([[*far, player]], min_height=0.25)
     est(frame)
     assert est.crops[0] == [player]
+
+
+def _person(**move):
+    """A frontal person in a 1280-wide image (COCO-17), parts moved as given."""
+    kp = np.zeros((17, 2))
+    kp[0] = [640, 200]  # nose
+    kp[5], kp[6] = [700, 300], [580, 300]  # shoulders
+    kp[11], kp[12] = [680, 480], [600, 480]  # hips
+    for i, xy in move.items():
+        kp[int(i[1:])] = xy
+    return kp
+
+
+def test_a_whole_upright_person_passes_with_or_without_hips():
+    sc = np.full(17, 0.9)
+    assert looks_like_a_person(_person(), sc, 1280)
+    close = sc.copy()
+    close[[11, 12]] = 0.1  # hips out of frame, close to the camera
+    assert looks_like_a_person(_person(), close, 1280)
+
+
+def test_slivers_and_odd_shapes_are_rejected():
+    sc = np.full(17, 0.9)
+    one_shoulder = sc.copy()
+    one_shoulder[6] = 0.2
+    assert not looks_like_a_person(_person(), one_shoulder, 1280)  # half a body
+    assert not looks_like_a_person(_person(p0=[900, 200]), sc, 1280)  # head off the shoulders
+    assert not looks_like_a_person(_person(p0=[640, 400]), sc, 1280)  # head below them
+    assert not looks_like_a_person(_person(p11=[680, 310], p12=[600, 310]), sc, 1280)  # no torso
+    assert not looks_like_a_person(_person(p5=[1275, 300]), sc, 1280)  # cut by the edge
