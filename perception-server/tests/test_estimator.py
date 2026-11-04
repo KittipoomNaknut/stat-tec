@@ -1,6 +1,6 @@
 import numpy as np
 
-from stat_tec_perception.estimator import boxes_from_keypoints, largest_first
+from stat_tec_perception.estimator import boxes_from_keypoints, in_zone, largest_first
 
 
 def test_box_from_confident_keypoints_expanded_and_clipped():
@@ -24,7 +24,7 @@ def test_largest_first_and_limit():
     np.testing.assert_array_equal(largest_first(boxes, 2)[:, 2], [100, 50])
 
 
-def _estimator_with(detections):
+def _estimator_with(detections, zone=None):
     """An RtmPoseEstimator with fake models: the detector returns `detections` in turn."""
     from stat_tec_perception.estimator import RtmPoseEstimator
 
@@ -40,6 +40,7 @@ def _estimator_with(detections):
 
     est._pose = pose
     est._det_every, est._max_people, est._frame = 1, 3, 0
+    est._zone = zone
     est._boxes = np.zeros((0, 4), np.float32)
     return est
 
@@ -55,3 +56,19 @@ def test_detects_every_frame_and_survives_a_missed_detection():
     # Frame 2: the detector found nobody, so the crop came from frame 1's keypoints
     assert est.crops[1] != person and len(est.crops[1]) == 1
     assert est.crops[2] == person
+
+
+def test_zone_keeps_only_people_centered_in_the_band():
+    boxes = np.array([[0, 0, 100, 400], [560, 0, 720, 400], [1180, 0, 1280, 400]], np.float32)
+    kept = in_zone(boxes, 1280, (0.2, 0.8))
+    np.testing.assert_array_equal(kept[:, 0], [560])
+    assert in_zone(boxes, 1280, None) is boxes
+
+
+def test_a_bystander_outside_the_zone_is_never_posed():
+    frame = np.zeros((720, 1280, 3), np.uint8)
+    player = [560.0, 90.0, 720.0, 600.0]
+    bystander = [1150.0, 60.0, 1270.0, 700.0]  # taller in the image: would be "largest first"
+    est = _estimator_with([[bystander, player]], zone=(0.2, 0.8))
+    est(frame)
+    assert est.crops[0] == [player]

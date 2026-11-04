@@ -59,8 +59,10 @@ class PerceptionServer:
         port: int = 8765,
         preview_fps: float = 10,
         events: EventLog | None = None,
+        zone: tuple[float, float] | None = None,
     ) -> None:
         self.camera = camera
+        self.zone = zone
         self.estimator = estimator
         self.host = host
         self.port = port
@@ -110,6 +112,7 @@ class PerceptionServer:
                     width=self.camera.width,
                     height=self.camera.height,
                     model=self.estimator.name,
+                    zone=list(self.zone) if self.zone else None,
                 )
                 status = asyncio.create_task(self._status_loop())
                 try:
@@ -266,7 +269,7 @@ class PerceptionServer:
             if now - last_preview >= self._preview_interval and any(
                 c.preview for c in self._clients
             ):
-                preview = encode_preview(_jpeg(frame))
+                preview = encode_preview(_jpeg(frame, self.zone))
                 last_preview = now
             if self._loop:
                 self._loop.call_soon_threadsafe(self._publish, message, preview)
@@ -278,9 +281,17 @@ class PerceptionServer:
                 client.offer(preview)
 
 
-def _jpeg(frame: np.ndarray) -> bytes:
+def _jpeg(frame: np.ndarray, zone: tuple[float, float] | None = None) -> bytes:
     h, w = frame.shape[:2]
     small = cv2.resize(frame, (PREVIEW_WIDTH, round(h * PREVIEW_WIDTH / w)))
+    if zone:
+        # Outside the play zone is dimmed in the player-cam and F1, so the staff and the player
+        # see where to stand (research 031)
+        x0, x1 = round(zone[0] * PREVIEW_WIDTH), round(zone[1] * PREVIEW_WIDTH)
+        small[:, :x0] //= 3
+        small[:, x1:] //= 3
+        for x in (x0, x1 - 1):
+            cv2.line(small, (x, 0), (x, small.shape[0] - 1), (143, 61, 255), 2)
     ok, buf = cv2.imencode(".jpg", small, [cv2.IMWRITE_JPEG_QUALITY, 70])
     return buf.tobytes() if ok else b""
 
