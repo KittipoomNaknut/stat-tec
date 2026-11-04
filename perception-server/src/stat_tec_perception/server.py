@@ -26,6 +26,7 @@ from .estimator import Estimator
 from .layout import to_app_layout
 from .monitor import EventLog, Problems, clean_app_event, cpu_temp, gpu_reading, on_mains
 from .protocol import Detections, encode_detections, encode_preview
+from .viewer import BOLD, DIM, GREEN, PROBLEMS, RED, YELLOW, Day, Follower, describe
 
 log = logging.getLogger(__name__)
 
@@ -35,6 +36,10 @@ PREVIEW_WIDTH = 640
 STATUS_INTERVAL_S = 1.0
 HARDWARE_EVERY = 5  # status ticks between temperature readings (nvidia-smi takes ~30 ms)
 HEALTH_LOG_EVERY = 60  # status ticks between health lines in the event log
+SCENE_INTERVAL_S = 1 / 15  # the staff screen's skeletons: 15 a second is plenty to watch
+OPERATOR_QUEUE = 32
+OPERATOR_BACKLOG = 40
+_CLASS = {RED: "red", YELLOW: "warn", GREEN: "ok", DIM: "dim", BOLD: "bold"}
 
 
 @dataclass(eq=False)
@@ -42,6 +47,9 @@ class Client:
     connection: ServerConnection
     queue: asyncio.Queue[bytes | str] = field(default_factory=lambda: asyncio.Queue(maxsize=2))
     preview: bool = False
+    # The staff screen (research 034): gets previews, the scene, the log; not detections, and
+    # never counted as the game (app-missing still opens when only it is connected)
+    operator: bool = False
 
     def offer(self, message: bytes | str) -> None:
         """Queue a message, dropping the oldest if the client is behind."""
@@ -91,6 +99,12 @@ class PerceptionServer:
             self._problems.rule(name, level, open_s, close_s)
         self._hardware: dict = {}
         self._app: dict = {}  # last app-health fields, and when they came ("at", monotonic)
+        # Today so far, for the staff screen: the same summary and feed as stat-tec-log
+        self._day = Day()
+        if self.events.log_dir:
+            for e in Follower(self.events.log_dir).read(time.time()):
+                self._day.add(e)
+        self.events.listeners.append(self._on_event)
 
     async def serve_forever(self, ready: asyncio.Event | None = None) -> None:
         self._loop = asyncio.get_running_loop()
@@ -126,10 +140,14 @@ class PerceptionServer:
             self.camera.close()
 
     async def _handle(self, connection: ServerConnection) -> None:
+        path = connection.request.path if connection.request else "/"
+        if path.startswith("/operator"):
+            await self._handle_operator(connection)
+            return
         client = Client(connection)
         self._clients.add(client)
         log.info("client connected (%d total)", len(self._clients))
-        self.events.write("service", "app-connected", clients=len(self._clients))
+        self.events.write("service", "app-connected", clients=self._games())
         await connection.send(json.dumps(self._hello()))
         sender = asyncio.create_task(self._send_loop(client))
         try:
@@ -142,7 +160,49 @@ class PerceptionServer:
             sender.cancel()
             self._clients.discard(client)
             log.info("client disconnected (%d total)", len(self._clients))
-            self.events.write("service", "app-disconnected", "warn", clients=len(self._clients))
+            self.events.write("service", "app-disconnected", "warn", clients=self._games())
+
+    async def _handle_operator(self, connection: ServerConnection) -> None:
+        client = Client(connection, asyncio.Queue(maxsize=OPERATOR_QUEUE), True, True)
+        await connection.send(json.dumps({**self._hello(), "zone": self.zone}))
+        for e in self._day.events[-OPERATOR_BACKLOG:]:
+            await connection.send(json.dumps(_log_line(e)))
+        self._clients.add(client)
+        self._record_scene()
+        log.info("staff screen connected")
+        sender = asyncio.create_task(self._send_loop(client))
+        try:
+            async for _ in connection:
+                pass
+        except ConnectionClosed:
+            pass
+        finally:
+            sender.cancel()
+            self._clients.discard(client)
+            self._record_scene()
+            log.info("staff screen disconnected")
+
+    def _games(self) -> int:
+        return sum(not c.operator for c in self._clients)
+
+    def _operators(self) -> list[Client]:
+        return [c for c in self._clients if c.operator]
+
+    def _record_scene(self) -> None:
+        """The estimator keeps what its filters saw only while a staff screen watches."""
+        if hasattr(self.estimator, "record_scene"):
+            self.estimator.record_scene = bool(self._operators())
+
+    def _on_event(self, record: dict) -> None:
+        self._day.add(record)
+        if record.get("name") == "health" or not self._loop:
+            return
+        line = json.dumps(_log_line(record))
+        self._loop.call_soon_threadsafe(self._to_operators, line)
+
+    def _to_operators(self, message: str) -> None:
+        for client in self._operators():
+            client.offer(message)
 
     def _on_text(self, client: Client, message: str) -> None:
         try:
@@ -180,13 +240,16 @@ class PerceptionServer:
                 {"type": "status", "fps": fps, "inferenceMs": round(self._inference_ms, 1)}
             )
             for client in list(self._clients):
-                client.offer(status)
+                if not client.operator:
+                    client.offer(status)
             if tick % HARDWARE_EVERY == 0:
                 self._hardware = await asyncio.to_thread(_hardware)
             health = self._health(fps)
             self.events.status({"t": time.time(), **health, "problems": self._problems.open})
             if tick % HEALTH_LOG_EVERY == 0:
                 self.events.write("service", "health", **health)
+            if self._operators():
+                self._to_operators(json.dumps(self._ops(health)))
             tick += 1
 
     def _health(self, fps: float) -> dict:
@@ -204,7 +267,7 @@ class PerceptionServer:
         p.check("low-fps", camera_ok and fps < 20, camera_ok and fps >= 24, now, fps=fps)
         slow, ms = self._inference_ms > 40, round(self._inference_ms, 1)
         p.check("slow-pose", camera_ok and slow, self._inference_ms < 30, now, ms=ms)
-        clients = len(self._clients)
+        clients = self._games()
         p.check("app-missing", clients == 0, clients > 0, now)
         if isinstance(app_fps, int | float):
             p.check("app-slow", app_fps < 30, app_fps >= 45, now, appFps=app_fps)
@@ -224,6 +287,30 @@ class PerceptionServer:
             **hw,
         }
 
+    def _ops(self, health: dict) -> dict:
+        """The staff screen's status panel: health, open problems with what to do, today."""
+        day, now = self._day, time.time()
+        problems = []
+        for name, e in day.open.items():
+            title, todo = PROBLEMS.get(name, (name, ""))
+            problems.append({"title": title, "todo": todo, "sinceS": round(now - e.get("t", now))})
+        avg = sum(day.durations) / len(day.durations) if day.durations else None
+        return {
+            "type": "ops",
+            "health": health,
+            "problems": problems,
+            "today": {
+                "visits": day.visits,
+                "finished": day.finished,
+                "abandoned": day.abandoned,
+                "avgMin": round(avg / 60, 1) if avg else None,
+                "poseTimeouts": day.pose_timeouts,
+                "poses": day.poses,
+                "problems": day.problems,
+                "errors": day.errors,
+            },
+        }
+
     def _hello(self) -> dict:
         c = self.camera
         return {
@@ -234,6 +321,7 @@ class PerceptionServer:
 
     def _capture_loop(self) -> None:
         last_preview = 0.0
+        last_scene = 0.0
         last_frame = time.monotonic()
         while not self._stop.is_set():
             got = self.camera.read()
@@ -271,14 +359,31 @@ class PerceptionServer:
             ):
                 preview = encode_preview(_jpeg(frame, self.zone))
                 last_preview = now
+            scene = None
+            scene_data = getattr(self.estimator, "scene", None)
+            if scene_data is not None and now - last_scene >= SCENE_INTERVAL_S:
+                if any(c.operator for c in self._clients):
+                    scene = json.dumps(
+                        {"type": "scene", "frame": self.frames, "zone": self.zone, **scene_data}
+                    )
+                last_scene = now
             if self._loop:
-                self._loop.call_soon_threadsafe(self._publish, message, preview)
+                self._loop.call_soon_threadsafe(self._publish, message, preview, scene)
 
-    def _publish(self, message: bytes, preview: bytes | None) -> None:
+    def _publish(self, message: bytes, preview: bytes | None, scene: str | None = None) -> None:
         for client in list(self._clients):
-            client.offer(message)
+            if client.operator:
+                if scene:
+                    client.offer(scene)
+            else:
+                client.offer(message)
             if preview and client.preview:
                 client.offer(preview)
+
+
+def _log_line(e: dict) -> dict:
+    color, text = describe(e)
+    return {"type": "log", "t": e.get("t"), "cls": _CLASS.get(color, ""), "text": text}
 
 
 def _jpeg(frame: np.ndarray, zone: tuple[float, float] | None = None) -> bytes:

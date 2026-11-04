@@ -1,0 +1,181 @@
+/* Staff screen (research 034): plain and readable at a glance, no animation (it must stay light). */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #0d0710;
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+#operator {
+  display: grid;
+  grid-template-columns: 1fr 34vw;
+  height: 100vh;
+}
+
+.op-cam {
+  position: relative;
+  background: #000;
+}
+
+.op-cam canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.op-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-size: 3vh;
+  color: var(--text-dim);
+}
+
+.op-wait[hidden] {
+  display: none;
+}
+
+.op-legend {
+  position: absolute;
+  left: 1.5vh;
+  bottom: 1.5vh;
+  display: flex;
+  gap: 2vh;
+  margin: 0;
+  padding: 0.8vh 1.4vh;
+  list-style: none;
+  background: rgb(10 4 14 / 80%);
+  border-radius: 1vh;
+  font-size: 1.8vh;
+}
+
+.op-legend .is-ok {
+  color: #4ade80;
+}
+
+.op-legend .is-no {
+  color: #9a8a99;
+}
+
+.op-legend .is-drop {
+  color: #f59e0b;
+}
+
+.op-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4vh;
+  padding: 1.8vh;
+  min-height: 0;
+  border-left: 1px solid rgb(255 255 255 / 10%);
+}
+
+.op-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1vh;
+}
+
+.op-tile {
+  padding: 1vh 1.2vh;
+  border-radius: 1vh;
+  background: rgb(255 255 255 / 5%);
+  border-left: 0.6vh solid #555;
+}
+
+.op-tile span {
+  display: block;
+  font-size: 1.6vh;
+  color: var(--text-dim);
+}
+
+.op-tile b {
+  font-size: 2.8vh;
+}
+
+.op-tile.is-ok {
+  border-color: #4ade80;
+}
+
+.op-tile.is-warn {
+  border-color: #facc15;
+}
+
+.op-tile.is-bad {
+  border-color: #f43f5e;
+  background: rgb(244 63 94 / 15%);
+}
+
+.op-problem {
+  padding: 1.2vh 1.4vh;
+  border-radius: 1vh;
+  background: rgb(244 63 94 / 18%);
+  border: 2px solid #f43f5e;
+  color: #ffd5dd;
+  font-size: 2.2vh;
+}
+
+.op-problem + .op-problem {
+  margin-top: 0.8vh;
+}
+
+.op-problem p {
+  margin: 0.4vh 0 0;
+  font-size: 2vh;
+}
+
+.op-fine {
+  padding: 1vh 1.4vh;
+  border-radius: 1vh;
+  background: rgb(74 222 128 / 12%);
+  color: #4ade80;
+  font-size: 2.2vh;
+}
+
+.op-today {
+  margin: 0;
+  font-size: 1.8vh;
+  color: var(--text-dim);
+}
+
+.op-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1.9vh;
+  line-height: 1.45;
+}
+
+.op-log time {
+  margin-right: 1vh;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 1.6vh;
+}
+
+.op-log .is-red {
+  color: #f87171;
+}
+
+.op-log .is-warn {
+  color: #facc15;
+}
+
+.op-log .is-ok {
+  color: #4ade80;
+}
+
+.op-log .is-dim {
+  color: var(--text-dim);
+}
+
+.op-log .is-bold {
+  font-weight: 700;
+}

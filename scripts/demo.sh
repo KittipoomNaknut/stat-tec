@@ -4,6 +4,8 @@
 #   ./scripts/demo.sh start           pose service + game + Chrome kiosk; closing Chrome
 #                                     (Alt+F4) stops everything, so nothing is left running hot
 #   ./scripts/demo.sh start --no-kiosk  services only (open http://127.0.0.1:8080 yourself)
+#   ./scripts/demo.sh start --operator  also the staff screen (camera + skeletons + live log) on
+#                                     the other monitor; STAT_TEC_OPERATOR_SCREEN=HDMI-A-1 picks it
 #   ./scripts/demo.sh stop            stop whatever this script started
 #   ./scripts/demo.sh status          what is running
 #   ./scripts/demo.sh log             live log: health, problems (red), visits
@@ -69,9 +71,40 @@ stop_one() {
   rm -f "$RUN/$name.pid"
 }
 
+# x,y,w,h of the monitor for the staff screen: $STAT_TEC_OPERATOR_SCREEN, else the first one
+# that is not the primary (the game opens on the primary)
+operator_geometry() {
+  command -v xrandr >/dev/null || return 1
+  xrandr --listmonitors 2>/dev/null | awk -v want="${STAT_TEC_OPERATOR_SCREEN:-}" '
+    NR > 1 {
+      name = $NF; primary = ($2 ~ /\*/)
+      split($3, a, /[\/x+]/)  # 1536/256x1152/192+0+0 → w, mm, h, mm, x, y
+      g = a[5] "," a[6] "," a[1] "," a[3]
+      if (want != "" && name == want) { print g; found = 1; exit }
+      if (want == "" && !primary && !other) other = g
+    }
+    END { if (!found && other) print other }'
+}
+
+open_operator() {
+  local geo args=()
+  geo="$(operator_geometry || true)"
+  if [[ -n "$geo" ]]; then
+    IFS=, read -r x y w h <<<"$geo"
+    # X11 (XWayland) so the window can be placed on the other monitor; it is a light 2D page
+    args=(--ozone-platform=x11 --window-position="$x,$y" --window-size="$w,$h" --start-fullscreen)
+    say "staff screen on the monitor at $x,$y (${w}x${h})"
+  else
+    say "staff screen: one monitor found — drag the window to the other screen, then press F11"
+  fi
+  launch operator "$LOGS/chrome-operator.log" google-chrome --app="${URL}operator.html" \
+    --user-data-dir="$CACHE/chrome-operator" --no-first-run --no-default-browser-check \
+    --noerrdialogs --disable-session-crashed-bubble --disable-features=Translate "${args[@]}"
+}
+
 build_if_changed() {
   local dist="$ROOT/app/dist/index.html"
-  if [[ -f "$dist" ]] && [[ -z "$(find "$ROOT/app/src" "$ROOT/app/public" "$ROOT/app/index.html" \
+  if [[ -f "$dist" ]] && [[ -z "$(find "$ROOT/app/src" "$ROOT/app/public" "$ROOT/app/index.html" "$ROOT/app/operator.html" \
     "$ROOT/content" -newer "$dist" -print -quit 2>/dev/null)" ]]; then
     return 0
   fi
@@ -80,8 +113,14 @@ build_if_changed() {
 }
 
 cmd_start() {
-  local kiosk=1
-  [[ "${1:-}" == "--no-kiosk" ]] && kiosk=0
+  local kiosk=1 operator=0 arg
+  for arg in "$@"; do
+    case "$arg" in
+    --no-kiosk) kiosk=0 ;;
+    --operator) operator=1 ;;
+    *) fail "unknown option $arg" ;;
+    esac
+  done
   mkdir -p "$RUN" "$LOGS"
   if running perception || running app; then
     fail "already running — ./scripts/demo.sh stop first (or status)"
@@ -103,6 +142,8 @@ cmd_start() {
     pnpm exec vite preview --host 127.0.0.1 --port "$APP_PORT" --strictPort)
   wait_port "$APP_PORT" 30 app "$LOGS/app.log"
 
+  ((operator)) && open_operator
+
   if ((kiosk == 0)); then
     say "ready: open $URL · live log: ./scripts/demo.sh log · stop: ./scripts/demo.sh stop"
     return 0
@@ -119,6 +160,7 @@ cmd_start() {
 }
 
 cmd_stop() {
+  stop_one operator
   stop_one app
   stop_one perception
   say "all stopped"
@@ -143,12 +185,15 @@ cmd_log() {
 }
 
 case "${1:-}" in
-start) cmd_start "${2:-}" ;;
+start)
+  shift
+  cmd_start "$@"
+  ;;
 stop) cmd_stop ;;
 status) cmd_status ;;
 log) cmd_log ;;
 *)
-  sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
   exit 1
   ;;
 esac

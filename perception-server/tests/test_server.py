@@ -102,3 +102,63 @@ def test_holding_the_frame_rate_without_a_camera_is_a_no_op():
     from stat_tec_perception.camera import hold_frame_rate
 
     assert hold_frame_rate(99) is None
+
+
+class SceneEstimator(FakeEstimator):
+    """Like the real estimator: keeps what its filters saw while asked to (staff screen)."""
+
+    record_scene = False
+    scene = None
+
+    def __call__(self, frame):
+        if self.record_scene:
+            self.scene = {"dropped": [{"box": [0.9, 0.1, 1.0, 0.3], "why": "small"}], "poses": []}
+        return super().__call__(frame)
+
+
+def test_staff_screen_sees_scene_log_and_status_but_is_not_the_game():
+    server = PerceptionServer(FakeCamera(), SceneEstimator(), port=0, preview_fps=50)
+
+    async def run():
+        ready = asyncio.Event()
+        task = asyncio.create_task(server.serve_forever(ready))
+        await asyncio.wait_for(ready.wait(), 5)
+        url = f"ws://127.0.0.1:{server.port}/operator"
+        try:
+            async with connect(url) as ws:
+                hello = json.loads(await ws.recv())
+                assert hello["type"] == "hello"
+                got: dict = {}
+                while not {"scene", "ops", "preview"} <= got.keys():
+                    message = await asyncio.wait_for(ws.recv(), 5)
+                    if isinstance(message, bytes):
+                        assert message[:4] != DETECTIONS_MAGIC  # no detections for it
+                        got["preview"] = message[:4] == PREVIEW_MAGIC
+                        continue
+                    data = json.loads(message)
+                    got.setdefault(data["type"], data)
+                assert got["scene"]["dropped"][0]["why"] == "small"
+                assert got["ops"]["health"]["clients"] == 0  # the game is not connected
+                assert server.estimator.record_scene
+                # a game event reaches the staff screen as a formatted line
+                async with connect(f"ws://127.0.0.1:{server.port}") as game:
+                    await game.recv()
+                    while True:
+                        data = json.loads(await _next_text(ws))
+                        if data["type"] == "log" and "เชื่อมต่อแล้ว" in data["text"]:
+                            break
+            await asyncio.sleep(0.1)
+            assert not server.estimator.record_scene  # nobody watching: no extra work
+        finally:
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+    asyncio.run(asyncio.wait_for(run(), 15))
+
+
+async def _next_text(ws):
+    while True:
+        message = await ws.recv()
+        if isinstance(message, str):
+            return message

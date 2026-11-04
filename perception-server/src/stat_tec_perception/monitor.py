@@ -13,6 +13,7 @@ import json
 import os
 import subprocess
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -36,6 +37,8 @@ class EventLog:
     def __init__(self, log_dir: Path | None) -> None:
         self.log_dir = log_dir
         self.recent: list[dict[str, Any]] = []
+        # Called with every record as it is written (the staff screen's live feed)
+        self.listeners: list[Callable[[dict[str, Any]], None]] = []
         if log_dir:
             log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -45,6 +48,8 @@ class EventLog:
         if self.log_dir:
             with today_file(self.log_dir, record["t"]).open("a", encoding="utf-8") as f:
                 f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        for listener in self.listeners:
+            listener(record)
         return record
 
     def status(self, status: dict[str, Any]) -> None:
