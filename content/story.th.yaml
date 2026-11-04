@@ -42,20 +42,14 @@ chapters:
     scene: c-coffee-pricing
     title: ราคาเดียว
     concept: Regression
-    vars: [price, revenue, optimalPrice, close, quizRight]
+    vars: [price, revenue, optimalPrice, close]
     beats:
       - type: mission
         lines:
-          - เปิดร้าน **ดาต้าคาเฟ่** วันแรก!
-          - { text: "ขายแก้วละ ฿200 จะมีคนซื้อไหม?", cue: quiz }
-          - { text: ถูกต้อง! แพงไป ลูกค้าหนีหมด, when: quizRight }
-          - {
-              text: ไม่มีใครซื้อเลยครับ! แพงไป ลูกค้าหนีหมด,
-              when: "!quizRight",
-            }
+          - เปิดร้าน **ดาต้าคาเฟ่** วันแรก! ท่านตั้งราคากาแฟ
       - type: tutorial
         gesture: raise
-        lines: [ยกมือขึ้น = ขึ้นราคา · ลดมือ = ลดราคา]
+        lines: [เลื่อนมือ **ขึ้น** = ขึ้นราคา · เลื่อน **ลง** = ลดราคา]
         success: หาราคาที่ได้เงินมากที่สุด!
       - type: play
         durationSec: 15
@@ -98,7 +92,7 @@ chapters:
           - { text: ให้ AI ขายทั้งวันบ้าง… กางแขนเลย!, cue: t-pose }
           - { text: AI เปลี่ยนราคาทุกชั่วโมง ตามคนในร้าน, cue: ai-day }
           - AI ได้มากกว่าราคาเดียว **{gain}%**!
-          - { text: กราฟ 3 มิติ! ยกมือหมุน กางมือซูม, cue: surface }
+          - { text: กราฟ 3 มิติ! เลื่อนมือหมุน ยกมือซูม, cue: surface }
       - type: lesson
         lines:
           - "**Dynamic Pricing** · แอปเรียกรถก็ใช้แบบนี้"

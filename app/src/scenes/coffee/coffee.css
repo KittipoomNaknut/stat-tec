@@ -26,15 +26,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 2vh;
+  min-width: 0;
 }
 
+/* Sized to the panel so a 3-digit price (฿120) never runs into the gauge or the edge */
 .cf-price-value {
-  font-size: 15vh;
+  font-size: min(13vh, 5.6vw);
   line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 /* The hand's height, as a laser column */
 .cf-gauge {
+  flex: none;
   position: relative;
   width: 1.2vh;
   height: 28vh;

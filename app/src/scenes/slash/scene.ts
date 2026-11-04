@@ -45,14 +45,19 @@ const T_POSE_MS = 8000;
 /** Story time to turn and zoom the 3D profit surface (research 030). */
 const EXPLORE_MS = 15_000;
 /** The surface's resting view: turned a little, tilted toward the player. */
+/**
+ * The surface's resting view and how far one hand moves it (research 036: owner asked for
+ * easier and wider). Sideways turns up to ±100°; up and down zooms; both hands spread zoom too.
+ */
 const VIEW = {
   yaw: -0.45,
-  turn: 0.95,
-  tilt: 0.42,
-  tiltRange: 0.32,
+  turn: 1.75,
+  tilt: 0.45,
   zoom: 0.9,
-  zoomMin: 0.8,
-  zoomMax: 1.45,
+  zoomMin: 0.75,
+  zoomMax: 1.9,
+  /** Hand height in, from the lowest counted (−0.35) to overhead (1). */
+  heightLow: -0.35,
 };
 
 export function slashScene(chapterId: string) {
@@ -616,8 +621,8 @@ class SlashScene implements SceneModule {
     hint.innerHTML = `
       <p class="hud-eyebrow">กำไร ทุกชั่วโมง × ทุกราคา</p>
       <ul>
-        <li><b>✋ ↔</b> เลื่อนมือ = หมุน</li>
-        <li><b>🙌</b> กาง-หุบมือ = ซูม</li>
+        <li><b>✋ ↔</b> เลื่อนซ้าย-ขวา = หมุน</li>
+        <li><b>✋ ↕</b> ยกขึ้น = ซูมเข้า</li>
         <li class="ps-ridge"><span class="ps-swatch"></span>สันสีทอง = ราคาที่ AI เลือก</li>
       </ul>
       <div class="ps-explore-time"><i></i></div>`;
@@ -652,11 +657,14 @@ class SlashScene implements SceneModule {
     const h = this.#mode === 'explore' ? this.#hands : null;
     const free = !h || h.count === 0;
     const yaw = free ? VIEW.yaw + 0.25 * Math.sin(timeSec * 0.5) : VIEW.yaw + h.x * VIEW.turn;
-    const tilt = free ? VIEW.tilt : VIEW.tilt + h.y * VIEW.tiltRange;
-    if (h?.spread != null) {
-      this.#zoomGoal = VIEW.zoomMin + h.spread * (VIEW.zoomMax - VIEW.zoomMin);
+    const tilt = VIEW.tilt;
+    if (h && h.count > 0) {
+      // Both hands: how far apart; one hand: how high
+      const amount =
+        h.spread ?? Math.min(1, Math.max(0, (h.y - VIEW.heightLow) / (1 - VIEW.heightLow)));
+      this.#zoomGoal = VIEW.zoomMin + amount * (VIEW.zoomMax - VIEW.zoomMin);
     }
-    const k = 1 - Math.exp(-dtMs / 220);
+    const k = 1 - Math.exp(-dtMs / 160);
     const v = this.#view;
     v.yaw += (yaw - v.yaw) * k;
     v.tilt += (tilt - v.tilt) * k;
@@ -664,7 +672,7 @@ class SlashScene implements SceneModule {
     surface.setView(v.yaw, v.tilt, v.zoom);
     // Zoomed in, the chart slides toward the middle of the screen
     surface.root.position.x =
-      -1.5 + 0.5 * ((v.zoom - VIEW.zoomMin) / (VIEW.zoomMax - VIEW.zoomMin));
+      -1.5 + 0.9 * ((v.zoom - VIEW.zoomMin) / (VIEW.zoomMax - VIEW.zoomMin));
     surface.update(timeSec);
     this.#published += dtMs;
     if (this.#published > 200) {
