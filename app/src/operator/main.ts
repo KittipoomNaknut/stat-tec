@@ -61,6 +61,9 @@ const feed = root.querySelector('.op-log') as HTMLOListElement;
 let image: ImageBitmap | null = null;
 let scene: Scene | null = null;
 let dirty = false;
+let drawnAt = 0;
+/** At most this often: plenty to watch skeletons, and half the preview rate (research 034). */
+const DRAW_EVERY_MS = 1000 / 12;
 
 function connect(): void {
   // ?server=ws://… like the game (a second pose service, or a test one)
@@ -97,9 +100,10 @@ function connect(): void {
   };
 }
 
-function frame(): void {
-  if (dirty) {
+function frame(now: number): void {
+  if (dirty && now - drawnAt >= DRAW_EVERY_MS) {
     dirty = false;
+    drawnAt = now;
     draw(canvas, image, scene);
   }
   requestAnimationFrame(frame);
