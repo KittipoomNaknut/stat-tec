@@ -48,9 +48,17 @@ def hold_frame_rate(index: int) -> bool | None:
 
 class Camera:
     def __init__(
-        self, index: int, width: int, height: int, fps: int, hold_fps: bool = True
+        self,
+        index: int,
+        width: int,
+        height: int,
+        fps: int,
+        hold_fps: bool = True,
+        fourcc: str = "MJPG",
     ) -> None:
         self.index = index
+        # MJPG for USB webcams; the Kinect 360 has no MJPG and needs GRBG (its 30 fps color)
+        self.fourcc = fourcc
         self.hold_fps = hold_fps
         self.width = width
         self.height = height
@@ -86,7 +94,7 @@ class Camera:
             time.sleep(min(self._next_attempt - now, 0.1))
             return False
         cap = cv2.VideoCapture(self.index, cv2.CAP_V4L2)
-        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*self.fourcc))
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
         cap.set(cv2.CAP_PROP_FPS, self.fps)
