@@ -62,6 +62,18 @@ def in_zone(boxes: np.ndarray, width: int, zone: Zone | None) -> np.ndarray:
     return boxes[(cx >= zone[0]) & (cx <= zone[1])]
 
 
+def tall_enough(boxes: np.ndarray, height: int, min_height: float) -> np.ndarray:
+    """Boxes at least `min_height` of the image tall: someone standing at the play spot.
+
+    A player 2 m from the camera fills over half the frame; people far behind, or things the
+    detector mistakes for people, are small. The Kinect saw 5-11 such boxes a frame, 0.1-0.4 of
+    the frame tall (research 032).
+    """
+    if min_height <= 0 or len(boxes) == 0:
+        return boxes
+    return boxes[(boxes[:, 3] - boxes[:, 1]) >= min_height * height]
+
+
 def largest_first(boxes: np.ndarray, limit: int) -> np.ndarray:
     areas = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
     return boxes[np.argsort(-areas)][:limit]
@@ -78,6 +90,7 @@ class RtmPoseEstimator:
         max_people: int = 3,
         detector: str = "tiny",
         zone: Zone | None = None,
+        min_height: float = 0.0,
     ) -> None:
         from .gpu import enable_gpu
 
@@ -100,6 +113,7 @@ class RtmPoseEstimator:
         if providers[0] != "TensorrtExecutionProvider":
             raise RuntimeError(f"pose model is not on TensorRT: {providers}")
         self._zone = zone
+        self._min_height = min_height
         self._det_every = det_every
         self._max_people = max_people
         self._frame = 0
@@ -108,7 +122,11 @@ class RtmPoseEstimator:
     def __call__(self, frame: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         h, w = frame.shape[:2]
         if self._frame % self._det_every == 0 or len(self._boxes) == 0:
-            found = in_zone(np.asarray(self._det(frame), np.float32).reshape(-1, 4), w, self._zone)
+            found = tall_enough(
+                in_zone(np.asarray(self._det(frame), np.float32).reshape(-1, 4), w, self._zone),
+                h,
+                self._min_height,
+            )
             # A missed detection keeps the boxes from the last keypoints, so one bad frame
             # does not drop the player
             if len(found) > 0 or len(self._boxes) == 0:

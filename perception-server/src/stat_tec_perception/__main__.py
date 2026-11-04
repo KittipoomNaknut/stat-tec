@@ -46,6 +46,13 @@ def main() -> None:
     )
     parser.add_argument("--max-people", type=int, default=3)
     parser.add_argument(
+        "--min-height",
+        type=float,
+        default=0.25,
+        help="ignore people shorter than this share of the image (far away or not a person; "
+        "research 032). 0 = off",
+    )
+    parser.add_argument(
         "--zone",
         type=_zone,
         default=None,
@@ -78,6 +85,7 @@ def main() -> None:
         max_people=args.max_people,
         detector=args.detector,
         zone=args.zone,
+        min_height=args.min_height,
     )
     camera = Camera(
         args.camera,
