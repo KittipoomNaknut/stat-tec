@@ -7,6 +7,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Added
 
+- `--min-height` (default 0.25) for the pose service. Detections shorter than that share of the image are ignored, because they are people far away or misreads. The Kinect saw 5-11 of them a frame, and the webcam saw none (research 032).
 - `--zone left,right` for the pose service. People centered outside that band of the image are never posed, so a queue or passers-by cost no time and cannot take over the player. The player-cam dims outside the zone and edges it in pink (research 031).
 - `--fourcc` for the pose service. The Xbox 360 Kinect has no MJPG and needs `--camera 2 --fourcc GRBG --width 640 --height 480`, which gives 30 fps color.
 - A new `hands` intent (`HandsDetector`): raised hands as a joystick (turn, tilt, spread). The synthetic player can hold both wrists (`hands()`).
