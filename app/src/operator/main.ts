@@ -123,12 +123,15 @@ function frame(now: number): void {
 }
 
 function addLine(t: number, cls: string, text: string): void {
+  // Follow new lines only while at the bottom: scrolling up to read stays put
+  const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 24;
   const li = document.createElement('li');
   if (cls) li.className = `is-${cls}`;
   li.textContent = `${new Date(t * 1000).toLocaleTimeString('en-GB')}  ${text}`;
+  li.title = li.textContent;
   feed.append(li);
-  while (feed.children.length > 80) feed.firstElementChild?.remove();
-  feed.scrollTop = feed.scrollHeight;
+  while (feed.children.length > 200) feed.firstElementChild?.remove();
+  if (atBottom) feed.scrollTop = feed.scrollHeight;
 }
 
 const n = (v: number | null | undefined, unit = '') => (v == null ? '   -' : `${String(v)}${unit}`);
