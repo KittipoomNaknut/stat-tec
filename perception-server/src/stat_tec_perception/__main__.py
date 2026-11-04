@@ -12,6 +12,16 @@ from .server import PerceptionServer
 DEFAULT_TRT_CACHE = Path.home() / ".cache" / "stat-tec" / "trt"
 
 
+def _zone(text: str) -> tuple[float, float]:
+    try:
+        left, right = (float(v) for v in text.split(","))
+    except ValueError:
+        raise argparse.ArgumentTypeError("use left,right, e.g. 0.2,0.8") from None
+    if not 0 <= left < right <= 1:
+        raise argparse.ArgumentTypeError("need 0 <= left < right <= 1")
+    return left, right
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="stat-tec-perception")
     parser.add_argument("--camera", type=int, default=0, help="V4L2 index (/dev/videoN)")
@@ -35,6 +45,13 @@ def main() -> None:
         help="YOLOX size (research 027: tiny every frame ≈ 5 ms; m ≈ 19 ms)",
     )
     parser.add_argument("--max-people", type=int, default=3)
+    parser.add_argument(
+        "--zone",
+        type=_zone,
+        default=None,
+        help="play zone as left,right fractions of the image width, e.g. 0.2,0.8: people "
+        "centered outside it are ignored (research 031)",
+    )
     parser.add_argument(
         "--dynamic-fps",
         action="store_true",
@@ -60,6 +77,7 @@ def main() -> None:
         det_every=args.det_every,
         max_people=args.max_people,
         detector=args.detector,
+        zone=args.zone,
     )
     camera = Camera(
         args.camera,
@@ -71,7 +89,7 @@ def main() -> None:
     )
     events = EventLog(None if args.no_log else args.log_dir)
     server = PerceptionServer(
-        camera, estimator, args.host, args.port, args.preview_fps, events=events
+        camera, estimator, args.host, args.port, args.preview_fps, events=events, zone=args.zone
     )
     with contextlib.suppress(KeyboardInterrupt):
         asyncio.run(_serve_until_terminated(server))

@@ -47,6 +47,21 @@ def boxes_from_keypoints(
     return np.array(boxes, dtype=np.float32).reshape(-1, 4)
 
 
+Zone = tuple[float, float]
+
+
+def in_zone(boxes: np.ndarray, width: int, zone: Zone | None) -> np.ndarray:
+    """Boxes whose center lies in the play zone: a band of the image width, as fractions.
+
+    People beside the play spot (a queue, passers-by, a poster) are never posed, so they cost no
+    time and cannot steal the lock. Most useful with a wide camera like the Kinect (research 031).
+    """
+    if zone is None or len(boxes) == 0:
+        return boxes
+    cx = (boxes[:, 0] + boxes[:, 2]) / 2 / width
+    return boxes[(cx >= zone[0]) & (cx <= zone[1])]
+
+
 def largest_first(boxes: np.ndarray, limit: int) -> np.ndarray:
     areas = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
     return boxes[np.argsort(-areas)][:limit]
@@ -57,7 +72,12 @@ DETECTORS = {"tiny": "lightweight", "m": "balanced"}  # rtmlib Body modes
 
 class RtmPoseEstimator:
     def __init__(
-        self, trt_cache: Path, det_every: int = 1, max_people: int = 3, detector: str = "tiny"
+        self,
+        trt_cache: Path,
+        det_every: int = 1,
+        max_people: int = 3,
+        detector: str = "tiny",
+        zone: Zone | None = None,
     ) -> None:
         from .gpu import enable_gpu
 
@@ -79,6 +99,7 @@ class RtmPoseEstimator:
         providers = self._pose.session.get_providers()
         if providers[0] != "TensorrtExecutionProvider":
             raise RuntimeError(f"pose model is not on TensorRT: {providers}")
+        self._zone = zone
         self._det_every = det_every
         self._max_people = max_people
         self._frame = 0
@@ -87,7 +108,7 @@ class RtmPoseEstimator:
     def __call__(self, frame: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         h, w = frame.shape[:2]
         if self._frame % self._det_every == 0 or len(self._boxes) == 0:
-            found = np.asarray(self._det(frame), np.float32).reshape(-1, 4)
+            found = in_zone(np.asarray(self._det(frame), np.float32).reshape(-1, 4), w, self._zone)
             # A missed detection keeps the boxes from the last keypoints, so one bad frame
             # does not drop the player
             if len(found) > 0 or len(self._boxes) == 0:
@@ -97,5 +118,5 @@ class RtmPoseEstimator:
         if len(boxes) == 0:
             return np.zeros((0, 17, 2)), np.zeros((0, 17))
         keypoints, scores = self._pose(frame, bboxes=boxes.tolist())
-        self._boxes = boxes_from_keypoints(keypoints, scores, w, h)
+        self._boxes = in_zone(boxes_from_keypoints(keypoints, scores, w, h), w, self._zone)
         return keypoints, scores
