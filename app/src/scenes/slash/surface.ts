@@ -30,6 +30,8 @@ const COLS = 56;
 const SUB = 4;
 const GOLD = '#ffc94d';
 
+const baht = (v: number) => Math.round(v).toLocaleString('en-US');
+
 /**
  * EP II's last word in 3D (research 030): profit for every hour × price as a surface. The AI's
  * price each hour sits on the ridge; the single all-day price is a flat path across it. The
@@ -139,18 +141,67 @@ export class ProfitSurface {
       this.#keep(sprite.material, sprite.material.map as CanvasTexture);
       this.#pivot.add(sprite);
     };
-    for (const p of [40, 80, 120]) label(`฿${String(p)}`, new Vector3(px(p), -0.12, z1 + 0.28));
-    label('ราคา →', new Vector3(x1 - 0.2, -0.12, z1 + 0.62), '#ff9ec7', 0.22);
-    for (const h of [8, 14, 20]) {
-      label(`${String(h).padStart(2, '0')}:00`, new Vector3(x1 + 0.45, -0.05, hz(h)));
+    // Axes: price every ฿20, every other hour, profit per hour in thirds (research 036)
+    for (let p = 40; p <= 120; p += 20) {
+      label(`฿${String(p)}`, new Vector3(px(p), -0.12, z1 + 0.28), '#f4e6f0', 0.17);
     }
-    label('กำไร', new Vector3(x0 - 0.05, SIZE.y + 0.22, z1), '#ff9ec7', 0.22);
-    label(
-      'ราคา AI',
-      ridge[ridge.length - 3]?.clone().add(new Vector3(0.1, 0.35, 0)) ?? new Vector3(),
-      GOLD,
-      0.24,
-    );
+    label('ราคาต่อแก้ว →', new Vector3(x1 - 0.45, -0.12, z1 + 0.64), '#ff9ec7', 0.2);
+    for (let h = 8; h <= 20; h += 2) {
+      label(
+        `${String(h).padStart(2, '0')}:00`,
+        new Vector3(x1 + 0.45, -0.05, hz(h)),
+        '#f4e6f0',
+        0.16,
+      );
+    }
+    label('ชั่วโมง ↗', new Vector3(x1 + 0.5, -0.05, z0 - 0.35), '#ff9ec7', 0.2);
+    const ticks: Vector3[] = [];
+    for (const k of [1 / 3, 2 / 3, 1]) {
+      const y = SIZE.y * k;
+      ticks.push(new Vector3(x0, y, z1), new Vector3(x0 - 0.1, y, z1));
+      label(`฿${baht(top * k)}`, new Vector3(x0 - 0.42, y, z1), '#f4e6f0', 0.15);
+    }
+    const tickGeo = new BufferGeometry().setFromPoints(ticks);
+    this.#keep(tickGeo);
+    this.#pivot.add(new LineSegments(tickGeo, lineMat));
+    label('กำไร / ชม. ↑', new Vector3(x0 - 0.1, SIZE.y + 0.3, z1), '#ff9ec7', 0.2);
+
+    // The AI's price on the ridge, every other hour, and the day's peak
+    HOURS.forEach((_, i) => {
+      const v = ridge[i];
+      if (!v || i % 2 !== 1) return;
+      label(`฿${String(aiPrices[i] ?? '')}`, v.clone().add(new Vector3(0, 0.17, 0)), GOLD, 0.15);
+    });
+    let peak = 0;
+    HOURS.forEach((h, i) => {
+      const best = HOURS[peak] ?? h;
+      if (profit(aiPrices[i] ?? 0, busyByHour(h)) > profit(aiPrices[peak] ?? 0, busyByHour(best))) {
+        peak = i;
+      }
+    });
+    const top3 = ridge[peak];
+    if (top3) {
+      const drop = new BufferGeometry().setFromPoints([top3, new Vector3(top3.x, 0, top3.z)]);
+      this.#keep(drop);
+      this.#pivot.add(new LineSegments(drop, gold));
+      const hour = HOURS[peak] ?? 20;
+      const p = aiPrices[peak] ?? 0;
+      label(
+        `สูงสุด ${String(hour).padStart(2, '0')}:00 · ฿${String(p)} · กำไร ฿${baht(profit(p, busyByHour(hour)))}/ชม.`,
+        top3.clone().add(new Vector3(0, 0.42, 0)),
+        GOLD,
+        0.17,
+      );
+    }
+    const flatEnd = flat.at(-1);
+    if (flatEnd) {
+      label(
+        `ราคาเดียวทั้งวัน ฿${String(flatPrice)}`,
+        flatEnd.clone().add(new Vector3(0, 0.2, -0.15)),
+        '#d9c9d6',
+        0.15,
+      );
+    }
 
     this.root.add(this.#pivot);
     this.#pivot.position.y = -SIZE.y / 3;

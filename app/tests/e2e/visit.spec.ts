@@ -80,8 +80,8 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
     await page.waitForTimeout(200);
   }
   expect([...seen]).toEqual(chapters);
-  // Pose questions: the coffee quiz and the T-pose before the AI's day
-  expect(selected).toBe(2);
+  // Pose questions: the T-pose before the AI's day (the coffee quiz is gone: kids found it confusing)
+  expect(selected).toBe(1);
 
   // Report: a real profit total and rank, then back to attract on its own.
   await expect.poll(() => phase(page)).toBe('report');
@@ -105,7 +105,6 @@ test('a visitor plays a whole visit with their body', async ({ page }) => {
     'visit-start',
     'pose:both-up',
     'chapter',
-    'pose:right-up',
     'chapter-done',
     'chapter',
     'pose:t-pose',
