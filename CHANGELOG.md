@@ -29,6 +29,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Fixed
 
+- The staff screen no longer grows with the log. On the booth's 4:3 monitor the whole page scrolled until the camera was off screen. The page now fits the screen exactly and only the log scrolls. 4:3 screens put the camera on top, with the panel below in two columns (research 035).
 - A three-digit price (฿120) ran into the gauge and past the panel edge in EP I. The number is now sized to the panel.
 - The game stuttered while slashing price tags. Every tag's canvas glow (`shadowBlur`) kept the GPU at 100%, which dropped the pose model to 11 fps. The glow is now drawn once per color and stamped. Pose holds 30 fps during play (research 029).
 

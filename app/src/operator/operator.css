@@ -3,6 +3,7 @@ html,
 body {
   margin: 0;
   height: 100%;
+  overflow: hidden; /* the page never scrolls: only the log does, inside its box */
   background: #000;
   color: #b8ffcc;
   font:
@@ -11,10 +12,13 @@ body {
     monospace;
 }
 
+/* Exactly one screen. Wide monitors: camera left, panel right. 4:3 and taller: camera on top. */
 #operator {
   display: grid;
-  grid-template-columns: 1fr 640px;
+  grid-template-columns: minmax(0, 1fr) clamp(420px, 33vw, 640px);
+  grid-template-rows: minmax(0, 1fr);
   height: 100vh;
+  overflow: hidden;
 }
 
 pre {
@@ -25,6 +29,8 @@ pre {
 
 .op-cam {
   position: relative;
+  min-height: 0;
+  overflow: hidden;
   border-right: 1px solid #1f3a28;
 }
 
@@ -50,9 +56,17 @@ pre {
 .op-side {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
+  overflow: hidden;
   padding: 10px 12px;
+}
+
+.op-stat,
+.op-problems,
+.op-keys,
+.op-ack {
+  flex: none;
 }
 
 .op-stat,
@@ -67,9 +81,11 @@ pre {
   color: #ff8899;
 }
 
+/* Two columns of keys: the panel stays short and the log gets the room */
 .op-keys {
   display: grid;
-  gap: 2px;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
 }
 
 .op-keys button {
@@ -87,6 +103,7 @@ pre {
 }
 
 .op-keys p {
+  grid-column: 1 / -1;
   margin: 2px 0 0;
   color: #ff2bd6;
 }
@@ -97,13 +114,20 @@ pre {
 }
 
 .op-log {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   margin: 0;
   padding: 6px 8px;
   list-style: none;
   border: 1px solid #1f3a28;
+}
+
+.op-log li {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .op-log .is-red {
@@ -124,4 +148,49 @@ pre {
 
 .op-log .is-bold {
   color: #fff;
+}
+
+/* 4:3 and taller monitors (the booth's HDMI screen is 1536×1152): camera on top, panel below
+   in two columns, the log on the right. Last in the file so it wins over the rules above. */
+@media (max-aspect-ratio: 3/2) {
+  #operator {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 58fr) minmax(0, 42fr);
+  }
+
+  .op-cam {
+    border-right: none;
+    border-bottom: 1px solid #1f3a28;
+  }
+
+  .op-side {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'stat log'
+      'problems log'
+      'keys log'
+      'ack log';
+  }
+
+  .op-stat {
+    grid-area: stat;
+  }
+
+  .op-problems {
+    grid-area: problems;
+  }
+
+  .op-keys {
+    grid-area: keys;
+  }
+
+  .op-ack {
+    grid-area: ack;
+  }
+
+  .op-log {
+    grid-area: log;
+  }
 }
