@@ -82,6 +82,8 @@ class PerceptionServer:
         self._stop = threading.Event()
         self._frame_s = 0.0  # smoothed frame interval; fps = 1 / interval
         self._inference_ms = 0.0
+        # Work per frame after it arrives (pose, previews, publishing): near 33 ms, frames queue
+        self._busy_ms = 0.0
         self.frames = 0
         self._last_frame_at = 0.0  # monotonic; 0 = no frame yet
         self._started = time.monotonic()
@@ -311,6 +313,7 @@ class PerceptionServer:
         return {
             "fps": fps,
             "inferenceMs": round(self._inference_ms, 1),
+            "busyMs": round(self._busy_ms, 1),
             "people": self._people,
             "clients": clients,
             "cameraSilentS": round(silent_s, 1) if silent_s is not None else None,
@@ -400,6 +403,8 @@ class PerceptionServer:
                 last_scene = now
             if self._loop:
                 self._loop.call_soon_threadsafe(self._publish, message, preview, scene)
+            busy_ms = (time.perf_counter() - start) * 1000
+            self._busy_ms = 0.9 * self._busy_ms + 0.1 * busy_ms
 
     def _publish(self, message: bytes, preview: bytes | None, scene: str | None = None) -> None:
         for client in list(self._clients):
