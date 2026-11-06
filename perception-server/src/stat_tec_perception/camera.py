@@ -98,6 +98,9 @@ class Camera:
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
         cap.set(cv2.CAP_PROP_FPS, self.fps)
+        # One buffer: always the newest frame. With the default (4), a loop that once fell behind
+        # the camera never catches up and every frame arrives ~100 ms old (research 038).
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         if not cap.isOpened():
             cap.release()
             self._next_attempt = now + RECONNECT_S
