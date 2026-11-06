@@ -125,3 +125,42 @@ def test_slivers_and_odd_shapes_are_rejected():
     assert not looks_like_a_person(_person(p0=[640, 400]), sc, 1280)  # head below them
     assert not looks_like_a_person(_person(p11=[680, 310], p12=[600, 310]), sc, 1280)  # no torso
     assert not looks_like_a_person(_person(p5=[1275, 300]), sc, 1280)  # cut by the edge
+
+
+def test_an_admitted_player_is_kept_while_an_arm_hides_the_face():
+    """The body check admits people; a slash across the face must not drop the player."""
+    from stat_tec_perception.estimator import RtmPoseEstimator
+
+    face = _person()
+    sc_ok = np.full(17, 0.9)
+    sc_hidden = sc_ok.copy()
+    sc_hidden[0] = 0.2  # nose behind the arm
+    frames = iter([(face, sc_ok), (face, sc_hidden), (face, sc_hidden)])
+    player = [560.0, 150.0, 720.0, 600.0]
+
+    est = object.__new__(RtmPoseEstimator)
+    est._det = lambda frame: [player]
+    est._pose = lambda frame, bboxes: (lambda k, s: (k[None], s[None]))(*next(frames))
+    est._det_every, est._max_people, est._frame = 1, 3, 0
+    est._zone, est._min_height, est._body_check = None, 0.0, True
+    est._boxes = np.zeros((0, 4), np.float32)
+    est._accepted = np.zeros((0, 4), np.float32)
+    frame = np.zeros((720, 1280, 3), np.uint8)
+    assert len(est(frame)[0]) == 1  # admitted
+    assert len(est(frame)[0]) == 1  # face hidden, same place: kept
+    assert len(est(frame)[0]) == 1
+
+
+def test_someone_new_with_a_hidden_face_is_not_admitted():
+    from stat_tec_perception.estimator import RtmPoseEstimator
+
+    sc_hidden = np.full(17, 0.9)
+    sc_hidden[0] = 0.2
+    est = object.__new__(RtmPoseEstimator)
+    est._det = lambda frame: [[560.0, 150.0, 720.0, 600.0]]
+    est._pose = lambda frame, bboxes: (_person()[None], sc_hidden[None])
+    est._det_every, est._max_people, est._frame = 1, 3, 0
+    est._zone, est._min_height, est._body_check = None, 0.0, True
+    est._boxes = np.zeros((0, 4), np.float32)
+    est._accepted = np.zeros((0, 4), np.float32)
+    assert len(est(np.zeros((720, 1280, 3), np.uint8))[0]) == 0
