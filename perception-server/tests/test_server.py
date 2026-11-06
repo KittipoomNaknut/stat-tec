@@ -190,3 +190,46 @@ def test_staff_commands_reach_the_game_and_bad_ones_do_not():
                     break
 
     asyncio.run(with_server(test))
+
+
+def test_camera_hands_over_the_newest_frame_and_keeps_its_own_pace(monkeypatch):
+    """Research 038: a slow pose loop must get the newest frame, and the camera keeps 30 fps."""
+    import cv2
+
+    from stat_tec_perception import camera as camera_mod
+
+    class FakeCap:
+        n = 0
+
+        def __init__(self, *a):
+            pass
+
+        def set(self, *a):
+            return True
+
+        def get(self, prop):
+            return 640 if prop == cv2.CAP_PROP_FRAME_WIDTH else 480
+
+        def isOpened(self):  # noqa: N802 (OpenCV's name)
+            return True
+
+        def read(self):
+            time.sleep(1 / 30)
+            FakeCap.n += 1
+            return True, np.full((2, 2, 3), FakeCap.n % 256, np.uint8)
+
+        def release(self):
+            pass
+
+    monkeypatch.setattr(camera_mod.cv2, "VideoCapture", FakeCap)
+    cam = camera_mod.Camera(9, 640, 480, 30, hold_fps=False)
+    seen = []
+    t0 = time.monotonic()
+    while time.monotonic() - t0 < 1.0:
+        frame, _ = cam.read()
+        seen.append(int(frame[0, 0, 0]))
+        assert int(frame[0, 0, 0]) >= FakeCap.n - 1  # never an old frame
+        time.sleep(0.07)  # a pose loop slower than the camera
+    cam.close()
+    assert FakeCap.n >= 25  # the camera kept its pace (~30 a second)
+    assert len(seen) <= 15  # the slow loop skipped frames instead of queueing them
