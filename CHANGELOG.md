@@ -29,7 +29,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Fixed
 
-- Large lag with the new camera. The pose loop ran close to the 33 ms frame budget (1080p decode plus three people), so frames queued in OpenCV's 4-frame camera buffer and each one arrived ~100 ms old. The camera now keeps one buffer, and health logs `busyMs`, the work per frame (research 038).
+- Large lag with the new camera. The pose loop ran close to the 33 ms frame budget (1080p decode plus three people), so frames queued in OpenCV's 4-frame camera buffer and each one arrived ~100 ms old. A reader thread now drains the camera at its own pace and hands the pose loop only the newest frame, so frames never queue and the camera keeps 30 fps. A single camera buffer, the first fix, dropped it to 10 fps. Health logs `busyMs`, the work per frame (research 038).
 - Slashing felt laggy and off the hand. The body check dropped the real player whenever the slashing arm hid their face, and after 300 ms the game paused (184 pauses of ~0 s in one booth day). The body check now admits new people only. Someone already admitted stays while their box stays put (research 037).
 - The staff screen no longer grows with the log. On the booth's 4:3 monitor the whole page scrolled until the camera was off screen. The page now fits the screen exactly and only the log scrolls. 4:3 screens put the camera on top, with the panel below in two columns (research 035).
 - A three-digit price (฿120) ran into the gauge and past the panel edge in EP I. The number is now sized to the panel.

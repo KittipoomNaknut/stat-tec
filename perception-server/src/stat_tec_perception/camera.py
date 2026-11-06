@@ -6,6 +6,7 @@ import fcntl
 import logging
 import os
 import struct
+import threading
 import time
 from pathlib import Path
 
@@ -65,6 +66,15 @@ class Camera:
         self.fps = fps
         self._cap: cv2.VideoCapture | None = None
         self._next_attempt = 0.0
+        # A reader thread drains the camera at its own pace and keeps only the newest frame, so
+        # the pose loop never gets a stale one and the camera never waits for it (research 038)
+        self._reader: threading.Thread | None = None
+        self._stop = threading.Event()
+        self._new = threading.Condition()
+        self._latest: tuple[np.ndarray, float] | None = None
+        self._seq = 0
+        self._taken = 0
+        self._failed = False
 
     @property
     def label(self) -> str:
@@ -75,15 +85,37 @@ class Camera:
         """Next frame and its capture time (epoch ms), or None while the camera is unavailable."""
         if self._cap is None and not self._open():
             return None
-        assert self._cap is not None
-        ok, frame = self._cap.read()
-        if not ok:
+        with self._new:
+            self._new.wait_for(lambda: self._seq > self._taken or self._failed, timeout=1.0)
+            if self._failed or self._seq == self._taken or self._latest is None:
+                failed = True
+            else:
+                failed = False
+                self._taken = self._seq
+                latest = self._latest
+        if failed:
             log.warning("camera %s stopped delivering frames; reconnecting", self.index)
             self.close()
             return None
-        return frame, time.time() * 1000
+        return latest
+
+    def _drain(self, cap: cv2.VideoCapture) -> None:
+        while not self._stop.is_set():
+            ok, frame = cap.read()
+            with self._new:
+                if not ok:
+                    self._failed = True
+                    self._new.notify_all()
+                    return
+                self._latest = (frame, time.time() * 1000)
+                self._seq += 1
+                self._new.notify_all()
 
     def close(self) -> None:
+        self._stop.set()
+        if self._reader is not None:
+            self._reader.join(timeout=2)
+        self._reader = None
         if self._cap is not None:
             self._cap.release()
         self._cap = None
@@ -98,9 +130,6 @@ class Camera:
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
         cap.set(cv2.CAP_PROP_FPS, self.fps)
-        # One buffer: always the newest frame. With the default (4), a loop that once fell behind
-        # the camera never catches up and every frame arrives ~100 ms old (research 038).
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         if not cap.isOpened():
             cap.release()
             self._next_attempt = now + RECONNECT_S
@@ -116,4 +145,10 @@ class Camera:
                     "camera %s: frame rate held in dim light (exposure priority off)", self.index
                 )
         self._cap = cap
+        self._stop = threading.Event()
+        self._failed = False
+        self._seq = self._taken = 0
+        self._latest = None
+        self._reader = threading.Thread(target=self._drain, args=(cap,), name="camera", daemon=True)
+        self._reader.start()
         return True
