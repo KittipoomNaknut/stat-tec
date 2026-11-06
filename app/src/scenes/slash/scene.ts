@@ -269,7 +269,7 @@ class SlashScene implements SceneModule {
       void askPose(
         this.#ctx.hud,
         this.#ctx.bus,
-        [{ pose: 't-pose', label: 'กางแขน ปล่อยพลัง AI!' }],
+        [{ pose: 't-pose', label: 'กางแขนเพื่อให้ AI ตั้งราคา' }],
         (ms, step) => this.#anim.tween(ms, step, { ease: ease.linear }),
         T_POSE_MS,
       ).then(() => {
