@@ -156,6 +156,9 @@ class RtmPoseEstimator:
         self._zone = zone
         self._min_height = min_height
         self._body_check = body_check
+        # Boxes of the poses reported last frame: someone already accepted keeps being reported
+        # while their box stays put, even when an arm hides the face (research 037)
+        self._accepted = np.zeros((0, 4), np.float32)
         # The staff screen asks for everything the filters saw (research 034); off = no cost
         self.record_scene = False
         self.scene: dict | None = None
@@ -181,6 +184,7 @@ class RtmPoseEstimator:
         self._frame += 1
         boxes = largest_first(self._boxes, self._max_people)
         if len(boxes) == 0:
+            self._accepted = np.zeros((0, 4), np.float32)
             if record:
                 self.scene = _scene(w, h, dropped, [])
             return np.zeros((0, 17, 2)), np.zeros((0, 17))
@@ -190,11 +194,40 @@ class RtmPoseEstimator:
             why_not_a_person(k, s, w) if self._body_check else None
             for k, s in zip(keypoints, scores, strict=True)
         ]
+        # The body check admits people; it does not throw out someone it already admitted. A
+        # slash sweeps an arm across the face, the nose drops below SEEN, and dropping the player
+        # for those frames paused the game (owner: "laggy, not on the hand"; booth log: 184
+        # pauses of ~0 s in a day). A sliver or a thing never got in, so it gets no such pass.
+        accepted = getattr(self, "_accepted", np.zeros((0, 4), np.float32))
+        why = [
+            None if r is not None and _overlaps(b, accepted) else r
+            for b, r in zip(boxes, why, strict=True)
+        ]
+        self._accepted = np.asarray(
+            [b for b, r in zip(boxes, why, strict=True) if r is None], np.float32
+        ).reshape(-1, 4)
         if record:
             self.scene = _scene(w, h, dropped, list(zip(keypoints, scores, why, strict=True)))
         keep = [r is None for r in why]
         # Rejected poses are still tracked (the boxes above), just not reported as people
         return keypoints[keep], scores[keep]
+
+
+KEEP_IOU = 0.4
+
+
+def _overlaps(box: np.ndarray, others: np.ndarray) -> bool:
+    """Whether `box` overlaps any of `others` by at least KEEP_IOU (intersection over union)."""
+    if len(others) == 0:
+        return False
+    x0 = np.maximum(box[0], others[:, 0])
+    y0 = np.maximum(box[1], others[:, 1])
+    x1 = np.minimum(box[2], others[:, 2])
+    y1 = np.minimum(box[3], others[:, 3])
+    inter = np.clip(x1 - x0, 0, None) * np.clip(y1 - y0, 0, None)
+    area = (box[2] - box[0]) * (box[3] - box[1])
+    areas = (others[:, 2] - others[:, 0]) * (others[:, 3] - others[:, 1])
+    return bool(np.any(inter / np.maximum(area + areas - inter, 1e-6) >= KEEP_IOU))
 
 
 def _dropped(before: np.ndarray, after: np.ndarray, why: str) -> list[tuple[list[float], str]]:
