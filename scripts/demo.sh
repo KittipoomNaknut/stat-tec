@@ -11,7 +11,9 @@
 #   ./scripts/demo.sh log             live log: health, problems (red), visits
 #
 # Logs: ~/.cache/stat-tec/logs (names and numbers only, never camera images).
-# Extra pose-service flags: STAT_TEC_PERCEPTION_ARGS="--camera 2" ./scripts/demo.sh start
+# Booth defaults (research 039): the C30 on /dev/video2, middle half of the image, 2 people.
+# Extra or overriding pose-service flags (the last one wins):
+#   STAT_TEC_PERCEPTION_ARGS="--camera 0" ./scripts/demo.sh start
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -20,6 +22,7 @@ RUN="$CACHE/run"
 LOGS="$CACHE/logs"
 APP_PORT=8080
 POSE_PORT=8765
+BOOTH_ARGS="${STAT_TEC_BOOTH_ARGS---camera 2 --zone 0.25,0.75 --max-people 2}"
 URL="http://127.0.0.1:$APP_PORT/"
 
 say() { printf '\033[1m[demo]\033[0m %s\n' "$*"; }
@@ -133,7 +136,7 @@ cmd_start() {
   say "starting the pose service (camera)…"
   launch perception "$LOGS/perception.log" \
     uv run --directory "$ROOT/perception-server" --extra gpu stat-tec-perception --log-dir "$LOGS" \
-    ${STAT_TEC_PERCEPTION_ARGS:-}
+    $BOOTH_ARGS ${STAT_TEC_PERCEPTION_ARGS:-}
   wait_port "$POSE_PORT" 90 perception "$LOGS/perception.log"
 
   say "serving the game on $URL…"

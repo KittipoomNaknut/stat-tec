@@ -17,6 +17,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Changed
 
+- `./scripts/demo.sh start` now uses the booth setup by default: the C30 on `/dev/video2`, the middle half of the image (`--zone 0.25,0.75`) and at most 2 people, at 720p. Your own `STAT_TEC_PERCEPTION_ARGS` still win, and `STAT_TEC_BOOTH_ARGS=` turns the defaults off. On the open-house day at 720p the camera held 30 fps for 4.3 hours with about 16 of 33 ms used per frame (research 039).
 - EP I no longer asks whether anyone would buy a ฿200 coffee, because kids found it confusing. It just says เลื่อนมือขึ้น = ขึ้นราคา · เลื่อนลง = ลดราคา. A visit now has two poses: both hands up to start, and the T-pose (research 036).
 - The 3D profit surface is easier and goes further. One hand does it all: sideways turns up to ±100° (was ±54°), and raising it zooms 0.75-1.9× (was two hands, 0.8-1.45×). It also has more detail: price and hour ticks, a profit axis with values, the AI's price on the ridge every other hour, the day's peak, and a label for the flat price (research 036).
 - The visit is two chapters: ราคาเดียว (Regression) → ศึก 11.11 (Dynamic pricing). EP II คู่แข่งบุก (K-means) is removed. A visit is about 2.6 minutes, down from 3.2 (research 028).

@@ -56,7 +56,9 @@ STAT_TEC_PERCEPTION_ARGS="--camera 2 --fourcc GRBG --width 640 --height 480 --zo
 
 - เลข `--camera` ดูจากบรรทัดแรก (Kinect ขึ้นชื่อ `gspca main driver`)
 - กด **F1** ในเกม: เห็นภาพกล้องและโครงกระดูก · ดู fps ในหน้า `./scripts/demo.sh log`
-- กล้องเดิม: `./scripts/demo.sh start` เฉย ๆ
+- ค่าเริ่มต้นของบูธ: กล้อง C30 (`/dev/video2`) · 720p · `--zone 0.25,0.75` · คนสูงสุด 2 คน — `./scripts/demo.sh start --operator` เฉย ๆ พอ
+- ถ้าเลขกล้องเปลี่ยน (เสียบพอร์ตอื่น): `STAT_TEC_PERCEPTION_ARGS="--camera 0" ./scripts/demo.sh start --operator` (ค่าที่พิมพ์เองชนะค่าเริ่มต้น)
+- ไม่เอาค่าเริ่มต้นเลย: `STAT_TEC_BOOTH_ARGS= ./scripts/demo.sh start`
 - `--zone 0.25,0.75` = จับท่าเฉพาะคนที่ยืนกลางภาพ (ครึ่งกลาง) · นอกโซนจะมืดในช่องดูตัวเอง · ใช้กับเว็บแคมได้ด้วย
 
 ## ระหว่างวัน
